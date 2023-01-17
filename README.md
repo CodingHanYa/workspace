@@ -1,9 +1,7 @@
 ## 一个基于C++11的高性能的、跨平台的、简单易用的线程池框架（thread pool framework）
 
-**Hipe **是基于 C++11 编写的跨平台的、高性能的、简单易用且功能强大的线程池框架（thread pool framework），每秒能够空跑**上百万**的任务。其内置了两个职责分明的线程池（SteadyThreadPond和DynamicThreadPond），并提供了诸如任务包装器、计时器、同步IO流、自旋锁等实用的工具。
-
+**Hipe**是基于 C++11 编写的跨平台的、高性能的、简单易用且功能强大的线程池框架（thread pool framework），每秒能够空跑**上百万**的任务。其内置了两个职责分明的线程池（SteadyThreadPond和DynamicThreadPond），并提供了诸如任务包装器、计时器、同步IO流、自旋锁等实用的工具。
 使用者可以根据业务类型结合使用Hipe-Dynamic和Hipe-Steady两种线程池来提供高并发服务。
-
 bilibili源码剖析视频：https://space.bilibili.com/499976060 （更新中）
 
 ## demo-最简单调用
