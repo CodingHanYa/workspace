@@ -36,24 +36,6 @@ Hipe-Steady内部为每个线程都分配了公开任务队列、缓冲任务队
 
 由于其底层的实现机制，Hipe-Steady适用于**稳定的**（避免超时任务阻塞线程）、**任务量大**（任务传递的优势得以体现）的任务流。也可以说Hipe-Steady适合作为核心线程池（能够处理基准任务并长时间运行），而当可以**定制容量**的Hipe-Steady面临任务数量超过设定值时—— 即**任务溢出**时，我们可以通过定制的**回调函数**拉取出溢出的任务，并把这些任务推到我们的动态线程池DynamicThreadPond中。在这个情景中，DynamicThreadPond或许可以被叫做CacheThreadPond。关于二者之间如何协调运作，大家可以阅读`Hipe/demo/demo1`.在这个demo中我们展示了如何把DynamicThreadPond用作Hipe-Steady的缓冲池。
 
-## interface
-```c++
- SteadyThreadPond(uint thread_numb = 0, uint task_capacity = HipeUnlimited);
-```
-`thread_numb`：固定的线程数
-
-`task_capacity`：线程池阻塞的最大任务数。
-
-但为了减少同步的开销，Hipe是在Hipe-Steady的**线程中**记录存留的任务数，而不是在线程池层面维护一个原子量来记录。因此，传入的`task_capacity`会被**除以**传入的线程数，作为每个线程的最大阻塞任务数。该除法为除后向下取整（floor division），且每个线程的最大阻塞任务数最小为1，因此当`task_capacity`不是`thread_numb`的整数倍时。结果可能会与调用者的预期略有出入。
-
-
-若想要再提高SteadyThreadPond的性能，批量提交是最好的方法。Hipe-Steady提供了十分简便的批量提交任务的接口。
-```C++
-// 主线程会尝试将一批任务提交给单个线程，因此不能让批量提交的单位过大，这样不利于线程池内线程的负载均衡。
-std::vector<std::function<void()>> container(10, []{});
-pond.submitInBatch(container, container.size());
-```
-
 
 ## Hipe-DynamicThreadPond
 
