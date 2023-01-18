@@ -100,8 +100,10 @@ private:
                     runBufferTaskQueue();
 
                     // enable rob task
+                    #ifdef HIPE_ENABLE_ROB_NEIGHBOR
                     if (robNeighbor()) 
                         runBufferTaskQueue();
+                    #endif
 
                     // main thread waiting for working thread
                     if (waiting) 
