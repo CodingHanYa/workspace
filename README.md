@@ -203,8 +203,9 @@ threads: 16 | task-type: empty task | task-numb: 1000000 | time-cost: 0.68551(s)
 
 BS的贡献者
 
+小林技术交流群中的各位大佬
+
 ## 联系我
 
 QQ邮箱：1848395727@qq.com
 
-欢迎向我提问，也希望我们能一起把Hipe变得更好，一起在C++线程池这方面做些贡献。
