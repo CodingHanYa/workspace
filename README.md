@@ -47,7 +47,7 @@ Hipe-Dynamic采用的是多线程竞争单条任务队列的模型。该任务�
 
 
 
-## BenchMark
+## Performance BenchMark
 
 [bshoshany](https://github.com/bshoshany)/**[thread-pool](https://github.com/bshoshany/thread-pool)** （以下简称BS）是在GitHub上开源的已收获了**1k+stars** 的C++线程池，采用C++17编写，具有轻量，高效的特点。我们通过**加速比测试和空任务测试**，对比BS和Hipe的性能。实际上BS的底层机制与Hipe-Dynamic相似，都是多线程竞争一条任务队列，并且在没有任务时被条件变量阻塞。
 
