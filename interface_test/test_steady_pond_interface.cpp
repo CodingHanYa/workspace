@@ -12,7 +12,8 @@ void foo2(std::string name) {
     stm.print(name, " call foo2");
 }
 
-struct Functor {
+struct Functor 
+{
     void operator()() {
         stm.print("functor executed");
     }
@@ -23,10 +24,10 @@ void test_submit(SteadyThreadPond& pond)
     stm.print("\n", util::boundary('=', 15), util::strong("submit"), util::boundary('=', 16));
 
     // no return
-    pond.submit(foo1);  // function pointer
+    pond.submit(&foo1);  // function pointer
     pond.submit([]{stm.print("HanYa say hello world");}); // lambda
-    pond.submit(std::bind(foo2, "HanYa"));  // std::function
-
+    pond.submit(std::bind(foo2, "HanYa"));  // std::function<void()>
+    pond.submit(Functor());
 
     // if you need many returns
     int n = 3;
@@ -56,7 +57,9 @@ void test_submit_In_batch(SteadyThreadPond& pond)
 {
     stm.print("\n", util::boundary('=', 11), util::strong("submit in batch"), util::boundary('=', 11));
 
+    // std::queue<HipeTask>;   
     // use util::block  hipe::HipeTask = hipe::util::Task;
+    // std::function<void()>
     int n = 2;
     util::Block<HipeTask> blok(n);
 
@@ -69,6 +72,7 @@ void test_submit_In_batch(SteadyThreadPond& pond)
     // use std::vector , interface reset() from HipeTask
     // std::vector<std::function<void()>> 
     // std::vector<void(*)()>
+    // []
     std::vector<HipeTask> vec(n);
     for (int i = 0; i < n; ++i) {
         vec[i].reset([i]{stm.print("vector task ", i);});
@@ -76,7 +80,8 @@ void test_submit_In_batch(SteadyThreadPond& pond)
     pond.submitInBatch(vec, vec.size());
 
     // use another kind of submit by batch
-    pond.submit([]{ stm.print("same task submitted two times ");}, 2);
+    pond.submit([]{ stm.print("same task submitted two times "); }, 2);
+
     pond.waitForTasks();
 }
 
@@ -85,15 +90,17 @@ void test_task_overflow()
     stm.print("\n", util::boundary('=', 11), util::strong("task overflow"), util::boundary('=', 13));
 
     // task capacity is 100 
-    SteadyThreadPond pond(10, 100);
+    SteadyThreadPond pond(10, 100); 
 
-    pond.setRefuseCallBack([&]{
+    pond.setRefuseCallBack([&]
+    {
         stm.print("Task overflow !");
         auto blok = pond.pullOverFlowTasks();
-        stm.print("Losed ", blok.element_numb(), " tasks");
+        stm.print("Losed ", blok.element_numb(), " tasks"); // 1
     });
 
     util::Block<HipeTask> my_block(101);
+
     for (int i = 0; i < 101; ++i) {
         my_block.add([]{util::sleep_for_milli(10);});
     }

@@ -81,15 +81,15 @@ void test_motify_thread_numb(DynamicThreadPond& pond)
     stm.print("Now delete all the threads");
 
     pond.delThreads(pond.getThreadNumb());
-    stm.print("thread-numb = ", pond.getThreadNumb(), "\n");
+    stm.print("thread-numb = ", pond.getThreadNumb(), "\n");    // 0
 
     pond.submit([]{stm.print("task 1 done");});
     pond.submit([]{stm.print("task 2 done");});
     pond.submit([]{stm.print("task 3 done");});
 
-    stm.print("Now sleep for two second and then add one thread ...");
-
+    stm.print("Now sleep for two seconds and then add one thread ...");  // 2s
     util::sleep_for_seconds(2);
+
     pond.addThreads(1);
     pond.waitForTasks();
     pond.delThreads(1);
@@ -97,8 +97,10 @@ void test_motify_thread_numb(DynamicThreadPond& pond)
     stm.print("We have deleted the only one thread and now there are no threads");
     stm.print("Now we adjust the thread number to target number");
 
+
     int target_thread_number = 3;
     pond.adjustThreads(target_thread_number);
+    stm.print("thread-numb now: ", pond.getThreadNumb());  // 3
 
 }
 
@@ -107,6 +109,7 @@ int main()
 {
     stm.print(util::title("Test DynamicThreadPond", 10));
 
+    // unlimited
     DynamicThreadPond pond(thread_numb);
 
     util::print("\nthread-num = ", pond.getThreadNumb());

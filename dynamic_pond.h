@@ -20,7 +20,7 @@ class DynamicThreadPond
     std::queue<HipeTask> shared_tq = {};
 
     // locker shared by threads
-    std::mutex shared_locker;
+    std::mutex shared_locker;   
 
     // stop the pond
     std::atomic_bool stop = {false};
@@ -105,7 +105,7 @@ public:
                     idx = deleted_threads.front();
                     deleted_threads.pop();  
                 }
-                pond[idx].join();
+                pond[idx].join();   
                 dead_thread--;
 
                 pond[idx] = std::thread(&DynamicThreadPond::worker, this, idx);
@@ -243,7 +243,6 @@ private:
     void worker(uint index) 
     {
         HipeTask task;
-        auto id = std::this_thread::get_id();
 
         while (!stop) 
         {
@@ -256,7 +255,6 @@ private:
                 dead_thread++;
                 shrink_size--;
                 deleted_threads.push(index);
-                locker.unlock();
                 break;  
             }
             if (!stop)
@@ -264,6 +262,7 @@ private:
                 task = std::move(shared_tq.front());
                 shared_tq.pop();
                 locker.unlock();
+
                 task_loaded++;
                 
                 // just invoke 

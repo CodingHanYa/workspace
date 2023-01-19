@@ -35,13 +35,6 @@ private:
         */
         void worker(int self_idx, SteadyThreadPond* pond) 
         {
-            
-            // wait for tasks
-            auto waitNotify = [this, pond] {
-                HipeUniqGuard lock(pond->cv_locker);
-                awake_cv.wait(lock, [this, pond]{return (task_numb.load() > 0 || pond->stop);});
-            };
-
             // execute buffer task queue
             auto runBufferTaskQueue = [this, pond] 
             {
@@ -61,6 +54,7 @@ private:
                 for (int i = 0; i < HIPE_MAX_ROB_NEIG_STEP; ++i) 
                 {
                     util::recyclePlus(idx, 0, pond->thread_numb);
+
                     if (pond->tq_locker.try_lock()) 
                     {
                         auto neig = &(pond->threads[idx]);
@@ -86,6 +80,7 @@ private:
                 util::spinlock_guard lock(pond->tq_locker);
                 public_tq.swap(buffer_tq);
             };
+
 
             while (!pond->stop) 
             {
@@ -115,11 +110,9 @@ private:
                         // tell main thread that tasks done
                         task_done_cv.notify_one();
                     }
-
                 }
             }
         }
-
     };
 
 private:
