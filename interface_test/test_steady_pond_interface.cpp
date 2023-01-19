@@ -27,6 +27,7 @@ void test_submit(SteadyThreadPond& pond)
     pond.submit([]{stm.print("HanYa say hello world");}); // lambda
     pond.submit(std::bind(foo2, "HanYa"));  // std::function
 
+
     // if you need many returns
     int n = 3;
     HipePromiseVector<int> promises(n);
@@ -49,13 +50,14 @@ void test_submit(SteadyThreadPond& pond)
     stm.print("get return ",fut.get());
 }
 
-void test_submit_by_batch(SteadyThreadPond& pond) 
+void test_submit_In_batch(SteadyThreadPond& pond) 
 {
     stm.print("\n", util::boundary('=', 11), util::strong("submit in batch"), util::boundary('=', 11));
 
-    // use util::block
+    // use util::block  hipe::HipeTask = hipe::util::Task;
     int n = 2;
     util::Block<HipeTask> blok(n);
+
     for (int i = 0; i < n; ++i) { 
         blok.add([i]{stm.print("block task ", i);});
     }
@@ -63,6 +65,8 @@ void test_submit_by_batch(SteadyThreadPond& pond)
 
 
     // use std::vector , interface reset() from HipeTask
+    // std::vector<std::function<void()>> 
+    // std::vector<void(*)()>
     std::vector<HipeTask> vec(n);
     for (int i = 0; i < n; ++i) {
         vec[i].reset([i]{stm.print("vector task ", i);});
@@ -98,7 +102,6 @@ void test_task_overflow()
 
 
 
-
 int main() 
 {
     stm.print(util::title("Test SteadyThreadPond", 10));
@@ -112,7 +115,7 @@ int main()
     test_submit(pond);
     util::sleep_for_seconds(1);
 
-    test_submit_by_batch(pond);
+    test_submit_In_batch(pond);
     util::sleep_for_seconds(1);
 
     test_task_overflow(); 
