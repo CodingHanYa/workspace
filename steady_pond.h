@@ -22,8 +22,6 @@ private:
         std::queue<HipeTask> buffer_tq;
 
         std::atomic_int  task_numb = {0};
-
-        std::condition_variable awake_cv;
         std::condition_variable task_done_cv;
 
 
@@ -215,12 +213,6 @@ public:
     void close() 
     {
         stop = true;
-        HipeUniqGuard locker(cv_locker);
-        for (int i = 0; i < thread_numb; ++i)  { 
-            threads[i].awake_cv.notify_one();
-        }
-        locker.unlock();
-        
         for (int i = 0; i < thread_numb; ++i) {
             threads[i].handle.join();
         }
