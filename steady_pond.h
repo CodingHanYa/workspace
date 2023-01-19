@@ -85,7 +85,6 @@ private:
             while (!pond->stop) 
             {
                 if (!task_numb) {
-                    if (waiting) task_done_cv.notify_one();
                     std::this_thread::yield();
                     continue;
                 }
@@ -101,7 +100,7 @@ private:
                     #endif
 
                     // main thread waiting for working thread
-                    if (waiting) 
+                    if (waiting)
                     {
                         // clean the public task queue
                         loadTask();
