@@ -21,7 +21,6 @@ private:
         std::queue<HipeTask> public_tq;
         std::queue<HipeTask> buffer_tq;
 
-        std::atomic_bool waiting = {false};
         std::atomic_int  task_numb = {0};
 
         std::condition_variable awake_cv;
@@ -100,7 +99,7 @@ private:
                     #endif
 
                     // main thread waiting for working thread
-                    if (waiting)
+                    if (pond->waiting)
                     {
                         // clean the public task queue
                         loadTask();
@@ -118,6 +117,9 @@ private:
 
     // stop the thread pend
     std::atomic_bool stop = {false};     
+
+    // wait for tasks done
+    std::atomic_bool waiting = {false};
 
     // iterater for threads
     int cur = 0;                              
@@ -253,13 +255,13 @@ public:
     {
         for (int i = 0; i < thread_numb; ++i) 
         {
-            threads[i].waiting = true;
+            waiting = true;
 
             HipeUniqGuard lock(cv_locker);
             threads[i].task_done_cv.wait(lock, [this, i]{ 
                 return !threads[i].task_numb; 
             });
-            threads[i].waiting = false;
+            waiting = false;
         }
     }
 
