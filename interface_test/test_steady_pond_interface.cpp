@@ -34,8 +34,10 @@ void test_submit(SteadyThreadPond& pond)
     HipeFutureVector<int>  futures(n);
     util::futureBindPromise(futures, promises);
 
+    auto func = [](HipePromise<int>& pro){ pro.set_value(6); };
+
     for (int i = 0; i < n; ++i) {
-        pond.submit([&, i] { promises[i].set_value(i); });
+        pond.submit(std::bind(func, std::ref(promises[i])));
     }
     for (int i = 0; i < n; ++i) {
         stm.print("get return ", futures[i].get());
