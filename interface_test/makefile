@@ -7,7 +7,7 @@ test_file2 = ./test_dynamic_pond_interface.cpp
 
 
 ${tar}: ${src}
-	g++ ${flag}  ${test_file2} -o ${tar} ${lib}
+	g++ ${flag}  ${test_file1} -o ${tar} ${lib}
 
 .PRONY: exec clean
 
