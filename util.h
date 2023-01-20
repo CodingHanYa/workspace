@@ -1,4 +1,5 @@
 #pragma once
+#include <thread>
 #include <vector>
 #include <string>
 #include <mutex>
@@ -31,23 +32,23 @@ using HipePromise = std::promise<T>;
 namespace util 
 {
 
-    HipeTimePoint tick() {
+    inline HipeTimePoint tick() {
         return std::chrono::steady_clock::now();
     }
 
-    void sleep_for_seconds(uint sec) {
+    inline void sleep_for_seconds(uint sec) {
         std::this_thread::sleep_for(std::chrono::seconds(sec));
     }
 
-    void sleep_for_milli(uint milli) {
+    inline void sleep_for_milli(uint milli) {
         std::this_thread::sleep_for(std::chrono::milliseconds(milli));
     }
 
-    void sleep_for_micro(uint micro) {
+    inline void sleep_for_micro(uint micro) {
         std::this_thread::sleep_for(std::chrono::microseconds(micro));
     }
 
-    void sleep_for_nano(uint nano) {
+    inline void sleep_for_nano(uint nano) {
         std::this_thread::sleep_for(std::chrono::nanoseconds(nano));
     }
 
@@ -73,7 +74,7 @@ namespace util
      * *   title   *
      * =============
     */
-    std::string title(std::string tar, size_t left_right_edge = 4) 
+    inline std::string title(std::string tar, size_t left_right_edge = 4) 
     {
         static std::string ele1 = "+";
         static std::string ele2 = " ";
@@ -98,7 +99,7 @@ namespace util
      * just like this
      * <[ something ]>
     */
-    std::string strong(std::string tar, size_t left_right_edge = 2) 
+    inline std::string strong(std::string tar, size_t left_right_edge = 2) 
     {
         static std::string ele1 = "<[";
         static std::string ele2 = "]>";
@@ -115,7 +116,7 @@ namespace util
 
     }  
 
-    std::string boundary(char element, size_t length = 10) {
+    inline std::string boundary(char element, size_t length = 10) {
         std::string res(length, element);
         return res;
     } 
