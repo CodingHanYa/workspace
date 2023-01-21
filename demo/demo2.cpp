@@ -6,12 +6,12 @@
 
 bool closed = false;
 uint tnumb = 8;
-uint task_pack_numb = 5000;
+uint task_pack_numb = 5000;  // 15000 task
 uint milli_per_submit = 500; // 0.5s
 
 void manager(hipe::DynamicThreadPond* pond) 
 {   
-    uint unit = 4;
+    uint unit = 1;
     uint prev_load = 0;
     uint max_thread_numb = 200;
     uint min_thread_numb = 8;
@@ -55,7 +55,7 @@ int main()
     auto task2 = []{hipe::util::sleep_for_milli(30);};
     auto task3 = []{hipe::util::sleep_for_milli(50);}; 
 
-    auto packs = (double)100/((double)milli_per_submit/1000);
+    auto packs = (double)100/((double)milli_per_submit/1000); 
     auto task_nums = packs * 3;
     hipe::util::print("Submit ", packs, " task pack and ", task_nums, " task per second");
     hipe::util::print("So we hope that the threads is able to load [", task_nums, "] task per second");

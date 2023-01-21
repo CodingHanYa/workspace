@@ -75,7 +75,7 @@ namespace util
     */
     std::string title(std::string tar, size_t left_right_edge = 4) 
     {
-        static std::string ele1 = "+";
+        static std::string ele1 = "=";
         static std::string ele2 = " ";
 
         std::string res;
