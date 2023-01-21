@@ -33,7 +33,7 @@ namespace hipe {
 static const int HipeUnlimited = 0;
 
 /**
- * @brief task type that is able to contain different kind of executable object!
+ * @brief task type that is able to contain different kinds of executable object!
  * It is quite useful.
 */
 using HipeTask = util::Task;

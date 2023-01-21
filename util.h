@@ -127,6 +127,7 @@ namespace util
     }
 
 
+    // future container
     template <typename T>
     class Futures
     {
@@ -140,9 +141,9 @@ namespace util
         std::vector<T>& get()
         {
             results.resize(futures.size());
-
-            for (size_t i = 0; i < futures.size(); ++i)
+            for (size_t i = 0; i < futures.size(); ++i) {
                 results[i] = futures[i].get();
+            }
             return results;
         }
 

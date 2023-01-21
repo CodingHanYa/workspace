@@ -2,11 +2,13 @@
 
 **Hipe**是基于 C++11 编写的跨平台的、高性能的、简单易用且功能强大的线程池框架（thread pool framework），每秒能够空跑**上百万**的任务。其内置了两个职责分明的线程池（SteadyThreadPond和DynamicThreadPond），并提供了诸如任务包装器、计时器、同步IO流、自旋锁等实用的工具。
 使用者可以根据业务类型结合使用Hipe-Dynamic和Hipe-Steady两种线程池来提供高并发服务。
-bilibili源码剖析视频：https://space.bilibili.com/499976060 （更新中）
 
-## demo-最简单调用
+bilibili源码剖析视频：https://space.bilibili.com/499976060 （根据源码迭代持续更新）
+
+## demo1-简单地提交一点任务
 
 ```C++
+
 #include "./Hipe/hipe.h" 
 using namespace hipe;
 
@@ -17,6 +19,12 @@ SteadyThreadPond pond(8);
 // util::print()是Hipe提供的标准输出接口，让调用者可以像写python一样简单
 pond.submit([]{ util::print("HanYa said ", "hello world\n"); });
 
+
+// 带返回值的提交
+auto ret = pond.submitForReturn([]{ return 2023; });
+util::print("task return ", ret.get());
+
+
 // 主线程等待所有任务被执行
 pond.waitForTasks();
 
@@ -24,6 +32,40 @@ pond.waitForTasks();
 pond.close();
 
 ```
+
+
+## demo2-批量获取返回值
+
+```C++
+
+#include "./Hipe/hipe.h" 
+using namespace hipe;
+
+int main() 
+{
+    // 动态线程池
+    DynamicThreadPond pond(8);
+    HipeFutures<int> futures;
+
+    for (int i = 0; i < 5; ++i) {
+        auto ret = pond.submitForReturn([i]{ return i+1; }); 
+        futures.push_back(std::move(ret));
+    }
+
+    // 等待所有任务被执行
+    futures.wait();
+
+    // 获取所有异步任务结果
+    auto rets = futures.get();
+
+    for (int i = 0; i < 5; ++i) {
+        util::print("return ", rets[i]);
+    }
+}
+
+```
+
+
 
 更多接口的调用请大家阅读`hipe/interface_test/`，里面有全部的接口测试，并且每一个函数调用都有较为详细的注释。
 
