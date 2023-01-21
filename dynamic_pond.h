@@ -200,6 +200,28 @@ public:
     }
 
     /**
+     * @brief submit task and get return
+     * @param foo a runable object
+     * @return a future 
+    */
+    template <typename _Runable>
+    auto submitForReturn(_Runable&& foo) -> std::future<typename std::result_of<_Runable()>::type> 
+    {
+        using RT = typename std::result_of<_Runable()>::type;
+        std::packaged_task<RT()> pack(std::move(foo));
+        std::future<RT> fut(pack.get_future()); 
+
+        {
+            HipeLockGuard lock(shared_locker);
+            shared_tq.emplace(std::move(pack));
+            ++total_tasks;
+        }
+        awake_cv.notify_one();
+        return fut; // 6
+    }
+
+
+    /**
      * @brief submit same task
      * @param foo  An runable object
      * @param numb The number of task you want to execute

@@ -78,17 +78,18 @@ namespace util
     {
         static std::string ele1 = "=";
         static std::string ele2 = " ";
+        static std::string ele3 = "*";
 
         std::string res;
 
         repeat([&]{ res.append(ele1);}, left_right_edge * 2 + tar.size());
         res.append("\n");
 
-        res.append(ele1);
-        repeat([&]{ res.append(ele2); }, left_right_edge - ele1.size());
+        res.append(ele3);
+        repeat([&]{ res.append(ele2); }, left_right_edge - ele3.size());
         res.append(tar);
-        repeat([&]{ res.append(ele2); }, left_right_edge - ele1.size());
-        res.append(ele1);
+        repeat([&]{ res.append(ele2); }, left_right_edge - ele3.size());
+        res.append(ele3);
         res.append("\n");
 
         repeat([&]{ res.append(ele1);}, left_right_edge * 2 + tar.size());
@@ -286,7 +287,7 @@ namespace util
         Task& operator = (Task&& tmp) {
             delete ptr;
             ptr = tmp.ptr;
-            tmp.ptr = nullptr;
+            tmp.ptr = nullptr;  
             return *this;
         }
         void operator()() { 

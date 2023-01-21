@@ -259,12 +259,11 @@ public:
 
     /**
      * @brief submit task
-     * @param foo An runable object
+     * @param foo a runable object
     */
     template <typename _Runable>
     void submit(_Runable&& foo) 
     {
-        // if the least-busy thread can't admit the task
         if (thread_cap && !admit()) {
             taskOverFlow(std::forward<_Runable>(foo));
             return;
@@ -274,6 +273,30 @@ public:
         util::spinlock_guard lock(tq_locker);
         threads[cur].public_tq.emplace(std::forward<_Runable>(foo));
         threads[cur].task_numb++;
+    }
+
+    /**
+     * @brief submit task and get return
+     * @param foo a runable object
+     * @return a future 
+    */
+    template <typename _Runable>
+    auto submitForReturn(_Runable&& foo) -> std::future<typename std::result_of<_Runable()>::type> 
+    {
+        if (thread_cap && !admit()) {
+            taskOverFlow(std::forward<_Runable>(foo));
+        }
+        moveIndexForLeastBusy(cur);
+
+        using RT = typename std::result_of<_Runable()>::type;
+        std::packaged_task<RT()> pack(std::move(foo));
+        std::future<RT> fut(pack.get_future()); 
+
+        util::spinlock_guard lock(tq_locker);
+        threads[cur].public_tq.emplace(std::move(pack));
+        threads[cur].task_numb++;
+
+        return fut; // 6
     }
 
     /**

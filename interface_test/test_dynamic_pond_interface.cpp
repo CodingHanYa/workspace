@@ -21,6 +21,10 @@ void test_submit_tasks(DynamicThreadPond& pond)
     pond.submit([]{stm.print("hello world");});
     pond.submit(foo1);
 
+    // get return 
+    auto ret = pond.submitForReturn([]{return 2023;});
+    stm.print("return = ", ret.get());
+
     // get return
     HipePromise<int> pro;
     HipeFuture<int> fut;

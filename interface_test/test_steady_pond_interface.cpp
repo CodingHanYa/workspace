@@ -29,6 +29,19 @@ void test_submit(SteadyThreadPond& pond)
     pond.submit(std::bind(foo2, "HanYa"));  // std::function<void()>
     pond.submit(Functor());
 
+    // If you need return 
+    auto ret = pond.submitForReturn([]{ return 2023; });
+    stm.print("get return ", ret.get());
+
+    // or you can do it like this
+    HipeFuture<double> fut;
+    HipePromise<double> pro;
+    util::futureBindPromise(fut, pro);
+
+    pond.submit([&pro]{ pro.set_value(12.25); });
+    stm.print("get return ",fut.get());
+
+
     // if you need many returns
     int n = 3;
     HipePromiseVector<int> promises(n);
@@ -44,13 +57,7 @@ void test_submit(SteadyThreadPond& pond)
         stm.print("get return ", futures[i].get());
     }
 
-    // or
-    HipeFuture<double> fut;
-    HipePromise<double> pro;
-    util::futureBindPromise(fut, pro);
-
-    pond.submit([&pro]{ pro.set_value(12.25); });
-    stm.print("get return ",fut.get());
+    
 }
 
 void test_submit_In_batch(SteadyThreadPond& pond) 

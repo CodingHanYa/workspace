@@ -5,9 +5,10 @@ lib = -lpthread
 test_file1 = ./test_steady_pond_interface.cpp
 test_file2 = ./test_dynamic_pond_interface.cpp
 
+src = ${test_file2}
 
 ${tar}: ${src}
-	g++ ${flag}  ${test_file1} -o ${tar} ${lib}
+	g++ ${flag} ${src} -o ${tar} ${lib}
 
 .PRONY: exec clean
 
