@@ -235,9 +235,10 @@ public:
      * Pull the overflow tasks managed by a block which will be kept until next task overflow. 
      * Then the new tasks will replace the old.
     */
-    util::Block<HipeTask>&&  pullOverFlowTasks() {
+    util::Block<HipeTask>  pullOverFlowTasks() {
         HipeLockGuard locker(of_tasks_locker);
-        return std::move(overflow_tasks);
+        auto tmp = std::move(overflow_tasks);
+        return tmp;
     }
 
     /**
@@ -299,26 +300,6 @@ public:
         return fut; // 6
     }
 
-    /**
-     * @brief submit task
-     * @param foo An runable object
-     * @param times The times you want to execute
-    */
-    template <typename _Runable>
-    void submit(_Runable&& foo, uint times) 
-    {
-        if (thread_cap && !admit(times)) {
-            taskOverFlow(std::forward<_Runable>(foo));
-            return;
-        }
-        moveIndexForLeastBusy(cur);
-
-        util::spinlock_guard lock(tq_locker);
-        for (int i = 0; i < times; ++i) {
-            threads[cur].public_tq.emplace(std::forward<_Runable>(foo));
-            threads[cur].task_numb++;
-        }
-    }
 
     /**
      * submit in a batch and the task container must override "[]"

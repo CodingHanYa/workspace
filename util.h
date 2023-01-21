@@ -11,19 +11,6 @@
 
 namespace hipe {
 
-using HipeTimePoint = std::chrono::steady_clock::time_point;
-
-template <typename T>
-using HipeFutureVector = std::vector<std::future<T>>;
-
-template <typename T>
-using HipePromiseVector = std::vector<std::promise<T>>;
-
-template <typename T>
-using HipeFuture = std::future<T>;
-
-template <typename T>
-using HipePromise = std::promise<T>;
 
 
 /**
@@ -31,6 +18,7 @@ using HipePromise = std::promise<T>;
 */
 namespace util 
 {
+    using HipeTimePoint = std::chrono::steady_clock::time_point;
 
     inline HipeTimePoint tick() {
         return std::chrono::steady_clock::now();
@@ -138,24 +126,52 @@ namespace util
         var = (++var == right_border) ? left_border : var;
     }
 
-    template <typename T>
-    void futureBindPromise(HipeFutureVector<T>& futures, HipePromiseVector<T>&  promises) {
-        for (int i = 0; i < std::min(futures.size(), promises.size()); ++i) {
-            futures[i] = promises[i].get_future();
-        }
-    }
 
     template <typename T>
-    void futureBindPromise(HipeFutureVector<T>& futures, HipePromiseVector<T>&  promises, int begin, int end) {
-        for (int i = begin; i < end; ++i) {
-            futures[i] = promises[i].get_future();
-        }
-    }
+    class Futures
+    {
+        std::vector<std::future<T>> futures;
+        std::vector<T>  results;
 
-    template <typename T>
-    void futureBindPromise(HipeFuture<T>& fut, HipePromise<T>& pro) {
-        fut = pro.get_future();
-    }
+    public:
+        Futures(): futures(0), results(0) {}
+
+        // return results contained by the built-in vector
+        std::vector<T>& get()
+        {
+            results.resize(futures.size());
+
+            for (size_t i = 0; i < futures.size(); ++i)
+                results[i] = futures[i].get();
+            return results;
+        }
+
+        std::future<T>& operator[](size_t i)
+        {
+            return futures[i];
+        }
+
+        void push_back(std::future<T>&& future)
+        {
+            futures.push_back(std::move(future));
+        }
+
+        size_t size()
+        {
+            return futures.size();
+        }
+
+        // wait for all futures
+        void wait() 
+        {
+            for (size_t i = 0; i < futures.size(); ++i) {
+                futures[i].wait();
+            }
+        }
+
+
+    };
+
 
     /**
      * Time wait for the "call".

@@ -220,26 +220,6 @@ public:
         return fut; // 6
     }
 
-
-    /**
-     * @brief submit same task
-     * @param foo  An runable object
-     * @param numb The number of task you want to execute
-    */
-    template <typename _Runable>
-    void submit(_Runable&& foo, uint numb) 
-    { 
-        {
-            HipeLockGuard lock(shared_locker);
-            total_tasks += numb;
-            for (int i = 0; i < numb; ++i) {
-                shared_tq.emplace(std::forward<_Runable>(foo));
-            }
-        }
-        awake_cv.notify_all();
-    } 
-
-
     /**
      * submit in a batch and the task container must override "[]"
      * @param cont task container

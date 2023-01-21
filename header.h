@@ -45,15 +45,7 @@ using HipeUniqGuard = std::unique_lock<std::mutex>;
 using HipeTimePoint = std::chrono::steady_clock::time_point;
 
 template <typename T>
-using HipeFutureVector = std::vector<std::future<T>>;
+using HipeFutures  = util::Futures<T>;
 
-template <typename T>
-using HipePromiseVector = std::vector<std::promise<T>>;
-
-template <typename T>
-using HipeFuture = std::future<T>;
-
-template <typename T>
-using HipePromise = std::promise<T>;
 
 }
