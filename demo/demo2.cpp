@@ -99,6 +99,7 @@ int main()
 
     // wait for task done and than close the manager
     pond.waitForTasks();
+
     closed = true;
     mger.join();
 
