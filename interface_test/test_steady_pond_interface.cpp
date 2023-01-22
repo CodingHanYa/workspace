@@ -29,7 +29,7 @@ void test_submit(SteadyThreadPond& pond)
     pond.submit(std::bind(foo2, "HanYa"));                   // std::function<void()>
     pond.submit(Functor());                                  // functor
 
-    // If you need return 
+    // If you need return  
     auto ret = pond.submitForReturn([]{ return 2023; });
     stream.print("get return ", ret.get());
 
