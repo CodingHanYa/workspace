@@ -20,7 +20,7 @@ void test_BS()
     for (uint nums = min_task_numb; nums <= 1000000; nums *= 10) 
     {
         double time_cost = hipe::util::timewait(foo, nums);
-        printf("threads: %-2d | task-type: empty task | task-numb: %-7d | time-cost: %.5f(s)\n",
+        printf("threads: %-2d | task-type: empty task | task-numb: %-8d | time-cost: %.5f(s)\n",
         tnumb, nums, time_cost);
     }
 }
@@ -41,7 +41,38 @@ void test_Hipe_steady()
     for (uint nums = min_task_numb; nums <= 1000000; nums *= 10) 
     {
         double time_cost = hipe::util::timewait(foo, nums);
-        printf("threads: %-2d | task-type: empty task | task-numb: %-7d | time-cost: %.5f(s)\n",
+        printf("threads: %-2d | task-type: empty task | task-numb: %-8d | time-cost: %.5f(s)\n",
+        tnumb, nums, time_cost);
+    }
+}
+
+void test_Hipe_steady_batch_submit() 
+{
+    uint tnumb = std::thread::hardware_concurrency();
+    hipe::SteadyThreadPond pond(tnumb);
+
+    hipe::util::print("\n", hipe::util::title("Test C++(11) Thread Pool Hipe-Steady-Batch-Submit(10)"));
+
+    uint batch_size = 10;
+
+    hipe::util::Block<hipe::HipeTask> task_block(batch_size);
+
+    auto foo = [&](uint task_numb) 
+    {
+        for (int i = 0; i < task_numb;) 
+        {
+            for (int j = 0; j < batch_size; ++j, ++i) {
+                task_block.add([]{});
+            }
+            pond.submitInBatch(task_block, batch_size);
+            task_block.clean();
+        }
+        pond.waitForTasks();
+    };
+    for (uint nums = min_task_numb; nums <= 10000000; nums *= 10) 
+    {
+        double time_cost = hipe::util::timewait(foo, nums);
+        printf("threads: %-2d | task-type: empty task | task-numb: %-8d | time-cost: %.5f(s)\n",
         tnumb, nums, time_cost);
     }
 }
@@ -62,7 +93,7 @@ void test_Hipe_dynamic()
     for (uint nums = min_task_numb; nums <= 1000000; nums *= 10) 
     {
         double time_cost = hipe::util::timewait(foo, nums);
-        printf("threads: %-2d | task-type: empty task | task-numb: %-7d | time-cost: %.5f(s)\n",
+        printf("threads: %-2d | task-type: empty task | task-numb: %-8d | time-cost: %.5f(s)\n",
         tnumb, nums, time_cost);
     }
 }
@@ -78,6 +109,10 @@ int main()
     hipe::util::sleep_for_seconds(5);
 
     test_Hipe_steady();
+
+    hipe::util::sleep_for_seconds(5);
+
+    test_Hipe_steady_batch_submit();
 
     hipe::util::print("\n", hipe::util::title("End of the test", 15));
 }

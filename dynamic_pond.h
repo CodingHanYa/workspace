@@ -37,8 +37,8 @@ class DynamicThreadPond
     // dynamic thread pond
     std::vector<std::thread> pond;
 
-    // expect the size that pond shrink 
-    std::atomic_uint shrink_size = {0};
+    // the shrinking number of threads
+    std::atomic_uint shrink_numb = {0};
 
     // the number of deleted threads 
     std::atomic_int dead_thread = {0};
@@ -133,7 +133,7 @@ public:
             util::error("DynamicThreadPond: Not enough threads to delete");
             return;
         }
-        shrink_size = tnumb;
+        shrink_numb = tnumb;
         thread_numb -= tnumb;
         awake_cv.notify_all();
     }
@@ -250,12 +250,12 @@ private:
         {
             // wait notify 
             HipeUniqGuard locker(shared_locker);
-            awake_cv.wait(locker, [this] { return !shared_tq.empty() || stop || shrink_size > 0; });
+            awake_cv.wait(locker, [this] { return !shared_tq.empty() || stop || shrink_numb > 0; });
 
-            if (shrink_size) 
+            if (shrink_numb) 
             {
                 dead_thread++;
-                shrink_size--;
+                shrink_numb--;
                 deleted_threads.push(index);
                 break;  
             }

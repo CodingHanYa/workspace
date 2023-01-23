@@ -28,7 +28,7 @@ private:
         /**
          * @brief default loop of async thread
          * @param self_idx position of the thread
-         * @param pond using to call source from the pond
+         * @param pond provide some resource like locker
         */
         void worker(int self_idx, SteadyThreadPond* pond) 
         {
@@ -140,9 +140,6 @@ private:
     // keep thread variables
     std::unique_ptr<Thread[]> threads = {nullptr};    
 
-    // overflow tasks' locker
-    std::mutex of_tasks_locker;
-
     // tasks that failed to submit
     util::Block<HipeTask> overflow_tasks = {0};
 
@@ -236,7 +233,6 @@ public:
      * Then the new tasks will replace the old.
     */
     util::Block<HipeTask>  pullOverFlowTasks() {
-        HipeLockGuard locker(of_tasks_locker);
         auto tmp = std::move(overflow_tasks);
         return tmp;
     }
@@ -342,7 +338,7 @@ public:
 private:
 
     /**
-     * Judge whether there are enough capacity, 
+     * Judge whether there are enough capacity for tasks, 
      * if the task capacity of the pond is unlimited, it will always return true
      * @param tar_capacity target capacity
     */
@@ -367,11 +363,8 @@ private:
     template <typename T>
     void taskOverFlow(T&& task) 
     {    
-        {
-            HipeLockGuard lock(of_tasks_locker);
-            overflow_tasks.reset(1);
-            overflow_tasks.add(std::forward<T>(task));
-        }
+        overflow_tasks.reset(1);
+        overflow_tasks.add(std::forward<T>(task));
 
         if (refuse_cb.is_setted()) {
             util::invoke(refuse_cb);
@@ -389,13 +382,10 @@ private:
     template <typename T>
     void taskOverFlow(T&& tasks, size_t left, size_t right) 
     {
-        {
-            HipeLockGuard lock(of_tasks_locker);
-            overflow_tasks.reset(right-left);
+        overflow_tasks.reset(right-left);
 
-            for (int i = left; i < right; ++i) {
-                overflow_tasks.add(std::move(tasks[i]));
-            }
+        for (int i = left; i < right; ++i) {
+            overflow_tasks.add(std::move(tasks[i]));
         }
         if (refuse_cb.is_setted()) {
             util::invoke(refuse_cb);

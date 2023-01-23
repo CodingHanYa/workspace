@@ -83,7 +83,7 @@ Hipe-Steady内部为每个线程都分配了公开任务队列、缓冲任务队
 
 （以下简称Hipe-Dynamic）Hipe-Dynamic是Hipe提供的动态的、能够扩缩容的线程池。支持批量提交任务、支持线程吞吐任务速率监测、支持无界队列。当没有任务时所有线程会被自动挂起（阻塞等待条件变量的通知），较为节能。
 
-Hipe-Dynamic采用的是多线程竞争单条任务队列的模型。该任务队列是无界的，能够容蓄大量的任务（直至系统资源耗尽）。由于Hipe-Dynamic管理的线程没有私有的任务队列，因此能够被灵活地调度。同时，为了监测任务的加载速率（线程消化任务的速度），Hipe-Dynamic提供了监测任务队列的接口，其使用实例在`Hipe/demo/demo2`。
+Hipe-Dynamic采用的是多线程竞争单条任务队列的模型。该任务队列是无界的，能够容蓄大量的任务（直至系统资源耗尽）。由于Hipe-Dynamic管理的线程没有私有的任务队列，因此能够被灵活地调度。同时，为了能动态调节线程数，Hipe-Dynamic还提供了能监测线程池执行速率的接口，其使用实例在`Hipe/demo/demo2`。
 
 由于Hipe-Dynamic的接口较为简单，如果需要了解更多接口的调用，可以阅读接口测试文件`Hipe/interface_test/`或者`Hipe/demo/demo2`。
 
@@ -173,39 +173,50 @@ Best speed-up obtained by multithreading vs. single-threading: 8.62, using 16 ta
 
 ```
 
-+++++++++++++++++++++++++++++++++++++++++++++
-+   Test C++(11) Thread Pool Hipe-Dynamic   +
-+++++++++++++++++++++++++++++++++++++++++++++
-threads: 16 | task-type: empty task | task-numb: 100     | time-cost: 0.00142(s)
-threads: 16 | task-type: empty task | task-numb: 1000    | time-cost: 0.01095(s)
-threads: 16 | task-type: empty task | task-numb: 10000   | time-cost: 0.09778(s)
-threads: 16 | task-type: empty task | task-numb: 100000  | time-cost: 0.97992(s)
-threads: 16 | task-type: empty task | task-numb: 1000000 | time-cost: 9.83240(s)
+=============================================
+*   Test C++(11) Thread Pool Hipe-Dynamic   *
+=============================================
+threads: 16 | task-type: empty task | task-numb: 100      | time-cost: 0.00142(s)
+threads: 16 | task-type: empty task | task-numb: 1000     | time-cost: 0.01066(s)
+threads: 16 | task-type: empty task | task-numb: 10000    | time-cost: 0.09554(s)
+threads: 16 | task-type: empty task | task-numb: 100000   | time-cost: 0.96166(s)
+threads: 16 | task-type: empty task | task-numb: 1000000  | time-cost: 9.72766(s)
 
-+++++++++++++++++++++++++++++++++++
-+   Test C++(17) Thread Pool BS   +
-+++++++++++++++++++++++++++++++++++
-threads: 16 | task-type: empty task | task-numb: 100     | time-cost: 0.00133(s)
-threads: 16 | task-type: empty task | task-numb: 1000    | time-cost: 0.01085(s)
-threads: 16 | task-type: empty task | task-numb: 10000   | time-cost: 0.09667(s)
-threads: 16 | task-type: empty task | task-numb: 100000  | time-cost: 0.99130(s)
-threads: 16 | task-type: empty task | task-numb: 1000000 | time-cost: 9.98166(s)
+===================================
+*   Test C++(17) Thread Pool BS   *
+===================================
+threads: 16 | task-type: empty task | task-numb: 100      | time-cost: 0.00160(s)
+threads: 16 | task-type: empty task | task-numb: 1000     | time-cost: 0.01204(s)
+threads: 16 | task-type: empty task | task-numb: 10000    | time-cost: 0.10107(s)
+threads: 16 | task-type: empty task | task-numb: 100000   | time-cost: 0.97874(s)
+threads: 16 | task-type: empty task | task-numb: 1000000  | time-cost: 9.83712(s)
 
-++++++++++++++++++++++++++++++++++++++++++++
-+   Test C++(11) Thread Pool Hipe-Steady   +
-++++++++++++++++++++++++++++++++++++++++++++
-threads: 16 | task-type: empty task | task-numb: 100     | time-cost: 0.00040(s)
-threads: 16 | task-type: empty task | task-numb: 1000    | time-cost: 0.00093(s)
-threads: 16 | task-type: empty task | task-numb: 10000   | time-cost: 0.00672(s)
-threads: 16 | task-type: empty task | task-numb: 100000  | time-cost: 0.07198(s)
-threads: 16 | task-type: empty task | task-numb: 1000000 | time-cost: 0.68551(s)
+============================================
+*   Test C++(11) Thread Pool Hipe-Steady   *
+============================================
+threads: 16 | task-type: empty task | task-numb: 100      | time-cost: 0.00067(s)
+threads: 16 | task-type: empty task | task-numb: 1000     | time-cost: 0.00063(s)
+threads: 16 | task-type: empty task | task-numb: 10000    | time-cost: 0.00673(s)
+threads: 16 | task-type: empty task | task-numb: 100000   | time-cost: 0.06083(s)
+threads: 16 | task-type: empty task | task-numb: 1000000  | time-cost: 0.61471(s)
 
-+++++++++++++++++++++++++++++++++++++++++++++
-+              End of the test              +
-+++++++++++++++++++++++++++++++++++++++++++++
+=============================================================
+*   Test C++(11) Thread Pool Hipe-Steady-Batch-Submit(10)   *
+=============================================================
+threads: 16 | task-type: empty task | task-numb: 100      | time-cost: 0.00003(s)
+threads: 16 | task-type: empty task | task-numb: 1000     | time-cost: 0.00027(s)
+threads: 16 | task-type: empty task | task-numb: 10000    | time-cost: 0.00280(s)
+threads: 16 | task-type: empty task | task-numb: 100000   | time-cost: 0.02907(s)
+threads: 16 | task-type: empty task | task-numb: 1000000  | time-cost: 0.26858(s)
+threads: 16 | task-type: empty task | task-numb: 10000000 | time-cost: 2.79028(s)
+
+=============================================
+*              End of the test              *
+=============================================
+
 ```
 
-- 结果分析： 可以看到在处理空任务这一方面Hipe-Steady具有**巨大的优势**，在处理**1000000**个空任务时性能是BS和Hipe-Dynamic的**10倍以上**（如果采用批量提交接口能达到约**20倍以上**的性能）。而且随着任务数增多Steady线程池也并未呈现出指数级的增长趋势，而是呈常数级的增长趋势。即随着任务增多而线性增长。
+- 结果分析： 可以看到在处理空任务这一方面Hipe-Steady具有**巨大的优势**，在处理**1000000**个空任务时性能是BS和Hipe-Dynamic的**10倍以上**。如果采用批量提交接口能达到约**30倍以上**的性能（注意！我们测试批量提交任务的时候最后用的是一千万个任务哦）。而且随着任务数增多Steady线程池也并未呈现出指数级的增长趋势，而是呈常数级的增长趋势。即随着任务增多而线性增长。
 
 
 
