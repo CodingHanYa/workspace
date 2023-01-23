@@ -118,51 +118,53 @@ void computation_intensive_task() {
 
 
 ```
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++
-+           Test Single-thread Performance            +
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-threads: 1  | task-type: compute mode | task-numb: 4  | time-cost-per-task: 344.30398(ms)
+=======================================================
+*           Test Single-thread Performance            *
+=======================================================
 
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-+           Test C++(11) Thread-Pool Hipe-Steady             +
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+threads: 1  | task-type: compute mode | task-numb: 4  | time-cost-per-task: 349.40249(ms)
 
-threads: 16 | task-type: compute mode | task-numb: 4  | time-cost-per-task: 153.04224(ms)
-threads: 16 | task-type: compute mode | task-numb: 16 | time-cost-per-task: 40.14723(ms)
-threads: 16 | task-type: compute mode | task-numb: 28 | time-cost-per-task: 44.97041(ms)
-threads: 16 | task-type: compute mode | task-numb: 40 | time-cost-per-task: 48.64367(ms)
-threads: 16 | task-type: compute mode | task-numb: 52 | time-cost-per-task: 50.56839(ms)
-threads: 16 | task-type: compute mode | task-numb: 64 | time-cost-per-task: 41.96570(ms)
-Best speed-up obtained by multithreading vs. single-threading: 8.58, using 16 tasks
+================================================================
+*             Test C++(11) Thread-Pool Hipe-Steady             *
+================================================================
 
-+++++++++++++++++++++++++++++++++++++++++++++++++++++
-+           Test C++(17) Thread-Pool BS             +
-+++++++++++++++++++++++++++++++++++++++++++++++++++++
+threads: 16 | task-type: compute mode | task-numb: 4  | time-cost-per-task: 139.38149(ms)
+threads: 16 | task-type: compute mode | task-numb: 16 | time-cost-per-task: 37.13697(ms)
+threads: 16 | task-type: compute mode | task-numb: 28 | time-cost-per-task: 44.36706(ms)
+threads: 16 | task-type: compute mode | task-numb: 40 | time-cost-per-task: 47.09633(ms)
+threads: 16 | task-type: compute mode | task-numb: 52 | time-cost-per-task: 48.13259(ms)
+threads: 16 | task-type: compute mode | task-numb: 64 | time-cost-per-task: 45.09768(ms)
+Best speed-up obtained by multithreading vs. single-threading: 9.41, using 16 tasks
 
-threads: 16 | task-type: compute mode | task-numb: 4  | time-cost-per-task: 91.33461(ms)
-threads: 16 | task-type: compute mode | task-numb: 16 | time-cost-per-task: 40.63790(ms)
-threads: 16 | task-type: compute mode | task-numb: 28 | time-cost-per-task: 43.87851(ms)
-threads: 16 | task-type: compute mode | task-numb: 40 | time-cost-per-task: 45.61345(ms)
-threads: 16 | task-type: compute mode | task-numb: 52 | time-cost-per-task: 44.25607(ms)
-threads: 16 | task-type: compute mode | task-numb: 64 | time-cost-per-task: 40.58885(ms)
-Best speed-up obtained by multithreading vs. single-threading: 8.48, using 64 tasks
+=======================================================
+*             Test C++(17) Thread-Pool BS             *
+=======================================================
 
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-+           Test C++(11) Thread-Pool Hipe-Dynamic           +
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+threads: 16 | task-type: compute mode | task-numb: 4  | time-cost-per-task: 93.45621(ms)
+threads: 16 | task-type: compute mode | task-numb: 16 | time-cost-per-task: 41.98891(ms)
+threads: 16 | task-type: compute mode | task-numb: 28 | time-cost-per-task: 44.13553(ms)
+threads: 16 | task-type: compute mode | task-numb: 40 | time-cost-per-task: 44.37572(ms)
+threads: 16 | task-type: compute mode | task-numb: 52 | time-cost-per-task: 44.79318(ms)
+threads: 16 | task-type: compute mode | task-numb: 64 | time-cost-per-task: 39.93736(ms)
+Best speed-up obtained by multithreading vs. single-threading: 8.75, using 64 tasks
 
-threads: 16 | task-type: compute mode | task-numb: 4  | time-cost-per-task: 97.45932(ms)
-threads: 16 | task-type: compute mode | task-numb: 16 | time-cost-per-task: 39.93850(ms)
-threads: 16 | task-type: compute mode | task-numb: 28 | time-cost-per-task: 43.26275(ms)
-threads: 16 | task-type: compute mode | task-numb: 40 | time-cost-per-task: 44.35939(ms)
-threads: 16 | task-type: compute mode | task-numb: 52 | time-cost-per-task: 44.71270(ms)
-threads: 16 | task-type: compute mode | task-numb: 64 | time-cost-per-task: 39.96931(ms)
-Best speed-up obtained by multithreading vs. single-threading: 8.62, using 16 tasks
+=================================================================
+*             Test C++(11) Thread-Pool Hipe-Dynamic             *
+=================================================================
 
-+++++++++++++++++++++++++++++++++++++++++++++
-+              End of the test              +
-+++++++++++++++++++++++++++++++++++++++++++++
+threads: 16 | task-type: compute mode | task-numb: 4  | time-cost-per-task: 94.31042(ms)
+threads: 16 | task-type: compute mode | task-numb: 16 | time-cost-per-task: 40.00866(ms)
+threads: 16 | task-type: compute mode | task-numb: 28 | time-cost-per-task: 43.75092(ms)
+threads: 16 | task-type: compute mode | task-numb: 40 | time-cost-per-task: 44.70085(ms)
+threads: 16 | task-type: compute mode | task-numb: 52 | time-cost-per-task: 45.11398(ms)
+threads: 16 | task-type: compute mode | task-numb: 64 | time-cost-per-task: 39.82556(ms)
+Best speed-up obtained by multithreading vs. single-threading: 8.77, using 64 tasks
+
+=============================================
+*              End of the test              *
+=============================================
+
 ```
 
 - 结果分析：可以看到线程池BS的最佳加速比为**8.48倍**， Hipe-Steady线程池的最佳加速比为**8.58倍**，Hipe-Dynamic的最佳加速比为**8.62倍**。三者的性能接近，说明在任务传递过程开销较小的情况下（由于任务数较少），**乒乓缓存、线程切换和线程同步**等因素对三种种线程池的加速比的影响是相近的。
