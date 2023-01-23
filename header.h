@@ -15,15 +15,6 @@
 #include <functional>
 #include <condition_variable>
 
-// ========================== Configure of SteadyPond ===========================
-
-// rob neighbor thread's task 
-#define HIPE_ENABLE_ROB_NEIGHBOR    // enable
-#define HIPE_MAX_ROB_NEIG_STEP 2    // rob step
-
-// ============================== end configure ==============================
-
-
 namespace hipe {
 
 // ======================
@@ -44,7 +35,7 @@ using HipeUniqGuard = std::unique_lock<std::mutex>;
 
 using HipeTimePoint = std::chrono::steady_clock::time_point;
 
-template <typename T>
+template <typename T> 
 using HipeFutures  = util::Futures<T>;
 
 

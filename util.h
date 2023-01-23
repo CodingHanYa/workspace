@@ -18,11 +18,6 @@ namespace hipe {
 */
 namespace util 
 {
-    using HipeTimePoint = std::chrono::steady_clock::time_point;
-
-    inline HipeTimePoint tick() {
-        return std::chrono::steady_clock::now();
-    }
 
     inline void sleep_for_seconds(uint sec) {
         std::this_thread::sleep_for(std::chrono::seconds(sec));
@@ -106,8 +101,7 @@ namespace util
     }  
 
     inline std::string boundary(char element, size_t length = 10) {
-        std::string res(length, element);
-        return res;
+        return std::string(length, element);
     } 
 
     template <typename _Executable, typename... _Args>
@@ -175,7 +169,7 @@ namespace util
 
 
     /**
-     * Time wait for the "call".
+     * Time wait for the runable object
      * Use std::milli or std::micro or std::nano to fill template parameter
     */
     template <typename _Precision, typename F, typename... _Args>
@@ -187,7 +181,7 @@ namespace util
     }
 
     /**
-     * Time wait for the "call"
+     * Time wait for the runable object
      * And the presition is std::chrono::second
     */
     template <typename F, typename... _Args>
@@ -229,6 +223,7 @@ namespace util
     };
 
 
+
     // spin locker that use C++11 std::atomic_flag 
     class spinlock 
     {
@@ -245,6 +240,7 @@ namespace util
         }
     };
 
+
     // locker guard for spinlock
     class spinlock_guard 
     {
@@ -258,6 +254,7 @@ namespace util
             lck->unlock();
         }
     };
+
 
 
     /**
@@ -283,14 +280,17 @@ namespace util
         Task() = default;
         ~Task() { delete ptr; }
 
+
         Task(Task&) = delete;
         Task(const Task&) = delete;
         Task& operator = (const Task&) = delete;
 
+
         template <typename F> 
         Task(F&& f): ptr(new GenericExec<F>(std::forward<F>(f))) {}
         Task(Task&& tmp): ptr(tmp.ptr) { tmp.ptr = nullptr; }
-        
+
+
         template <typename Func> 
         void reset(Func&& f) {
             delete ptr;
@@ -307,12 +307,14 @@ namespace util
             tmp.ptr = nullptr;  
             return *this;
         }
+
         void operator()() { 
             ptr->call();
         }
 
     private:
-        BaseExec* ptr = nullptr;       
+        BaseExec* ptr = nullptr;     
+
     };
 
 
@@ -330,6 +332,8 @@ namespace util
 
     public:
         Block() = default;
+        
+        virtual ~Block() {}
 
         Block(Block&& other) 
             : blok(std::move(other.blok))
@@ -342,7 +346,6 @@ namespace util
             , sz(sz) {
         }
 
-        virtual ~Block() {}
 
         T& operator [] (size_t idx) {
             return blok[idx];

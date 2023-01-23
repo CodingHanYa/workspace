@@ -21,7 +21,7 @@ private:
         std::queue<HipeTask> public_tq;
         std::queue<HipeTask> buffer_tq;
 
-        std::atomic_int  task_numb = {0};
+        std::atomic_int task_numb = {0};
         std::condition_variable task_done_cv;
 
 
@@ -48,7 +48,7 @@ private:
             auto robNeighbor = [this, self_idx, pond] 
             {
                 int idx = self_idx;
-                for (int i = 0; i < HIPE_MAX_ROB_NEIG_STEP; ++i) 
+                for (int i = 0; i < pond->rob_numb; ++i) 
                 {
                     util::recyclePlus(idx, 0, pond->thread_numb);
 
@@ -90,11 +90,8 @@ private:
                     loadTask();
                     runBufferTaskQueue();
 
-                    // enable rob task
-                    #ifdef HIPE_ENABLE_ROB_NEIGHBOR
-                    if (robNeighbor()) 
+                    if (pond->enable_rob_tasks && robNeighbor()) 
                         runBufferTaskQueue();
-                    #endif
 
                     // main thread waiting for working thread
                     if (pond->waiting)
@@ -118,6 +115,12 @@ private:
 
     // wait for tasks done
     std::atomic_bool waiting = {false};
+
+    // enable rob tasks from neighbor thread
+    bool enable_rob_tasks = true;
+
+    // max rob numb
+    uint rob_numb = 2;
 
     // iterater for threads
     int cur = 0;                              
@@ -334,6 +337,28 @@ public:
             }
         }
     }
+
+
+    // enable task stealing between each thread
+    void enableRobTasks() {
+        enable_rob_tasks = true;
+    }
+
+    // disable task stealing between each thread
+    void disableRobTasks() {
+        enable_rob_tasks = false;
+    }
+
+    // set thread number of each rob 
+    void setRobThreadNumb(uint numb) {
+        if (!numb || numb > thread_numb) {
+            util::error("SteadyThreadPond: Illegal rob thread number");
+            return;
+        }
+        rob_numb = numb;
+    }
+
+
 
 private:
 
