@@ -6,7 +6,7 @@
 
 bool closed = false;
 uint tnumb = 8;
-uint task_pack_numb = 5000;  // 15000 task
+uint tasks_numb = 15000;  
 uint milli_per_submit = 500; // 0.5s
 
 void manager(hipe::DynamicThreadPond* pond) 
@@ -62,6 +62,7 @@ void manager(hipe::DynamicThreadPond* pond)
         // I think that the interval of each sleep should be an order of magnitude more than the time a task cost.
         hipe::util::sleep_for_seconds(1); // 1s
     }
+
     total += pond->resetTaskLoaded();
     hipe::util::print("total load ", total);
 }
@@ -75,26 +76,26 @@ int main()
     auto task2 = []{hipe::util::sleep_for_milli(30);};
     auto task3 = []{hipe::util::sleep_for_milli(50);}; 
 
-    auto packs = (double)100/((double)milli_per_submit/1000); 
-    auto task_nums = packs * 3;
+    auto tasks_per_second = 600;
 
-    hipe::util::print("Submit ", packs, " task pack and ", task_nums, " task per second");
-    hipe::util::print("So we hope that the threads is able to load [", task_nums, "] task per second");
+    hipe::util::print("Submit ", tasks_per_second, " task per second");
+    hipe::util::print("So we hope that the threads is able to load [", tasks_per_second, "] task per second");
     hipe::util::print(hipe::util::boundary('=', 65));
 
     // create a manager thread.
     std::thread mger(manager, &pond);
 
     // 600 tasks per second
-    int count = task_pack_numb/100;
+    int count = (tasks_numb/3)/100;
     while (count--) 
     {   
+        // 300 tasks
         for (int i = 0; i < 100; ++i) {
             pond.submit(task1);
             pond.submit(task2);
             pond.submit(task3);
         }
-        hipe::util::sleep_for_milli(milli_per_submit);
+        hipe::util::sleep_for_milli(500); //0.5s
     }
 
     // wait for task done and than close the manager
