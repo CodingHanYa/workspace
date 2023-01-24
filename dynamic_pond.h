@@ -254,7 +254,6 @@ private:
 
             if (shrink_numb) 
             {
-                dead_thread++;
                 shrink_numb--;
                 deleted_threads.push(index);
                 break;  
