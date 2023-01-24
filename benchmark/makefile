@@ -6,7 +6,7 @@ lib = -lpthread
 test_file1 = ./test_empty_task.cpp
 test_file2 = ./test_speedup.cpp
 
-src = ${test_file2}
+src = ${test_file1}
 
 ${tar}: ${src}
 	g++ ${flag} ${src} -o ${tar} ${lib}

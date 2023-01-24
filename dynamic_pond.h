@@ -10,8 +10,15 @@ namespace hipe {
 */
 class DynamicThreadPond
 {
+
+    // stop the pond
+    bool stop = {false};
+
     // thread number
-    std::atomic_uint thread_numb = {0};
+    int thread_numb = {0};
+
+    // waitting for tasks
+    bool waiting = {false};
 
     // task number
     std::atomic_uint total_tasks = {0};
@@ -21,12 +28,6 @@ class DynamicThreadPond
 
     // locker shared by threads
     std::mutex shared_locker;   
-
-    // stop the pond
-    std::atomic_bool stop = {false};
-
-    // waitting for tasks
-    std::atomic_bool waiting = {false};
 
     // cv to awake the paused thread
     std::condition_variable awake_cv;
@@ -39,9 +40,6 @@ class DynamicThreadPond
 
     // the shrinking number of threads
     std::atomic_uint shrink_numb = {0};
-
-    // the number of deleted threads 
-    std::atomic_int dead_thread = {0};
 
     // deleted thread index
     std::queue<int> deleted_threads;
@@ -98,23 +96,22 @@ public:
         int idx = 0;
         while (tnumb--) 
         {
-            if (dead_thread) 
-            { 
-                {   
-                    HipeLockGuard lock(shared_locker);
-                    idx = deleted_threads.front();
-                    deleted_threads.pop();  
-                }
-                pond[idx].join();   
-                dead_thread--;
+            shared_locker.lock();
+            
+            if (!deleted_threads.empty()) 
+            {
+                idx = deleted_threads.front();
+                deleted_threads.pop();  
+                shared_locker.unlock();
 
+                pond[idx].join();
                 pond[idx] = std::thread(&DynamicThreadPond::worker, this, idx);
 
-            } 
-            else {
+            } else {
+                shared_locker.unlock();
                 int idx = pond.size();
                 pond.emplace_back(std::thread(&DynamicThreadPond::worker, this, idx));
-            }
+            } 
             thread_numb++;
         }
     }
@@ -129,7 +126,7 @@ public:
     */
     void delThreads(uint tnumb = 1) 
     {
-        if (tnumb > thread_numb.load()) {
+        if (tnumb > thread_numb) {
             util::error("DynamicThreadPond: Not enough threads to delete");
             return;
         }
@@ -144,10 +141,13 @@ public:
     */
     void adjustThreads(uint target_tnumb) 
     {
-        if (target_tnumb > thread_numb.load()) {
-            addThreads(target_tnumb - thread_numb.load());
-        } else {
-            delThreads(target_tnumb - thread_numb.load());
+        if (target_tnumb > thread_numb) {
+            addThreads(target_tnumb - thread_numb);
+            return;
+        } 
+        if (target_tnumb < thread_numb) {
+            delThreads(target_tnumb - thread_numb);
+            return;
         }
     }
 
@@ -172,7 +172,7 @@ public:
 
     // get thread number now
     uint getThreadNumb() {
-        return thread_numb.load();
+        return thread_numb;
     }
 
     // wait for tasks in the pond done
@@ -217,7 +217,7 @@ public:
             ++total_tasks;
         }
         awake_cv.notify_one();
-        return fut; // 6
+        return fut; 
     }
 
     /**

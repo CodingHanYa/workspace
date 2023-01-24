@@ -107,6 +107,22 @@ void test_task_overflow()
 
 }
 
+void test_other_interface(SteadyThreadPond& pond, uint thread_numb) 
+{
+    stream.print("\n", util::boundary('=', 11), util::strong("other interface"), util::boundary('=', 13));
+
+    util::print("enable rob tasks");
+
+    // enable rob neighbor thread and reduce the impact of abnormal tasks blocking threads
+    pond.setRobThreadNumb(thread_numb/2);
+    pond.enableRobTasks();
+
+
+    util::print("disable rob tasks");
+    // than we just disable this function
+    pond.disableRobTasks();
+
+}
 
 
 int main() 
@@ -127,7 +143,9 @@ int main()
 
     test_task_overflow(); 
     util::sleep_for_seconds(1);
-   
+
+    test_other_interface(pond, 8); 
+    util::sleep_for_seconds(1);
 
     stream.print("\n", util::title("End of the test", 5));
 

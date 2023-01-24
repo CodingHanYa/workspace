@@ -11,8 +11,8 @@ namespace hipe {
 
 class SteadyThreadPond
 {
-
 private:
+
     // thread object that support double queue replacement algorithm
     struct Thread
     {
@@ -27,10 +27,10 @@ private:
 
         /**
          * @brief default loop of async thread
-         * @param self_idx position of the thread
+         * @param index position of the thread
          * @param pond provide some resource like locker
         */
-        void worker(int self_idx, SteadyThreadPond* pond) 
+        void worker(int index, SteadyThreadPond* pond) 
         {
             // execute buffer task queue
             auto runBufferTaskQueue = [this, pond] 
@@ -45,21 +45,20 @@ private:
 
             // try rob task from neighbor thread's public task queue
             // if succeed ——> return true.
-            auto robNeighbor = [this, self_idx, pond] 
+            auto robNeighbor = [this, index, pond] 
             {
-                int idx = self_idx;
+                int tmp = index;
                 for (int i = 0; i < pond->rob_numb; ++i) 
                 {
-                    util::recyclePlus(idx, 0, pond->thread_numb);
-
+                    util::recyclePlus(tmp, 0, pond->thread_numb);
                     if (pond->tq_locker.try_lock()) 
                     {
-                        auto neig = &(pond->threads[idx]);
-                        auto que = &neig->public_tq;
+                        auto thr = &(pond->threads[tmp]);
+                        auto que = &thr->public_tq;
 
                         if (que->size()) 
                         {
-                            neig->task_numb -= que->size();
+                            thr->task_numb -= que->size();
                             que->swap(buffer_tq);
                             task_numb += buffer_tq.size();
 
@@ -111,10 +110,10 @@ private:
 private:
 
     // stop the thread pend
-    std::atomic_bool stop = {false};     
+    bool stop = {false};     
 
     // wait for tasks done
-    std::atomic_bool waiting = {false};
+    bool waiting = {false};
 
     // enable rob tasks from neighbor thread
     bool enable_rob_tasks = true;
@@ -131,7 +130,7 @@ private:
     // step limitation of seeking the least-busy thread
     int step_limitation = 4;
 
-    // capacity per thread
+    // task capacity per thread
     uint thread_cap = 0;
 
     // task queue locker for threads
@@ -245,16 +244,15 @@ public:
     */
     void waitForTasks() 
     {
+        waiting = true;
         for (int i = 0; i < thread_numb; ++i) 
         {
-            waiting = true;
-
             HipeUniqGuard lock(cv_locker);
             threads[i].task_done_cv.wait(lock, [this, i]{ 
                 return !threads[i].task_numb; 
             });
-            waiting = false;
         }
+        waiting = false;
     }
 
     /**
@@ -296,7 +294,7 @@ public:
         threads[cur].public_tq.emplace(std::move(pack));
         threads[cur].task_numb++;
 
-        return fut; // 6
+        return fut; 
     }
 
 
@@ -312,7 +310,7 @@ public:
 
         if (thread_cap) 
         {
-            auto start = cur;
+            int start = cur;
             for (int i = 0; i < size; ) 
             {
                 if (threads[cur].task_numb.load() < thread_cap) {
