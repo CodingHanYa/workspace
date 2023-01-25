@@ -126,7 +126,7 @@ public:
     void delThreads(uint tnumb = 1) 
     {
         if (tnumb > thread_numb) {
-            util::error("DynamicThreadPond: Not enough threads to delete");
+            throw std::invalid_argument("DynamicThreadPond: Not enough threads to delete");
             return;
         }
         shrink_numb = tnumb;
