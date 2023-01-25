@@ -320,7 +320,7 @@ namespace util
 
     /**
      * Block for adding task by betch
-     * Use c array manage by unique_ptr
+     * Use c array managed by unique_ptr
      * Notice that the element must override " = "
     */
     template <typename T>

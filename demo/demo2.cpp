@@ -50,12 +50,10 @@ void manager(hipe::DynamicThreadPond* pond)
             }
         } 
         else {
-
             if (!pond->getTasksRemain() && tnumb > min_thread_numb) {
                 pond->delThreads(unit);
                 last_act = Action::del;
             }
-
         }
         prev_load = new_load;
 
