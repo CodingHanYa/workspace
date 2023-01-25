@@ -17,7 +17,7 @@ class DynamicThreadPond
     // thread number
     int thread_numb = {0};
 
-    // waitting for tasks
+    // waiting for tasks
     bool waiting = {false};
 
     // task number
@@ -97,7 +97,6 @@ public:
         while (tnumb--) 
         {
             shared_locker.lock();
-            
             if (!deleted_threads.empty()) 
             {
                 idx = deleted_threads.front();
@@ -244,6 +243,7 @@ private:
     // working threads' default loop
     void worker(uint index) 
     {
+        // task container
         HipeTask task;
 
         while (!stop) 
