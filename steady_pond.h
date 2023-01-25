@@ -191,14 +191,14 @@ public:
 
     /**
      * Set refuse call back. 
-     * If the capacity is unlimited , the hipe will throw error. 
-     * If didn't set and task overflow, the hipe will throw error and abort the program. 
+     * If the capacity is unlimited , the hipe will throw logic error. 
+     * If didn't set and task overflow, the hipe will throw logic error and abort the program. 
     */
     template <typename F, typename... _Argv>
     void setRefuseCallBack(F&& foo, _Argv&&... argv) 
     {
         if (!thread_cap) {
-            util::error("The refuse callback will never be invoked because the capacity has been setted unlimited");
+            throw std::logic_error("The refuse callback will never be invoked because the capacity has been setted unlimited");
         } else {
             refuse_cb.reset(std::bind(std::forward<F>(foo), std::forward<_Argv>(argv)...));
         }
@@ -349,9 +349,8 @@ public:
 
     // set thread number of each rob 
     void setRobThreadNumb(uint numb) {
-        if (!numb || numb > thread_numb) {
-            util::error("SteadyThreadPond: Illegal rob thread number");
-            return;
+        if (!numb || numb >= thread_numb) {
+            throw std::invalid_argument("The number of robbing threads must smaller than thread number and greater than zero");
         }
         rob_numb = numb;
     }
@@ -393,12 +392,12 @@ private:
             util::invoke(refuse_cb);
         } 
         else {
-            util::error("SteadyThreadPond: Task overflow while submitting task");
+            throw std::runtime_error("SteadyThreadPond: Task overflow while submitting task");
         }
     }
 
     /**
-     * task overflow call back for batch
+     * task overflow call back for batch submit
      * @param left left edge
      * @param right right edge
     */ 
@@ -414,7 +413,7 @@ private:
             util::invoke(refuse_cb);
         } 
         else {
-            util::error("SteadyThreadPond: Task overflow while submitting task by batch");
+            throw std::runtime_error("SteadyThreadPond: Task overflow while submitting tasks in batch");
         }
     }
 
