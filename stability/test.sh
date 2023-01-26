@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# if should make firstly
+# you should make firstly
 
 echo "==============================="
 echo "*    Start Stability Test     *"
@@ -18,7 +18,8 @@ tmp2=${tick}
 
 while [[ $tmp1 > 0 ]]
 do
-    ./test
+    # run ./test here and you should make firstly
+    ./test   
 	let tmp1--
     if [ $? -eq 0 ] 
     then 
