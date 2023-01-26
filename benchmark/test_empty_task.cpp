@@ -100,13 +100,13 @@ void test_Hipe_dynamic()
 
 int main() 
 {
-    // test_Hipe_dynamic();
+    test_Hipe_dynamic();
 
-    // hipe::util::sleep_for_seconds(5);
+    hipe::util::sleep_for_seconds(5);
 
-    // test_BS();
+    test_BS();
 
-    // hipe::util::sleep_for_seconds(5);
+    hipe::util::sleep_for_seconds(5);
 
     test_Hipe_steady();
 

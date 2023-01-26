@@ -14,7 +14,9 @@ class DqThread
 
     std::atomic_int task_numb = {0};
     std::condition_variable task_done_cv = {};
+
     util::spinlock tq_locker = {};
+    std::mutex cv_locker;
 
 public:
 
@@ -42,6 +44,7 @@ public:
             task_numb--;
         }
         if (waiting) {
+            HipeUniqGuard lock(cv_locker);
             task_done_cv.notify_one();
         }
     }
@@ -58,6 +61,7 @@ public:
             task_numb--;
         }   
         if (waiting) {
+            HipeUniqGuard lock(cv_locker);
             task_done_cv.notify_one();
         }
     }    
@@ -83,7 +87,7 @@ public:
         return false;
     }
 
-    void waitTasksDone(std::mutex& cv_locker) {
+    void waitTasksDone() {
         waiting = true;
         HipeUniqGuard lock(cv_locker);
         task_done_cv.wait(lock, [this]{ return !task_numb; });
@@ -248,10 +252,9 @@ public:
     /**
      * Wait for all threads finish their task
     */
-    void waitForTasks() 
-    {
+    void waitForTasks() {
         for (int i = 0; i < thread_numb; ++i) {
-            threads[i].waitTasksDone(cv_locker);
+            threads[i].waitTasksDone();
         }
     }
 

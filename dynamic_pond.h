@@ -76,9 +76,11 @@ public:
     */
     void close() 
     {
-        stop = true;
-        awake_cv.notify_all();
-
+        {
+            HipeUniqGuard locker(shared_locker);
+            stop = true;
+            awake_cv.notify_all();
+        }
         for (auto& thread: pond) {
             thread.join();
         }
@@ -271,6 +273,7 @@ private:
                 --total_tasks;
 
                 if (waiting) {
+                    HipeUniqGuard locker(shared_locker);
                     task_done_cv.notify_one();
                 }
             }
