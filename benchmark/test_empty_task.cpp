@@ -110,7 +110,7 @@ int main()
 
     test_Hipe_steady();
 
-    hipe::util::sleep_for_seconds(2);
+    hipe::util::sleep_for_seconds(5);
 
     test_Hipe_steady_batch_submit();
 
