@@ -38,5 +38,4 @@ using HipeTimePoint = std::chrono::steady_clock::time_point;
 template <typename T> 
 using HipeFutures  = util::Futures<T>;
 
-
 }
