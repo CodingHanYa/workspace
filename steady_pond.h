@@ -3,6 +3,113 @@
 
 namespace hipe { 
 
+// thread object that support double queue replacement algorithm
+class DqThread
+{
+    bool waiting = false;
+    std::thread handle;
+
+    std::queue<HipeTask> public_tq;
+    std::queue<HipeTask> buffer_tq;
+
+    std::atomic_int task_numb = {0};
+    std::condition_variable task_done_cv = {};
+    util::spinlock tq_locker = {};
+
+public:
+
+    uint getTasksNumb() {
+        return task_numb.load();
+    }
+
+    bool notask() {
+        return !task_numb;
+    }
+
+    void join() {
+        handle.join();
+    }
+
+    void runTasks() 
+    {   
+        tq_locker.lock();
+        public_tq.swap(buffer_tq);
+        tq_locker.unlock();
+
+        while (!buffer_tq.empty()) {
+            util::invoke(buffer_tq.front());
+            buffer_tq.pop();
+            task_numb--;
+        }
+        if (waiting) {
+            task_done_cv.notify_one();
+        }
+    }
+
+    void bindHandle(std::thread&& handle) {
+        this->handle = std::move(handle);
+    }
+
+    void runBufferTasks() 
+    {
+        while (!buffer_tq.empty()) {
+            util::invoke(buffer_tq.front());
+            buffer_tq.pop();
+            task_numb--;
+        }   
+        if (waiting) {
+            task_done_cv.notify_one();
+        }
+    }    
+
+    bool tryGiveTasks(DqThread& t)
+    {
+        if (tq_locker.try_lock()) 
+        {
+            if (public_tq.size()) 
+            {
+                auto numb = public_tq.size(); 
+                public_tq.swap(t.buffer_tq);
+                task_numb -= numb;
+                t.task_numb += numb;
+                tq_locker.unlock();
+                return true;
+
+            } else {
+                tq_locker.unlock();
+                return false;
+            }
+        }
+        return false;
+    }
+
+    void waitTasksDone(std::mutex& cv_locker) {
+        waiting = true;
+        HipeUniqGuard lock(cv_locker);
+        task_done_cv.wait(lock, [this]{ return !task_numb; });
+        waiting = false;
+    }
+
+    template <typename T>
+    void enqueue(T&& tar) {
+        util::spinlock_guard lock(tq_locker);
+        public_tq.emplace(std::forward<T>(tar));
+        task_numb++;
+    }
+
+    template <typename _Container>
+    void enqueue(_Container& cont, uint size) {
+        util::spinlock_guard lock(tq_locker);
+        for (int i = 0; i < size; ++i) {
+            public_tq.emplace(std::move(cont[i]));
+            task_numb++;
+        }
+    }
+
+};
+
+
+
 /**
  * @brief A steady thread pond. 
  * @tparam Type that is executable.
@@ -11,115 +118,17 @@ namespace hipe {
 
 class SteadyThreadPond
 {
-private:
-
-    // thread object that support double queue replacement algorithm
-    struct Thread
-    {
-        std::thread handle;
-
-        std::queue<HipeTask> public_tq;
-        std::queue<HipeTask> buffer_tq;
-
-        std::atomic_int task_numb = {0};
-        std::condition_variable task_done_cv;
-
-
-        /**
-         * @brief default loop of async thread
-         * @param index position of the thread
-         * @param pond provide some resource like locker
-        */
-        void worker(int index, SteadyThreadPond* pond) 
-        {
-            // execute buffer task queue
-            auto runBufferTaskQueue = [this, pond] 
-            {
-                auto sz = buffer_tq.size();
-                while (!buffer_tq.empty()) {
-                    util::invoke(buffer_tq.front());
-                    buffer_tq.pop();
-                }
-                task_numb -= sz;
-            };
-
-            // try rob task from neighbor thread's public task queue
-            // if succeed ——> return true.
-            auto robNeighbor = [this, index, pond] 
-            {
-                int tmp = index;
-                for (int i = 0; i < pond->rob_numb; ++i) 
-                {
-                    util::recyclePlus(tmp, 0, pond->thread_numb);
-                    if (pond->tq_locker.try_lock()) 
-                    {
-                        auto thr = &(pond->threads[tmp]);
-                        auto que = &thr->public_tq;
-
-                        if (que->size()) 
-                        {
-                            thr->task_numb -= que->size();
-                            que->swap(buffer_tq);
-                            task_numb += buffer_tq.size();
-
-                            pond->tq_locker.unlock();
-                            return true;
-                        }
-                        pond->tq_locker.unlock();
-                    }
-                }
-                return false;
-            };
-
-            // swap task queue for task
-            auto loadTask = [this, pond] {
-                util::spinlock_guard lock(pond->tq_locker);
-                public_tq.swap(buffer_tq);
-            };
-
-
-            while (!pond->stop) 
-            {
-                if (!task_numb) {
-                    std::this_thread::yield();
-                    continue;
-                }
-                if (!pond->stop) 
-                {
-                    loadTask();
-                    runBufferTaskQueue();
-
-                    if (pond->enable_rob_tasks && robNeighbor()) 
-                        runBufferTaskQueue();
-
-                    // main thread waiting for working thread
-                    if (pond->waiting)
-                    {
-                        // clean the public task queue
-                        loadTask();
-                        runBufferTaskQueue();
-
-                        // tell main thread that tasks done
-                        task_done_cv.notify_one();
-                    }
-                }
-            }
-        }
-    };
-
-private:
-
     // stop the thread pend
     bool stop = {false};     
 
     // wait for tasks done
     bool waiting = {false};
 
-    // enable rob tasks from neighbor thread
-    bool enable_rob_tasks = true;
+    // enable steal tasks from neighbor thread
+    bool enable_steal_tasks = false;
 
-    // max rob numb
-    uint rob_numb = 2;
+    // max steal numb
+    uint max_steal = 0;
 
     // iterater for threads
     int cur = 0;                              
@@ -133,23 +142,17 @@ private:
     // task capacity per thread
     uint thread_cap = 0;
 
-    // task queue locker for threads
-    util::spinlock tq_locker;
-    
     // condition variable locker for threads
     std::mutex cv_locker;
 
     // keep thread variables
-    std::unique_ptr<Thread[]> threads = {nullptr};    
+    std::unique_ptr<DqThread[]> threads = {nullptr};    
 
     // tasks that failed to submit
     util::Block<HipeTask> overflow_tasks = {0};
 
     // task overflow call back
     HipeTask refuse_cb;
-
-    // grant permission
-    friend struct Thread;                      
 
 public:
 
@@ -159,6 +162,7 @@ public:
     */
     SteadyThreadPond(uint thread_numb = 0, uint task_capacity = HipeUnlimited) 
     {
+        // calculate thread number
         if (!thread_numb) {
             uint tmp = std::thread::hardware_concurrency();
             this->thread_numb = (tmp > 0) ? tmp : 1; 
@@ -166,6 +170,7 @@ public:
             this->thread_numb = thread_numb;
         }
 
+        // calculate task capacity
         if (!task_capacity) {
             thread_cap = 0;
         } else if (task_capacity > this->thread_numb) {
@@ -174,12 +179,13 @@ public:
             this->thread_cap = 1;
         }
 
+        // load balance
         this->step_limitation = getBestMoveStep(thread_numb);
-        
-        threads.reset(new Thread[this->thread_numb]);
 
+        // create
+        threads.reset(new DqThread[this->thread_numb]);
         for (int i = 0; i < this->thread_numb; ++i) {
-            threads[i].handle = std::thread(&Thread::worker, &threads[i], i, this);
+            threads[i].bindHandle(std::thread(&SteadyThreadPond::worker, this, i));
         }
     }
     
@@ -213,7 +219,7 @@ public:
     {
         stop = true;
         for (int i = 0; i < thread_numb; ++i) {
-            threads[i].handle.join();
+            threads[i].join();
         }
     }
 
@@ -221,11 +227,11 @@ public:
     /**
      * get block tasks number now
     */
-    int getTasksRemain() 
+    uint getTasksRemain() 
     {
-        int ret = 0;
+        uint ret = 0;
         for (int i = 0; i < thread_numb; ++i) {
-            ret += threads[i].task_numb.load();
+            ret += threads[i].getTasksNumb();
         }
         return ret;
     }              
@@ -244,15 +250,9 @@ public:
     */
     void waitForTasks() 
     {
-        waiting = true;
-        for (int i = 0; i < thread_numb; ++i) 
-        {
-            HipeUniqGuard lock(cv_locker);
-            threads[i].task_done_cv.wait(lock, [this, i]{ 
-                return !threads[i].task_numb; 
-            });
+        for (int i = 0; i < thread_numb; ++i) {
+            threads[i].waitTasksDone(cv_locker);
         }
-        waiting = false;
     }
 
     /**
@@ -267,10 +267,7 @@ public:
             return;
         }
         moveIndexForLeastBusy(cur);
-
-        util::spinlock_guard lock(tq_locker);
-        threads[cur].public_tq.emplace(std::forward<_Runable>(foo));
-        threads[cur].task_numb++;
+        threads[cur].enqueue(std::forward<_Runable>(foo));
     }
 
     /**
@@ -290,10 +287,7 @@ public:
         std::packaged_task<RT()> pack(std::move(foo));
         std::future<RT> fut(pack.get_future()); 
 
-        util::spinlock_guard lock(tq_locker);
-        threads[cur].public_tq.emplace(std::move(pack));
-        threads[cur].task_numb++;
-
+        threads[cur].enqueue(std::move(pack));
         return fut; 
     }
 
@@ -311,53 +305,81 @@ public:
         if (thread_cap) 
         {
             int start = cur;
-            for (int i = 0; i < size; ) 
-            {
-                if (threads[cur].task_numb.load() < thread_cap) {
-                    util::spinlock_guard lock(tq_locker);
-                    threads[cur].public_tq.emplace(std::move(container[i++]));
-                    threads[cur].task_numb++;
-                } 
-                else {
+            for (int i = 0; i < size; ) {
+                if (threads[cur].getTasksNumb() < thread_cap) {
+                    threads[cur].enqueue(std::move(container[i++]));
+                } else {
                     util::recyclePlus(cur, 0, thread_numb);
                     if (cur == start) {
                         taskOverFlow(std::forward<_Container>(container), i, size);
-                        return;
+                        break;
                     }
                 }
             }
-        } else {
-
-            util::spinlock_guard lock(tq_locker);
-            for (uint i = 0; i < size; ) {
-                threads[cur].public_tq.emplace(std::move(container[i++]));
-                threads[cur].task_numb++;
-            }
-        }
+            return;
+        } 
+        threads[cur].enqueue(std::forward<_Container>(container), size);
     }
 
 
     // enable task stealing between each thread
-    void enableRobTasks() {
-        enable_rob_tasks = true;
+    void enableStealTasks(uint max_numb = 0) 
+    {
+        if (!max_numb) {
+            max_numb = std::max(thread_numb/4, 1);
+            max_numb = std::min(max_numb, (uint)8);
+        }
+        if (max_numb >= thread_numb) {
+            throw std::invalid_argument("The number of stealing threads must smaller than thread number and greater than zero");
+        }
+        max_steal = max_numb;
+        enable_steal_tasks = true;
     }
 
     // disable task stealing between each thread
-    void disableRobTasks() {
-        enable_rob_tasks = false;
+    void disableStealTasks() {
+        enable_steal_tasks = false;
     }
-
-    // set thread number of each rob 
-    void setRobThreadNumb(uint numb) {
-        if (!numb || numb >= thread_numb) {
-            throw std::invalid_argument("The number of robbing threads must smaller than thread number and greater than zero");
-        }
-        rob_numb = numb;
-    }
-
 
 
 private:
+
+    void worker(int index) 
+    {   
+        auto& self = threads[index];
+
+        while (!stop) 
+        {
+            // yeild if no tasks
+            if (self.notask()) 
+            {
+                // steal tasks from other threads
+                if (enable_steal_tasks) 
+                {
+                    for (int i = index, j = 0; j < max_steal; j++) 
+                    {
+                        util::recyclePlus(i, 0, thread_numb);
+                        if (threads[i].tryGiveTasks(self)) {
+                            self.runBufferTasks();
+                            break;
+                        } 
+                    }
+                    if (self.notask()) {
+                        std::this_thread::yield();
+                        continue;
+                    }
+
+                } else {
+                    std::this_thread::yield();
+                    continue;
+                }
+            }
+            // run tasks 
+            self.runTasks();
+            
+        }
+    }
+
 
     /**
      * Judge whether there are enough capacity for tasks, 
@@ -370,8 +392,8 @@ private:
             return true;
         }
         int prev = cur;
-        auto spare = [this, tar_capacity] (Thread& t) {
-            return (t.task_numb.load() + tar_capacity) <= thread_cap;
+        auto spare = [this, tar_capacity] (DqThread& t) {
+            return (t.getTasksNumb() + tar_capacity) <= thread_cap;
         };
         while (!spare(threads[cur])) 
         {
@@ -422,15 +444,16 @@ private:
     {
         int tmp = idx;
         util::recyclePlus(tmp, 0, thread_numb);
-
+        
         for (int i = 0; i < step_limitation; ++i) {
-            if (threads[idx].task_numb) {
-                idx = (threads[tmp].task_numb < threads[idx].task_numb) ? tmp : idx;
+            if (threads[idx].getTasksNumb()) {
+                idx = (threads[tmp].getTasksNumb() < threads[idx].getTasksNumb()) ? tmp : idx;
                 util::recyclePlus(tmp, 0, thread_numb);
             } else {
                 break;
             }
         }
+
     }
 
     // calculate best step for seeking least-busy thread 

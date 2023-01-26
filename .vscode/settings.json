@@ -58,5 +58,5 @@
         "cassert": "cpp"
     },
     "editor.fontSize": 15,
-    "editor.fontFamily": " Consolas,  'Fira Mono','Verily Serif Mono' , 'Courier New', monospace"
+    "editor.fontFamily": "  'Fira Mono',Consolas, 'Verily Serif Mono' , 'Courier New', monospace"
 }

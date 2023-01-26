@@ -23,6 +23,7 @@ void test_submit(SteadyThreadPond& pond)
 {
     stream.print("\n", util::boundary('=', 15), util::strong("submit"), util::boundary('=', 16));
 
+
     // no return
     pond.submit(&foo1);                                      // function pointer
     pond.submit([]{stream.print("HanYa say hello world");}); // lambda
@@ -113,14 +114,12 @@ void test_other_interface(SteadyThreadPond& pond, uint thread_numb)
 
     util::print("enable rob tasks");
 
-    // enable rob neighbor thread and reduce the impact of abnormal tasks blocking threads
-    pond.setRobThreadNumb(thread_numb/2);
-    pond.enableRobTasks();
-
+    // enable steal neighbor thread and reduce the impact of abnormal tasks blocking threads
+    pond.enableStealTasks(thread_numb/2);
 
     util::print("disable rob tasks");
     // than we just disable this function
-    pond.disableRobTasks();
+    pond.disableStealTasks();
 
 }
 
