@@ -3,7 +3,7 @@
 # if should make firstly
 
 echo "==============================="
-echo "*   Start Stability Testing   *"
+echo "*    Start Stability Test     *"
 echo "==============================="
 
 times=10000
