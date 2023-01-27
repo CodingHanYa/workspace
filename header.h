@@ -38,4 +38,44 @@ using HipeTimePoint = std::chrono::steady_clock::time_point;
 template <typename T> 
 using HipeFutures  = util::Futures<T>;
 
+
+class ThreadBase 
+{
+public:
+
+    bool waiting = false;
+    std::thread handle;
+
+    std::atomic_int task_numb = {0};
+    std::condition_variable task_done_cv = {};
+
+    std::mutex cv_locker;
+
+public:
+
+    virtual uint getTasksNumb() {
+        return task_numb.load();
+    }
+
+    virtual bool notask() {
+        return !task_numb;
+    }
+
+    virtual void join() {
+        handle.join();
+    }
+
+    virtual void bindHandle(std::thread&& handle) {
+        this->handle = std::move(handle);
+    }
+
+    virtual void waitTasksDone() {
+        waiting = true;
+        HipeUniqGuard lock(cv_locker);
+        task_done_cv.wait(lock, [this]{ return !task_numb; });
+        waiting = false;
+    }
+
+};
+
 }

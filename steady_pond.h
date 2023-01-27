@@ -4,33 +4,13 @@
 namespace hipe { 
 
 // thread object that support double queue replacement algorithm
-class DqThread
+class DqThread: public ThreadBase
 {
-    bool waiting = false;
-    std::thread handle;
-
     std::queue<HipeTask> public_tq;
     std::queue<HipeTask> buffer_tq;
-
-    std::atomic_int task_numb = {0};
-    std::condition_variable task_done_cv = {};
-
     util::spinlock tq_locker = {};
-    std::mutex cv_locker;
 
 public:
-
-    uint getTasksNumb() {
-        return task_numb.load();
-    }
-
-    bool notask() {
-        return !task_numb;
-    }
-
-    void join() {
-        handle.join();
-    }
 
     void runTasks() 
     {   
@@ -47,10 +27,6 @@ public:
             HipeUniqGuard lock(cv_locker);
             task_done_cv.notify_one();
         }
-    }
-
-    void bindHandle(std::thread&& handle) {
-        this->handle = std::move(handle);
     }
 
     void runBufferTasks() 
@@ -87,13 +63,6 @@ public:
         return false;
     }
 
-    void waitTasksDone() {
-        waiting = true;
-        HipeUniqGuard lock(cv_locker);
-        task_done_cv.wait(lock, [this]{ return !task_numb; });
-        waiting = false;
-    }
-
     template <typename T>
     void enqueue(T&& tar) {
         util::spinlock_guard lock(tq_locker);
@@ -125,9 +94,6 @@ class SteadyThreadPond
     // stop the thread pend
     bool stop = {false};     
 
-    // wait for tasks done
-    bool waiting = {false};
-
     // enable steal tasks from neighbor thread
     bool enable_steal_tasks = false;
 
@@ -145,9 +111,6 @@ class SteadyThreadPond
 
     // task capacity per thread
     uint thread_cap = 0;
-
-    // condition variable locker for threads
-    std::mutex cv_locker;
 
     // keep thread variables
     std::unique_ptr<DqThread[]> threads = {nullptr};    
