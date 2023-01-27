@@ -1,7 +1,5 @@
 #pragma once
 #include "./util.h"
-#include <map>
-#include <climits>
 #include <vector>
 #include <string>
 #include <queue>
@@ -10,7 +8,6 @@
 #include <atomic>
 #include <memory>
 #include <thread>
-#include <cassert>
 #include <iostream>
 #include <functional>
 #include <condition_variable>
