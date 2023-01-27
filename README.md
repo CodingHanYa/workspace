@@ -252,9 +252,9 @@ threads: 16 | task-type: empty task | task-numb: 10000000 | time-cost: 2.79028(s
 
 一直支持我的女朋友小江和我的父母、姐姐。
 
-《C++并发编程实践》
+《C++并发编程实战》
 
-《Java并发编程实践》
+《Java并发编程的艺术》
 
 BS的贡献者
 
