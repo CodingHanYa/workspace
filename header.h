@@ -47,8 +47,7 @@ public:
     std::thread handle;
 
     std::atomic_int task_numb = {0};
-    std::condition_variable task_done_cv = {};
-
+    std::condition_variable task_done_cv;
     std::mutex cv_locker;
 
 public:
