@@ -249,7 +249,7 @@ threads: 16 | task-type: empty task | task-numb: 1000000  | time-cost: 0.31110(s
 
 ### 其它任务测试
 
-这次测试我们采用的是一个内存密集型任务，同时将线程数限制在较少的4
+测试原理：我们采用的是一个**内存密集型任务**（只在任务中申请一个vector），同时将线程数限制在较少的**4条**来对比Hipe-Steay和Hipe-Balance的性能。用于证明在某种情况下，例如工作线程的工作速度与主线程分配任务给该线程的速度相等，主线程与工作线程形成较强的竞争的情况下，Hipe-Steady对比Hipe-Balance更加卓越。其中的关键就是Hipe-Steady通过队列交换实现了部分读写分离，减少了一部分**潜在的**竞争。（测试20次取平均值）
 
 ```
 =============================================
@@ -261,6 +261,72 @@ thread-numb: 4  | task-numb: 1000000  | test-times: 20 | mean-time-cost: 0.32058
 *   Hipe-Balance Run Memory Intensive Task   *
 ==============================================
 thread-numb: 4  | task-numb: 1000000  | test-times: 20 | mean-time-cost: 0.39317(s)
+```
+
+因此，如果你能确保任务的执行时间是十分稳定的，不存在超时任务阻塞线程的情况。那么你有理由采用Hipe-Steady来提供更高效的服务的。但是如果你担心超时任务阻塞线程的话，那么我更推荐采用Hipe-Balance来作为核心线程池提供服务。具体还要应用到实际中进行调试。
+
+
+
+### 批量提交接口测试
+
+注意：单次批量提交的任务数为**10个**。每次测试之间留有30秒以上的时间间隔。
+
+
+
+**<<测试1>>**
+
+测试原理：调用Hipe-Steady和Hipe-Balance的**批量提交接口**提交大量的**空任务**，同时**不开启**任务缓冲区限制机制，即采用无界队列。通过结果对比展示**延长单次加锁时间**对两个线程池性能的影响。需要注意，如果我们开启了任务缓冲区限制机制，即采用了有界队列，则批量提交时两个线程池采用的是与单次提交相同的**加锁策略**。即每提交一个任务到队列中时加一次锁。
+
+```
+=============================================================
+*   Test C++(11) Thread Pool Hipe-Steady-Batch-Submit(10)   *
+=============================================================
+threads: 16  | task-type: empty task | task-numb: 100       | time-cost: 0.00004(s)
+threads: 16  | task-type: empty task | task-numb: 1000      | time-cost: 0.00024(s)
+threads: 16  | task-type: empty task | task-numb: 10000     | time-cost: 0.00237(s)
+threads: 16  | task-type: empty task | task-numb: 100000    | time-cost: 0.04381(s)
+threads: 16  | task-type: empty task | task-numb: 1000000   | time-cost: 0.22448(s)
+threads: 16  | task-type: empty task | task-numb: 10000000  | time-cost: 2.04291(s)
+threads: 16  | task-type: empty task | task-numb: 100000000 | time-cost: 23.77099(s)
+
+==============================================================
+*   Test C++(11) Thread Pool Hipe-Balance-Batch-Submit(10)   *
+==============================================================
+threads: 16  | task-type: empty task | task-numb: 100       | time-cost: 0.00007(s)
+threads: 16  | task-type: empty task | task-numb: 1000      | time-cost: 0.00043(s)
+threads: 16  | task-type: empty task | task-numb: 10000     | time-cost: 0.00378(s)
+threads: 16  | task-type: empty task | task-numb: 100000    | time-cost: 0.06987(s)
+threads: 16  | task-type: empty task | task-numb: 1000000   | time-cost: 0.54866(s)
+threads: 16  | task-type: empty task | task-numb: 10000000  | time-cost: 3.36323(s)
+threads: 16  | task-type: empty task | task-numb: 100000000 | time-cost: 37.50141(s)
+```
+
+**<<测试2>>**
+
+测试原理：调用Hipe-Steady和Hipe-Balance的**批量提交接口**提交大量的**空任务**，同时**开启**任务缓冲区限制机制，即采用有界队列。通过结果对比展示增强主线程与工作线程间**竞争**对两个线程池性能的影响。当加锁策略为每次提交一次任务就加一次锁，且由于任务为空任务，工作线程的工作时间**非常短暂**时，我们可以看到Hipe-Steady用队列交换减少竞争的**优化无法体现**。其根本原因还是任务的执行时间过短，工作线程长时间处于**饥饿状态**，主线程几乎每次添加任务都会与工作线程竞争。不同的是Hipe-Steady竞争到队列后将队列转移后执行，而Hipe-Balance竞争到队列后将任务转移后执行，而转移队列和转移任务的时间复杂度是相同的（O1）。
+
+```
+=============================================================
+*   Test C++(11) Thread Pool Hipe-Steady-Batch-Submit(10)   *
+=============================================================
+threads: 16 | task-type: empty task | task-numb: 100       | time-cost: 0.00477(s)
+threads: 16 | task-type: empty task | task-numb: 1000      | time-cost: 0.00049(s)
+threads: 16 | task-type: empty task | task-numb: 10000     | time-cost: 0.00467(s)
+threads: 16 | task-type: empty task | task-numb: 100000    | time-cost: 0.04435(s)
+threads: 16 | task-type: empty task | task-numb: 1000000   | time-cost: 0.45821(s)
+threads: 16 | task-type: empty task | task-numb: 10000000  | time-cost: 5.01119(s)
+threads: 16 | task-type: empty task | task-numb: 100000000 | time-cost: 52.19455(s)
+
+==============================================================
+*   Test C++(11) Thread Pool Hipe-Balance-Batch-Submit(10)   *
+==============================================================
+threads: 16 | task-type: empty task | task-numb: 100       | time-cost: 0.00007(s)
+threads: 16 | task-type: empty task | task-numb: 1000      | time-cost: 0.00587(s)
+threads: 16 | task-type: empty task | task-numb: 10000     | time-cost: 0.00560(s)
+threads: 16 | task-type: empty task | task-numb: 100000    | time-cost: 0.04498(s)
+threads: 16 | task-type: empty task | task-numb: 1000000   | time-cost: 0.46553(s)
+threads: 16 | task-type: empty task | task-numb: 10000000  | time-cost: 5.12321(s)
+threads: 16 | task-type: empty task | task-numb: 100000000 | time-cost: 51.70450(s)
 ```
 
 

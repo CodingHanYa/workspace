@@ -5,7 +5,7 @@ using namespace hipe;
 //      compare the performance of the interface "submitInBatch" between Hipe-Steady and Hipe-Balance
 // =========================================================================================================
 
-int  thread_numb = 0;
+int  thread_numb = 16;
 uint batch_size = 10;
 uint min_task_numb = 100;
 uint max_task_numb = 100000000;
@@ -14,7 +14,7 @@ void test_Hipe_steady_batch_submit()
 {
     hipe::util::print("\n", hipe::util::title("Test C++(11) Thread Pool Hipe-Steady-Batch-Submit(10)"));
 
-    hipe::SteadyThreadPond pond(thread_numb);
+    hipe::SteadyThreadPond pond(thread_numb, thread_numb*1000);
     hipe::util::Block<hipe::HipeTask> task_block(batch_size);
 
     auto foo = [&](uint task_numb) 
@@ -22,12 +22,13 @@ void test_Hipe_steady_batch_submit()
         for (int i = 0; i < task_numb;) 
         {
             for (int j = 0; j < batch_size; ++j, ++i) {
-                task_block.add([]{});
+                task_block.add([]{std::vector<int>(200);});
             }
             pond.submitInBatch(task_block, batch_size);
             task_block.clean();
         }
         pond.waitForTasks();
+        //util::print("steady-count = ", count);
     };
 
     for (uint nums = min_task_numb; nums <= max_task_numb; nums *= 10) 
@@ -44,7 +45,7 @@ void test_Hipe_Balance_batch_submit()
 
     hipe::util::print("\n", hipe::util::title("Test C++(11) Thread Pool Hipe-Balance-Batch-Submit(10)"));
 
-    hipe::BalancedThreadPond pond(thread_numb);
+    hipe::BalancedThreadPond pond(thread_numb,thread_numb*1000);
     hipe::util::Block<hipe::HipeTask> task_block(batch_size);
 
     auto foo = [&](uint task_numb) 
@@ -52,7 +53,7 @@ void test_Hipe_Balance_batch_submit()
         for (int i = 0; i < task_numb;) 
         {
             for (int j = 0; j < batch_size; ++j, ++i) {
-                task_block.add([]{});
+                task_block.add([]{std::vector<int>(200);});
             }
             pond.submitInBatch(task_block, batch_size);
             task_block.clean();

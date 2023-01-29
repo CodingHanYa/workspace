@@ -1,6 +1,9 @@
 #pragma once
 #include "header.h"
 
+// In benchmark/compare_batch_submit.cpp , we use 'count' to know which thread is faster ?  main thread or worker thread ?
+//static int count = 0;
+
 namespace hipe { 
 
 // thread object that support double queue replacement algorithm
@@ -17,6 +20,11 @@ public:
         tq_locker.lock();
         public_tq.swap(buffer_tq);
         tq_locker.unlock();
+
+        
+        //if (buffer_tq.size() > 10) {
+        //    count++;
+        //}
 
         while (!buffer_tq.empty()) {
             util::invoke(buffer_tq.front());
