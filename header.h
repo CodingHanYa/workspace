@@ -240,7 +240,6 @@ public:
     {
         if (!admit()) {
             taskOverFlow(std::forward<_Runable>(foo));
-            return;
         }
 
         using RT = typename std::result_of<_Runable()>::type;
