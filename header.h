@@ -4,6 +4,7 @@
 #include <string>
 #include <queue>
 #include <mutex>
+#include <cassert>
 #include <future>
 #include <atomic>
 #include <memory>

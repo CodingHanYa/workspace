@@ -93,9 +93,10 @@ public:
      * The pond will recycle the deleted thread firstly. But if there are  deleted threads, 
      * the pond will expand through creating new thread.
     */
-    void addThreads(uint tnumb = 1) 
+    void addThreads(int tnumb = 1) 
     {
         int idx = 0;
+        assert(tnumb >= 0);
         while (tnumb--) 
         {
             shared_locker.lock();
@@ -123,16 +124,13 @@ public:
      * @param tnumb thread number
      * If there are not enough threads, the Hipe will throw error. 
      * The deletion will not happen immediately, but just notify that 
-     * there are some threads that need to be deleted, as a result, 
+     * there are some threads need to be deleted, as a result, 
      * it is nonblocking.
     */
-    void delThreads(uint tnumb = 1) 
+    void delThreads(int tnumb = 1) 
     {
-        if (tnumb > thread_numb) {
-            throw std::invalid_argument("DynamicThreadPond: Not enough threads to delete");
-            return;
-        }
-        shrink_numb = tnumb;
+        assert((tnumb <= thread_numb)&&(tnumb >= 0));
+        shrink_numb += tnumb;
         thread_numb -= tnumb;
         awake_cv.notify_all();
     }
@@ -141,14 +139,14 @@ public:
      * @brief adjust thread number to target
      * @param target_tnumb target thread number
     */
-    void adjustThreads(uint target_tnumb) 
+    void adjustThreads(int target_tnumb) 
     {
         if (target_tnumb > thread_numb) {
             addThreads(target_tnumb - thread_numb);
             return;
         } 
         if (target_tnumb < thread_numb) {
-            delThreads(target_tnumb - thread_numb);
+            delThreads(thread_numb-target_tnumb);
             return;
         }
     }

@@ -3,16 +3,11 @@ using namespace hipe;
 
 int main() 
 {
-    hipe::DynamicThreadPond pond(8);
+    BalancedThreadPond pond(8);
+    pond.enableStealTasks(4);
 
     std::atomic_int var(0);
-    uint each_task_nums = 100;
-
-    for (int i = 1; i < 20; ++i) {
-        pond.addThreads(i);
-        pond.delThreads(i-1);
-    }
-    pond.adjustThreads(8);
+    uint each_task_nums = 1000000;
 
     for (int i = 0; i < each_task_nums; ++i) {
         pond.submit([&]{ var++; });
