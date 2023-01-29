@@ -1,6 +1,11 @@
 #include "../hipe.h"
 using namespace hipe;
 
+// =============================================================================
+//                 We submit some memory intensive tasks
+// =============================================================================
+
+
 int size = 100;
 int thread_numb = 2;
 int task_numb = 1000000;
@@ -53,6 +58,7 @@ void test_Hipe_balance() {
 
 
 
+//Notic that don't do two tests at once
 int main() 
 {
     util::print(util::title("Hipe-Steady Run Memory Intensive Task"));
