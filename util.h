@@ -318,9 +318,10 @@ namespace util
     };
 
 
+
     /**
-     * Block for adding task by betch
-     * Use c array managed by unique_ptr
+     * Block for adding tasks in betch
+     * You can regard it as a more convenient C arrays
      * Notice that the element must override " = "
     */
     template <typename T>
@@ -331,9 +332,10 @@ namespace util
         std::unique_ptr<T[]> blok = {nullptr};
 
     public:
+
         Block() = default;
-        
         virtual ~Block() {}
+
 
         Block(Block&& other) 
             : blok(std::move(other.blok))
@@ -346,12 +348,14 @@ namespace util
             , sz(sz) {
         }
 
+        Block(const Block& other) = delete;
+
 
         T& operator [] (size_t idx) {
             return blok[idx];
         }
 
-        // block capacity last
+        // block's capacity
         size_t capacity() {
             return sz;   
         }
@@ -361,7 +365,7 @@ namespace util
             return end;
         }
 
-        // whether is able to contain nums of elements
+        // whether have nums' space
         bool is_spare_for(size_t nums) {
             return (end + nums) <= sz;
         }
@@ -371,12 +375,12 @@ namespace util
             return end == sz;
         }
 
-        // add element
+        // add an element
         void add(T&& tar) {
             blok[end++] = std::forward<T>(tar);
         }
 
-        // fill element. Notice that the element must be able to copy !
+        // fill element. Notice that the element must can be copied !
         void fill(const T& tar) {
             while (end != sz) {
                 blok[end++] = tar;
@@ -395,7 +399,7 @@ namespace util
             end = 0;
         }
 
-        // release space
+        // release the heap space
         void release() {
             blok.release();
             sz = 0;

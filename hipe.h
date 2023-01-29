@@ -6,17 +6,23 @@
 
 /**
  * @brief A steady thread pond
- * It is a steady thread pond that have constant count of threads and is suitable for stable task volume and light task. 
+ * It is a steady thread pond that has constant count of threads and is suitable for stable task volume and light task. 
  * It also support task stealing, batch submission, batch execution, thread load balancing. 
 */
 #include "./steady_pond.h"
 
 /**
  * @brief A dynamic thread pond. 
- * It is a dynamic thread pond that allow expanding the pond with some threads or delete some threads from the pond.
- * To help you know when to motify the pond, it provide rate view of the threads for supervising.
+ * It is a dynamic thread pond that allows expanding the pond with some threads or delete some threads from the pond.
+ * To help you know when  and how to motify the pond, it provided interfaces to monitor the speed of task digestion.
 */
 #include "./dynamic_pond.h"
 
+
+/**
+ * @brief A balanced thread pond
+ * It is a balanced thread pond that 
+*/
+#include "./balanced_pond.h"
 
 

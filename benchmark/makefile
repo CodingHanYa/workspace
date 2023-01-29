@@ -5,8 +5,10 @@ lib = -lpthread
 # flag: -std=c++17 for BS
 test_file1 = ./test_empty_task.cpp
 test_file2 = ./test_speedup.cpp
+test_file3 = ./test_batch_submit.cpp
+test_file4 = ./test_steady_balance.cpp
 
-src = ${test_file1}
+src = ${test_file4}
 
 ${tar}: ${src}
 	g++ ${flag} ${src} -o ${tar} ${lib}
