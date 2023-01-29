@@ -68,10 +68,10 @@ void test_Hipe_Balance_batch_submit()
     }
 }
 
-//Notic that don't do two tests at once
+//Notice that don't do two tests at once
 int main() 
 {
-    //test_Hipe_Balance_batch_submit();
-    test_Hipe_steady_batch_submit();
+    test_Hipe_Balance_batch_submit();
+    //test_Hipe_steady_batch_submit();
 }
 

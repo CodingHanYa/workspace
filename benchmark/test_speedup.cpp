@@ -93,8 +93,52 @@ void test_BS()
     }
 
     // Maximum speedup obtained by multithreading vs. single-threading: 18.7x, using 24 tasks.
-    printf("Best speed-up obtained by multithreading vs. single-threading: %.2f, using %d tasks\n",
-            single_result/min_cost, min_cost_tasks);
+
+}
+
+
+/**
+ * use Steady thread pond provided by Hipe
+*/
+void test_Hipe_steady() 
+{
+    int thread_numb = std::thread::hardware_concurrency();
+    int task_numb = thread_numb / 4;
+
+    hipe::util::print("\n",hipe::util::title("Test C++(11) Thread-Pool Hipe-Steady", 14), "\n");
+
+    // use dynamic thread pond
+    hipe::SteadyThreadPond pond(thread_numb);
+
+    auto fooN = [&](int task_numb)
+    {
+        for (int i = 0; i < task_numb; ++i) {
+            pond.submit(computation_intensive_task);
+        }
+        pond.waitForTasks();
+    };
+
+    double min_cost = __DBL_MAX__;
+    int min_cost_tasks = 0;
+
+    for (int i = 0; i < 6; ++i, task_numb += 12) 
+    {
+        double total = 0.0;
+        for (int j = 0; j < repeat_times; ++j) {
+            total += hipe::util::timewait<std::milli>(fooN, task_numb);
+        }
+        double time_cost = total/repeat_times;
+        double multi_per_task = time_cost / task_numb;
+
+        printf("threads: %-2d | task-type: %s | task-numb: %-2d | time-cost-per-task: %.5f(ms)\n",
+                thread_numb, "compute mode", task_numb, multi_per_task);
+
+        // get min one
+        min_cost = std::min(min_cost, multi_per_task);
+        if (min_cost == multi_per_task) {
+            min_cost_tasks = task_numb;
+        }
+    }
 
 }
 
@@ -141,23 +185,21 @@ void test_Hipe_dynamic()
             min_cost_tasks = task_numb;
         }
     }
-    printf("Best speed-up obtained by multithreading vs. single-threading: %.2f, using %d tasks\n",
-            single_result/min_cost, min_cost_tasks);
 
 }
 
 /**
- * use Steady thread pond provided by Hipe
+ * use balanced thread pond provided by Hipe
 */
-void test_Hipe_steady() 
+void test_Hipe_balance() 
 {
     int thread_numb = std::thread::hardware_concurrency();
     int task_numb = thread_numb / 4;
 
-    hipe::util::print("\n",hipe::util::title("Test C++(11) Thread-Pool Hipe-Steady", 14), "\n");
+    hipe::util::print("\n",hipe::util::title("Test C++(11) Thread-Pool Hipe-Balance", 14), "\n");
 
-    // use dynamic thread pond
-    hipe::SteadyThreadPond pond(thread_numb);
+    // use balanced thread pond
+    hipe::BalancedThreadPond pond(thread_numb);
 
     auto fooN = [&](int task_numb)
     {
@@ -188,31 +230,19 @@ void test_Hipe_steady()
             min_cost_tasks = task_numb;
         }
     }
-    printf("Best speed-up obtained by multithreading vs. single-threading: %.2f, using %d tasks\n",
-            single_result/min_cost, min_cost_tasks);
-
 }
 
 
-
-
+//Notice that don't do two tests at once
 int main() {
 
-    test_single_thread();
+    // test_single_thread();
+    // test_BS();
+    // test_Hipe_dynamic();
+    // test_Hipe_steady();
+    test_Hipe_balance();
 
-    hipe::util::sleep_for_seconds(3);
 
-    test_Hipe_steady();
-
-    hipe::util::sleep_for_seconds(3);
-
-    test_BS();
-
-    hipe::util::sleep_for_seconds(3);
-
-    test_Hipe_dynamic();
-
-    hipe::util::print("\n", hipe::util::title("End of the test", 15));
 }
 
 
