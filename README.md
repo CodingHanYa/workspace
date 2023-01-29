@@ -337,24 +337,34 @@ threads: 16 | task-type: empty task | task-numb: 100000000 | time-cost: 51.70450
 
 ```
 .
-├── README.md                            本文档
-├── benchmark                            性能测试
-│   ├── BS_thread_pool.hpp               BS线程池
+├── README.md
+├── balanced_pond.h                      均衡线程池
+├── benchmark                            性能测试文件夹 
+│   ├── BS_thread_pool.hpp               BS源码
+│   ├── compare_batch_submit.cpp         对比Hipe-Steady和Hipe-Balance的批量提交接口
+│   ├── compare_other_task.cpp           对比Hipe-Steady和Hipe-Balance执行其它任务的性能（内存密集型任务）
+│   ├── compare_submit.cpp               对比Hipe-Steady和Hipe-Balance执行空任务的性能
 │   ├── makefile
-│   ├── test_empty_task.cpp              跑空任务
-│   └── test_speedup.cpp                 测加速比
-├── demo
-│   ├── demo1.cpp                        如何将Hipe-Dynamic作为缓冲池
-│   └── demo2.cpp                        如何根据流量动态调节Hipe-Dynamic的线程数
-├── dynamic_pond.h                       Hipe-Dynamic
-├── header.h                             一些别名和引入的头文件	
-├── hipe.h                               方便导入的文件，已将Hipe的头文件包含了 
-├── interface_test                       接口测试
+│   ├── test_empty_task.cpp              测试几种线程池执行空任务的性能
+│   └── test_speedup.cpp                 加速比测试
+├── demo 
+│   ├── demo1.cpp                        将动态线程池用作缓冲池
+│   └── demo2.cpp                        动态调整动态线程池
+├── dynamic_pond.h                       动态线程池
+├── header.h                             定义类线程类基类和Hipe-Steady+Hipe-Balance的基类（定义了提交任务、任务溢出、负载均衡）
+├── hipe.h                               头文件
+├── interfaces                           测试接口
 │   ├── makefile
-│   ├── test_dynamic_pond_interface.cpp  Hipe-Dynamic的接口测试
-│   └── test_steady_pond_interface.cpp   Hipe-Steady的接口测试
-├── steady_pond.h                        Hipe-Steady
-└── util.h                               工具包：计时器、任务包装器、同步IO流...
+│   ├── test_balanced_pond_interface.cpp 
+│   ├── test_dynamic_pond_interface.cpp
+│   └── test_steady_pond_interface.cpp
+├── stability                            稳定性测试
+│   ├── makefile
+│   ├── test.sh
+│   ├── test_dynamic.cpp
+│   └── test_steady.cpp
+├── steady_pond.h
+└── util.h
 ```
 
 

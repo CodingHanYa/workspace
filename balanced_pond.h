@@ -22,7 +22,7 @@ public:
         {
             if (!tq.empty()) 
             {
-                another.tq.emplace(std::move(tq.front()));
+                another.task = std::move(tq.front());
                 tq.pop();
                 tq_locker.unlock();
                 this->task_numb--;
@@ -55,18 +55,24 @@ public:
         }
     }
 
-    // run one task from the task queue
-    void runTask() 
+    // run the task
+    void runTask() {
+        util::invoke(task);
+        task_numb--;
+    }
+
+    // try load task from the task queue
+    bool tryloadTask() 
     {
         tq_locker.lock();
         if (!tq.empty()) {
             task = std::move(tq.front());
             tq.pop();
             tq_locker.unlock();
-            util::invoke(task);
-            task_numb--;
+            return true;
         } else {
             tq_locker.unlock();
+            return false;
         }
     }
 
@@ -98,6 +104,7 @@ private:
     void worker(int index) 
     {   
         auto& self = threads[index];
+        HipeTask task;
 
         while (!stop) 
         {
@@ -125,13 +132,14 @@ private:
                         // go to handle the tasks or the waiting signal directly
                         continue;
                     }
-
                 } 
                 std::this_thread::yield();
             
             } else {
-                // run task
-                self.runTask();
+                // try load task and run
+                if(self.tryloadTask()) {
+                    self.runTask();
+                }
             }
         }
     }

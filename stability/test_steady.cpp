@@ -1,4 +1,4 @@
-#include "../steady_pond.h"
+#include "../hipe.h"
 using namespace hipe;
 
 int main() 
