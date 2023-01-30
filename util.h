@@ -141,18 +141,15 @@ namespace util
             return results;
         }
 
-        std::future<T>& operator[](size_t i)
-        {
+        std::future<T>& operator[](size_t i) {
             return futures[i];
         }
 
-        void push_back(std::future<T>&& future)
-        {
+        void push_back(std::future<T>&& future) {
             futures.push_back(std::move(future));
         }
 
-        size_t size()
-        {
+        size_t size() {
             return futures.size();
         }
 
@@ -320,7 +317,7 @@ namespace util
 
 
     /**
-     * Block for adding tasks in betch
+     * Block for adding tasks in batch
      * You can regard it as a more convenient C arrays
      * Notice that the element must override " = "
     */

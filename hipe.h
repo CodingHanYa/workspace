@@ -21,7 +21,8 @@
 
 /**
  * @brief A balanced thread pond
- * It is a balanced thread pond that 
+ * It is a balanced thread pond has outstanding performance and support task stealing, batch submission, batch execution, 
+ * thread load balancing. 
 */
 #include "./balanced_pond.h"
 
