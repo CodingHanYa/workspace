@@ -329,7 +329,9 @@ threads: 16 | task-type: empty task | task-numb: 100000000 | time-cost: 51.70450
 
 ### 关于稳定性
 
-在稳定性测试过程中，我给Hipe-Steady和Hipe-Balance做了快速推入大量任务的测试。调用了`submit()`、`submitForReturn()`和`submitInBatch`三个接口，分别推入1000000个任务。最后用`run.sh`脚本测试了**1000个用例**，通过率为100%。而对Hipe-Dynamic的测试除了测试提交任务的接口，还测试了添加线程`addThreads()`、减少线程`delThreads`和调整线程数`adjustThreads`的接口。
+在稳定性测试过程中，我给Hipe-Steady和Hipe-Balance做了快速推入大量任务的测试。调用了`submit()`、`submitForReturn()`和`submitInBatch`三个接口，分别推入**1000000个**任务。最后用`run.sh`脚本测试了**1000个用例**，通过率为100%。而对Hipe-Dynamic的测试除了测试提交任务的接口，还测试了添加线程`addThreads()`、减少线程`delThreads`和调整线程数`adjustThreads`的接口。我跑了**10000个用例**，最终都通过测试。
+
+尽管如此，Hipe仍需要时间的检验，也需要诸位的帮助。希望大家能一起出力，将Hipe变得更好吧。
 
 
 
