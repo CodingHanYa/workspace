@@ -52,7 +52,7 @@ void test_BS()
 void test_Hipe_steady() 
 {
     uint tnumb = std::thread::hardware_concurrency();
-    hipe::SteadyThreadPond pond(2);
+    hipe::SteadyThreadPond pond(tnumb);
 
     hipe::util::print("\n", hipe::util::title("Test C++(11) Thread Pool Hipe-Steady"));
 
@@ -75,7 +75,7 @@ void test_Hipe_steady()
 void test_Hipe_balance() 
 {
     uint tnumb = std::thread::hardware_concurrency();
-    hipe::BalancedThreadPond pond(2);
+    hipe::BalancedThreadPond pond(tnumb);
 
     hipe::util::print("\n", hipe::util::title("Test C++(11) Thread Pool Hipe-Balance"));
 

@@ -204,38 +204,38 @@ threads: 16 | task-type: compute mode | task-numb: 64 | time-cost-per-task: 39.9
 ===================================
 *   Test C++(17) Thread Pool BS   *
 ===================================
-threads: 16 | task-type: empty task | task-numb: 100      | time-cost: 0.00126(s)
-threads: 16 | task-type: empty task | task-numb: 1000     | time-cost: 0.01104(s)
-threads: 16 | task-type: empty task | task-numb: 10000    | time-cost: 0.09691(s)
-threads: 16 | task-type: empty task | task-numb: 100000   | time-cost: 0.98304(s)
-threads: 16 | task-type: empty task | task-numb: 1000000  | time-cost: 9.84680(s)
+threads: 16 | task-type: empty task | task-numb: 100      | time-cost: 0.00125(s)
+threads: 16 | task-type: empty task | task-numb: 1000     | time-cost: 0.01082(s)
+threads: 16 | task-type: empty task | task-numb: 10000    | time-cost: 0.09733(s)
+threads: 16 | task-type: empty task | task-numb: 100000   | time-cost: 0.98153(s)
+threads: 16 | task-type: empty task | task-numb: 1000000  | time-cost: 9.73649(s)
 
 =============================================
 *   Test C++(11) Thread Pool Hipe-Dynamic   *
 =============================================
-threads: 16 | task-type: empty task | task-numb: 100      | time-cost: 0.00131(s)
-threads: 16 | task-type: empty task | task-numb: 1000     | time-cost: 0.01104(s)
-threads: 16 | task-type: empty task | task-numb: 10000    | time-cost: 0.09814(s)
-threads: 16 | task-type: empty task | task-numb: 100000   | time-cost: 0.97543(s)
-threads: 16 | task-type: empty task | task-numb: 1000000  | time-cost: 9.75777(s)
+threads: 16 | task-type: empty task | task-numb: 100      | time-cost: 0.00128(s)
+threads: 16 | task-type: empty task | task-numb: 1000     | time-cost: 0.01098(s)
+threads: 16 | task-type: empty task | task-numb: 10000    | time-cost: 0.09638(s)
+threads: 16 | task-type: empty task | task-numb: 100000   | time-cost: 0.97266(s)
+threads: 16 | task-type: empty task | task-numb: 1000000  | time-cost: 9.66044(s)
 
 ============================================
 *   Test C++(11) Thread Pool Hipe-Steady   *
 ============================================
-threads: 16 | task-type: empty task | task-numb: 100      | time-cost: 0.00005(s)
-threads: 16 | task-type: empty task | task-numb: 1000     | time-cost: 0.00049(s)
-threads: 16 | task-type: empty task | task-numb: 10000    | time-cost: 0.00349(s)
-threads: 16 | task-type: empty task | task-numb: 100000   | time-cost: 0.02929(s)
-threads: 16 | task-type: empty task | task-numb: 1000000  | time-cost: 0.28559(s)
+threads: 16 | task-type: empty task | task-numb: 100      | time-cost: 0.00008(s)
+threads: 16 | task-type: empty task | task-numb: 1000     | time-cost: 0.00089(s)
+threads: 16 | task-type: empty task | task-numb: 10000    | time-cost: 0.00648(s)
+threads: 16 | task-type: empty task | task-numb: 100000   | time-cost: 0.06384(s)
+threads: 16 | task-type: empty task | task-numb: 1000000  | time-cost: 0.57714(s)
 
 =============================================
 *   Test C++(11) Thread Pool Hipe-Balance   *
 =============================================
-threads: 16 | task-type: empty task | task-numb: 100      | time-cost: 0.00006(s)
-threads: 16 | task-type: empty task | task-numb: 1000     | time-cost: 0.00053(s)
-threads: 16 | task-type: empty task | task-numb: 10000    | time-cost: 0.00364(s)
-threads: 16 | task-type: empty task | task-numb: 100000   | time-cost: 0.03205(s)
-threads: 16 | task-type: empty task | task-numb: 1000000  | time-cost: 0.31110(s)
+threads: 16 | task-type: empty task | task-numb: 100      | time-cost: 0.00042(s)
+threads: 16 | task-type: empty task | task-numb: 1000     | time-cost: 0.00093(s)
+threads: 16 | task-type: empty task | task-numb: 10000    | time-cost: 0.00644(s)
+threads: 16 | task-type: empty task | task-numb: 100000   | time-cost: 0.10648(s)
+threads: 16 | task-type: empty task | task-numb: 1000000  | time-cost: 0.64149(s)
 
 =============================================
 *              End of the test              *
@@ -243,7 +243,7 @@ threads: 16 | task-type: empty task | task-numb: 1000000  | time-cost: 0.31110(s
 
 ```
 
-结果分析： 可以看到在处理空任务这一方面Hipe-Steady和Hipe-Balance具有**巨大的优势**，在处理**1000000**个空任务时性能是BS和Hipe-Dynamic的**20倍以上**。而如果Hipe-steady采用批量提交的接口的话，能够达到约**30倍以上**的性能提升。
+结果分析： 可以看到在处理空任务这一方面Hipe-Steady和Hipe-Balance具有**巨大的优势**，在处理**1000000**个空任务时性能是BS和Hipe-Dynamic的**15倍以上**。而如果Hipe-steady采用批量提交的接口的话，能够达到约**20倍~40倍左右**的性能提升。
 
 ### 其它任务测试
 
