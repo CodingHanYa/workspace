@@ -87,7 +87,7 @@ public:
  * @brief A steady thread pond. 
  * Support task stealing and execute tasks in batches
 */
-class SteadyThreadPond: public FixedThreadPondBase<DqThread>
+class SteadyThreadPond: public FixedThreadPond<DqThread>
 {
 public:
 
@@ -96,7 +96,7 @@ public:
      * @param task_capacity task capacity of the pond, default: unlimited
     */
     SteadyThreadPond(uint thread_numb = 0, uint task_capacity = HipeUnlimited) 
-        : FixedThreadPondBase(thread_numb, task_capacity)
+        : FixedThreadPond(thread_numb, task_capacity)
     {
         // create threads
         threads.reset(new DqThread[this->thread_numb]);

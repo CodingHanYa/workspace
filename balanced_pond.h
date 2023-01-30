@@ -80,7 +80,7 @@ public:
 
 
 
-class BalancedThreadPond: public FixedThreadPondBase<OqThread>
+class BalancedThreadPond: public FixedThreadPond<OqThread>
 {
 public:
 
@@ -89,7 +89,7 @@ public:
      * @param task_capacity task capacity of the pond, default: unlimited
     */
     BalancedThreadPond(uint thread_numb = 0, uint task_capacity = HipeUnlimited) 
-        : FixedThreadPondBase(thread_numb, task_capacity)
+        : FixedThreadPond(thread_numb, task_capacity)
     {
         // create
         threads.reset(new OqThread[this->thread_numb]);

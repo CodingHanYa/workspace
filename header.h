@@ -94,7 +94,7 @@ public:
  * @tparam The type of thread wrepper class that inherited from ThreadBase.
 */
 template <typename Ttype>
-class FixedThreadPondBase 
+class FixedThreadPond 
 {
 protected:
 
@@ -134,7 +134,7 @@ protected:
      * @param thread_numb fixed thread number
      * @param task_capacity task capacity of the pond, default: unlimited
     */
-    FixedThreadPondBase(uint thread_numb = 0, uint task_capacity = HipeUnlimited) 
+    FixedThreadPond(uint thread_numb = 0, uint task_capacity = HipeUnlimited) 
     {
         // calculate thread number
         if (!thread_numb) {
@@ -157,7 +157,7 @@ protected:
         cursor_move_limit = getBestMoveLimit(thread_numb);
     }
 
-    virtual ~FixedThreadPondBase() {
+    virtual ~FixedThreadPond() {
         if (!stop) {
             close();
         }
@@ -173,7 +173,8 @@ public:
     /**
      * Wait until all threads finish their task
     */
-    void waitForTasks() {
+    void waitForTasks() 
+    {
         for (int i = 0; i < thread_numb; ++i) {
             threads[i].waitTasksDone();
         }
