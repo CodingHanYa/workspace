@@ -17,15 +17,6 @@ public:
 
     void runTasks() 
     {   
-        tq_locker.lock();
-        public_tq.swap(buffer_tq);
-        tq_locker.unlock();
-
-        
-        //if (buffer_tq.size() > 10) {
-        //    count++;
-        //}
-
         while (!buffer_tq.empty()) {
             util::invoke(buffer_tq.front());
             buffer_tq.pop();
@@ -33,14 +24,13 @@ public:
         }
     }
 
-    void runBufferTasks() 
+    bool loadTasks() 
     {
-        while (!buffer_tq.empty()) {
-            util::invoke(buffer_tq.front());
-            buffer_tq.pop();
-            task_numb--;
-        }   
-    }    
+        tq_locker.lock();
+        public_tq.swap(buffer_tq);
+        tq_locker.unlock();
+        return buffer_tq.size() > 0;
+    }
 
     bool tryGiveTasks(DqThread& t)
     {
@@ -131,7 +121,7 @@ private:
                     {
                         util::recyclePlus(i, 0, thread_numb);
                         if (threads[i].tryGiveTasks(self)) {
-                            self.runBufferTasks();
+                            self.runTasks();
                             break;
                         } 
                     }
@@ -144,7 +134,9 @@ private:
 
             } else {
                 // run tasks 
-                self.runTasks();
+                if (self.loadTasks()) {
+                    self.runTasks();
+                }
             }
             
         }

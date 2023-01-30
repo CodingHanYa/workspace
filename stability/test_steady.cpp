@@ -7,7 +7,7 @@ int main()
     pond.enableStealTasks(4);
 
     std::atomic_int var(0);
-    uint each_task_nums = 1000000;
+    uint each_task_nums = 10000;
 
     for (int i = 0; i < each_task_nums; ++i) {
         pond.submit([&]{ var++; });
