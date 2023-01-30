@@ -6,9 +6,9 @@ echo "==============================="
 echo "*    Start Stability Test     *"
 echo "==============================="
 
-times=100
+times=10000
 success=0
-tick=1
+tick=10
 
 echo "Total test times: "$times 
 echo "------>"

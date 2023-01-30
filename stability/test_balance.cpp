@@ -3,7 +3,7 @@ using namespace hipe;
 
 int main() 
 {
-    SteadyThreadPond pond(8);
+    BalancedThreadPond pond(8);
     pond.enableStealTasks(4);
 
     std::atomic_int var(0);
