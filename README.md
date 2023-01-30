@@ -92,7 +92,7 @@ Hipe-Dynamic是Hipe提供的动态的、能够**扩缩容**的线程池。支持
 
 Hipe-Dynamic采用的是**多线程竞争单任务队列**的模型。该任务队列是无界的，能够容蓄大量的任务，直至系统资源耗尽。由于Hipe-Dynamic管理的线程没有私有的任务队列且面向单个任务，因此能够被灵活地调度。同时，为了能动态调节线程数，Hipe-Dynamic还提供了能监测线程池执行速率的接口，其使用实例在`Hipe/demo/demo2`。
 
-由于Hipe-Dynamic的接口较为简单，如果需要了解更多接口的调用，可以阅读接口测试文件`Hipe/interface_test/`或者`Hipe/demo/demo2`。
+由于Hipe-Dynamic的接口较为简单，如果需要了解更多接口的调用，可以阅读接口测试文件`Hipe/interfaces/`或者`Hipe/demo/demo2`。
 
 
 
