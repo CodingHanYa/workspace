@@ -64,7 +64,7 @@ int main()
 
 
 
-更多接口的调用请大家阅读`hipe/interface_test/`，里面有全部的接口测试，并且每一个函数调用都有较为详细的注释。
+更多接口的调用请大家阅读`hipe/interfaces/`，里面有全部的接口测试，并且每一个函数调用都有较为详细的注释。
 
 由于BalancedThreadPond和SteadyThreadPond的接口一致，二者都继承自一个统一接口的类FixedThreadPond（固定线程数的线程池基类，定义了负载均衡的算法和任务溢出机制等），因此不再展示。
 
@@ -108,7 +108,7 @@ Hipe-Dynamic采用的是**多线程竞争单任务队列**的模型。该任务�
 
 ```C++
 // ================================================
-// 		computation intensive task(计算密集型任务)
+//    computation intensive task(计算密集型任务)
 // ================================================
 
 uint vec_size = 4096;
