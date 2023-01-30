@@ -129,7 +129,7 @@ int main()
     stream.print(util::title("Test SteadyThreadPond", 10));
 
     // unlimited task capacity
-    SteadyThreadPond pond(8);
+    SteadyThreadPond pond(8); 
 
     // unlimited task capacity pond can't set refuse callback
     // pond.setRefuseCallBack([]{stream.print("task overflow!!!");});
