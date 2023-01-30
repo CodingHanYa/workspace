@@ -241,6 +241,7 @@ public:
     {
         if (!admit()) {
             taskOverFlow(std::forward<_Runable>(foo));
+            return std::future<typename std::result_of<_Runable()>::type>();
         }
 
         using RT = typename std::result_of<_Runable()>::type;
@@ -275,7 +276,6 @@ public:
                     break;
                 }
             }
-
         } else {
             getLeastBusyThread()->enqueue(std::forward<_Container>(container), size);
         } 
@@ -331,7 +331,7 @@ protected:
 
 public:
 
-    // enable task stealing between each thread
+    // enable task stealing between threads
     void enableStealTasks(uint max_numb = 0) 
     {
         if (!max_numb) {
@@ -424,9 +424,8 @@ protected:
 
         if (refuse_cb.is_setted()) {
             util::invoke(refuse_cb);
-        } 
-        else {
-            throw std::runtime_error("SteadyThreadPond: Task overflow while submitting task");
+        } else {
+            throw std::runtime_error("Hipe: Task overflow while submitting task");
         }
     }
 
@@ -446,9 +445,8 @@ protected:
         }
         if (refuse_cb.is_setted()) {
             util::invoke(refuse_cb);
-        } 
-        else {
-            throw std::runtime_error("SteadyThreadPond: Task overflow while submitting tasks in batch");
+        } else {
+            throw std::runtime_error("Hipe: Task overflow while submitting tasks in batch");
         }
     }
 
