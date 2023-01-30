@@ -141,6 +141,7 @@ public:
     */
     void adjustThreads(int target_tnumb) 
     {
+        assert(target_tnumb >= 0);
         if (target_tnumb > thread_numb) {
             addThreads(target_tnumb - thread_numb);
             return;
@@ -242,7 +243,7 @@ public:
 private:
 
     // working threads' default loop
-    void worker(uint index) 
+    void worker(int index) 
     {
         // task container
         HipeTask task;
