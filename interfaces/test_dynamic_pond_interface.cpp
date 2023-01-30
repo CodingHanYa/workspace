@@ -8,7 +8,6 @@ void foo1() {
     stream.print("call foo1");
 }
 
-
 void test_submit_tasks(DynamicThreadPond& pond) 
 {
     stream.print("\n", util::boundary('=', 15), util::strong("submit"), util::boundary('=', 16));
@@ -41,8 +40,6 @@ void test_submit_tasks(DynamicThreadPond& pond)
 
 }
 
-
-
 void test_submit_in_batch(DynamicThreadPond& pond) 
 {
     stream.print("\n", util::boundary('=', 11), util::strong("submit by batch"), util::boundary('=', 11));
@@ -69,9 +66,6 @@ void test_submit_in_batch(DynamicThreadPond& pond)
     // wait for tasks done
     pond.waitForTasks();
 }
-
-
-
 
 void test_motify_thread_numb(DynamicThreadPond& pond) 
 {
