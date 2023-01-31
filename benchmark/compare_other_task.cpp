@@ -61,9 +61,9 @@ void test_Hipe_balance() {
 //Notice that don't do two tests at once
 int main() 
 {
-    util::print(util::title("Hipe-Steady Run Memory Intensive Task"));
-    test_Hipe_steady();
+    // util::print(util::title("Hipe-Steady Run Memory Intensive Task"));
+    // test_Hipe_steady();
 
-    //util::print(util::title("Hipe-Balance Run Memory Intensive Task"));
-    //test_Hipe_balance();
+    util::print(util::title("Hipe-Balance Run Memory Intensive Task"));
+    test_Hipe_balance();
 }

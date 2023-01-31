@@ -14,7 +14,7 @@ void test_Hipe_steady_batch_submit()
 {
     hipe::util::print("\n", hipe::util::title("Test C++(11) Thread Pool Hipe-Steady-Batch-Submit(10)"));
 
-    hipe::SteadyThreadPond pond(thread_numb);
+    hipe::SteadyThreadPond pond(thread_numb, thread_numb*1000);
     hipe::util::Block<hipe::HipeTask> task_block(batch_size);
 
     auto foo = [&](uint task_numb) 
@@ -45,7 +45,7 @@ void test_Hipe_Balance_batch_submit()
 
     hipe::util::print("\n", hipe::util::title("Test C++(11) Thread Pool Hipe-Balance-Batch-Submit(10)"));
 
-    hipe::BalancedThreadPond pond(thread_numb);
+    hipe::BalancedThreadPond pond(thread_numb, thread_numb*1000);
     hipe::util::Block<hipe::HipeTask> task_block(batch_size);
 
     auto foo = [&](uint task_numb) 
@@ -73,6 +73,6 @@ void test_Hipe_Balance_batch_submit()
 int main() 
 {
     test_Hipe_Balance_batch_submit();
-    //test_Hipe_steady_batch_submit();
+    // test_Hipe_steady_batch_submit();
 }
 

@@ -237,10 +237,10 @@ void test_Hipe_balance()
 int main() {
 
     // test_single_thread();
-    // test_BS();
+    test_BS();
     // test_Hipe_dynamic();
     // test_Hipe_steady();
-    test_Hipe_balance();
+    // test_Hipe_balance();
 
 
 }
