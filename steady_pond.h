@@ -24,7 +24,7 @@ public:
         }
     }
 
-    bool loadTasks() 
+    bool tryLoadTasks() 
     {
         tq_locker.lock();
         public_tq.swap(buffer_tq);
@@ -134,7 +134,7 @@ private:
 
             } else {
                 // run tasks 
-                if (self.loadTasks()) {
+                if (self.tryLoadTasks()) {
                     self.runTasks();
                 }
             }

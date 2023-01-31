@@ -250,7 +250,7 @@ private:
 
         while (!stop) 
         {
-            // wait notify 
+            // wait notify  
             HipeUniqGuard locker(shared_locker);
             awake_cv.wait(locker, [this] { return !shared_tq.empty() || stop || shrink_numb > 0; });
 

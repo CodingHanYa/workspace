@@ -62,7 +62,7 @@ public:
     }
 
     // try load task from the task queue
-    bool tryloadTask() 
+    bool tryLoadTask() 
     {
         tq_locker.lock();
         if (!tq.empty()) {
@@ -104,7 +104,6 @@ private:
     void worker(int index) 
     {   
         auto& self = threads[index];
-        HipeTask task;
 
         while (!stop) 
         {
@@ -137,7 +136,7 @@ private:
             
             } else {
                 // try load task and run
-                if(self.tryloadTask()) {
+                if(self.tryLoadTask()) {
                     self.runTask();
                 }
             }
