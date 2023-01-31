@@ -316,7 +316,6 @@ protected:
                 break;
             }
         }
-
     }
 
     // calculate best cursor move limit
