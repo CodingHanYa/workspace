@@ -14,7 +14,7 @@ void test_Hipe_steady_batch_submit()
 {
     hipe::util::print("\n", hipe::util::title("Test C++(11) Thread Pool Hipe-Steady-Batch-Submit(10)"));
 
-    hipe::SteadyThreadPond pond(thread_numb, thread_numb*1000);
+    hipe::SteadyThreadPond pond(thread_numb);
     hipe::util::Block<hipe::HipeTask> task_block(batch_size);
 
     auto foo = [&](uint task_numb) 
@@ -22,7 +22,7 @@ void test_Hipe_steady_batch_submit()
         for (int i = 0; i < task_numb;) 
         {
             for (int j = 0; j < batch_size; ++j, ++i) {
-                task_block.add([]{std::vector<int>(200);});
+                task_block.add([]{});
             }
             pond.submitInBatch(task_block, batch_size);
             task_block.clean();
@@ -45,7 +45,7 @@ void test_Hipe_Balance_batch_submit()
 
     hipe::util::print("\n", hipe::util::title("Test C++(11) Thread Pool Hipe-Balance-Batch-Submit(10)"));
 
-    hipe::BalancedThreadPond pond(thread_numb,thread_numb*1000);
+    hipe::BalancedThreadPond pond(thread_numb);
     hipe::util::Block<hipe::HipeTask> task_block(batch_size);
 
     auto foo = [&](uint task_numb) 
@@ -53,7 +53,7 @@ void test_Hipe_Balance_batch_submit()
         for (int i = 0; i < task_numb;) 
         {
             for (int j = 0; j < batch_size; ++j, ++i) {
-                task_block.add([]{std::vector<int>(200);});
+                task_block.add([]{});
             }
             pond.submitInBatch(task_block, batch_size);
             task_block.clean();
@@ -72,7 +72,7 @@ void test_Hipe_Balance_batch_submit()
 //Notice that don't do two tests at once
 int main() 
 {
-    test_Hipe_Balance_batch_submit();
-    //test_Hipe_steady_batch_submit();
+    //test_Hipe_Balance_batch_submit();
+    test_Hipe_steady_batch_submit();
 }
 
