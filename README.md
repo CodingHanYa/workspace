@@ -1,10 +1,10 @@
-# 一个基于C++11的高性能的、跨平台的、简单易用的线程池框架（threadpool framework）
+# 一个纯C++11编写的高性能、跨平台、简单易用且功能强大的线程池框架（threadpool framework）
 
-**Hipe**是基于C++11编写的跨平台的、高性能的、简单易用且功能强大的线程池框架（thread pool framework），每秒能够空跑**上百万**的任务。其内置了三个职责分明的独立线程池：SteadyThreadPond稳定线程池、DynamicThreadPond动态线程池和BalancedThreadPond均衡线程池，并提供了诸如任务包装器、计时器、支持重定向的同步输出流、C++11自旋锁等实用的工具。使用者可以根据业务类型单独使用或者结合使用三种线程池来提供高并发服务。以下三种线程池分别称为Hipe-Steady、Hipe-Balance和Hipe-Dynamic。
+**Hipe**是基于C++11编写的跨平台的、高性能的、简单易用且功能强大的线程池框架（threadpool framework），每秒能够空跑**几百万**的任务。其内置了三个职责分明的独立线程池：SteadyThreadPond稳定线程池、DynamicThreadPond动态线程池和BalancedThreadPond均衡线程池，并提供了诸如任务包装器、计时器、支持重定向的同步输出流、C++11自旋锁等实用的工具。使用者可以根据业务类型单独使用或者结合使用三种线程池来提供高并发服务。以下三种线程池分别称为Hipe-Steady、Hipe-Balance和Hipe-Dynamic。
 
 bilibili源码剖析视频：https://space.bilibili.com/499976060 （根据源码迭代持续更新）
 
-## demo1-简单地提交一点任务
+## 我们从简单地提交一点任务开始
 
 ```C++
 
@@ -31,7 +31,7 @@ pond.close();
 ```
 
 
-## demo2-批量获取返回值
+## 当我们想要批量获取返回值
 
 ```C++
 
@@ -62,6 +62,36 @@ int main()
 
 ```
 
+## 当我们想要批量提交任务
+
+```C++
+
+#include "./Hipe/hipe.h" 
+#include <vector>
+using namespace hipe;
+
+int main() 
+{
+    // 均衡线程池，参数2为线程池缓冲任务容量
+    BalancedThreadPond pond(8, 800); 
+
+    // 任务容器
+    std::vector<std::function<void()>> tasks;
+
+    
+    int task_numb = 5;
+    for (int i = 0; i < task_numb; ++i) {
+        tasks.emplace_back([]{ /* empty task */ });
+    }
+
+    // 批量提交任务
+    pond.submitInBatch(tasks, task_numb);
+    pond.waitForTasks();
+
+}
+
+```
+
 
 
 更多接口的调用请大家阅读`hipe/interfaces/`，里面有全部的接口测试，并且每一个函数调用都有较为详细的注释。
@@ -81,9 +111,9 @@ Hipe-Steady所调用的线程类`DqThread`为每个线程都分配了公开任�
 
 Hipe-Balance对比Hipe-Steady除了对其所使用的线程类做了简化之外，其余的机制包括线程间负载均衡和任务溢出机制等都是相同的。提供的接口也是相同的。同时，与Hipe-Steady面向批量任务的思想不同，Hipe-Balance采用的是与Hipe-Dynamic相同的**面向单个任务**的思想，即每次只获取一个任务并执行。这也使得二者工作线程的工作方式略有不同。
 
-决定Hipe-Balanced和Hipe-Steay之间机制差异的根本原因在于其所采用的线程类的不同。前者采用的是`Oqthread`，译为**单队列线程**。内置了单条任务队列，主线程采用一种优于轮询的负载均衡机制向线程类内部的任务队列分发任务，工作线程直接查询该任务队列并获取任务。后者采用的是`DqThread`，译为双队列线程，采用的是队列交换的机制。
+决定Hipe-Balanced和Hipe-Steay之间机制差异的根本原因在于其所采用的线程类的不同。前者采用的是`Oqthread`，译为**单队列线程**。内置了单条任务队列，主线程采用一种优于轮询的负载均衡机制向线程类内部的任务队列分发任务，工作线程直接查询该任务队列并获取任务。后者采用的是`DqThread`，译为**双队列线程**，采用的是队列交换的机制。
 
-相比于Hipe-Steady，Hipe-Balanced在异步线程与主线程之间**竞争次数较多**的时候性能会有所下降，同时其**批量提交**接口的表现也会有所下降，甚至会低于其提交单个任务的接口（具体还要考虑任务类型等许多复杂的因素）。但是由于线程类中只有一条任务队列，因此所有任务都是可以被窃取的。这也导致Hipe-Balance在面对**不稳定的任务流**时（可能会有超时任务）具有更好的表现。
+相比于Hipe-Steady，Hipe-Balanced在异步线程与主线程之间**竞争次数较多**的时候性能会有所下降，同时其**批量提交**接口的表现也会有所下降，甚至有可能低于其提交单个任务的接口（具体还要考虑任务类型等许多复杂的因素）。但是由于线程类中只有一条任务队列，因此所有任务都是可以被**窃取**的。这也导致Hipe-Balance在面对**不稳定的任务流**时（可能会有超时任务）具有更好的表现。
 
 
 ## Hipe-DynamicThreadPond
@@ -100,7 +130,7 @@ Hipe-Dynamic采用的是**多线程竞争单任务队列**的模型。该任务�
 
 [bshoshany](https://github.com/bshoshany)/**[thread-pool](https://github.com/bshoshany/thread-pool)** （以下简称BS）是在GitHub上开源的已收获了**1k+stars** 的C++线程池，采用C++17编写，具有轻量，高效的特点。我们通过**加速比测试和空任务测试**，对比BS和Hipe的性能。实际上BS的底层机制与Hipe-Dynamic相似，都是多线程竞争一条任务队列，并且在没有任务时被条件变量阻塞。同时我们也通过其它任务测试和批量接口测试，对比Hipe-Steady和Hipe-Balance的性能差异。
 
-测试机器：16核_ubuntu20.04 （以下测试都开启O2优化）
+测试机器：16核_ubuntu20.04 （以下测试都开启**O2优化**）
 
 ### 加速比测试
 
@@ -191,7 +221,7 @@ threads: 16 | task-type: compute mode | task-numb: 64 | time-cost-per-task: 22.9
     Hipe-Balance: 9.88
 ```
 
-结果分析：四个线程池在加速比方面的性能都十分相近。
+结果分析：四个线程池在加速比方面的性能十分相近，这可能是因为任务数较少，执行任务的时间较长且在执行过程中不涉及缓存一致性等其它因素。因此线程池内部的编写细节对整体加速比的影响不大。
 
 ### 空任务测试
 
@@ -246,7 +276,7 @@ threads: 16 | task-type: empty task | task-numb: 1000000  | time-cost: 0.20107(s
 
 ### 其它任务测试
 
-测试原理：我们采用的是一个**内存密集型任务**（只在任务中申请一个vector），同时将线程数限制在较少的**4条**来对比Hipe-Steay和Hipe-Balance的性能。用于证明在某种情况下，例如工作线程的工作速度与主线程分配任务给该线程的速度相等，主线程与工作线程形成较强的竞争的情况下，Hipe-Steady对比Hipe-Balance更加卓越。其中的关键就是Hipe-Steady通过队列交换实现了部分读写分离，减少了一部分**潜在的**竞争。（测试20次取平均值）
+测试原理：我们采用的是一个**内存密集型任务**（只在任务中申请一个vector），同时将线程数限制在较少的**4条**来对比Hipe-Steay和Hipe-Balance的性能。用于证明在**某种情况**下，例如工作线程的工作速度与主线程分配任务给该线程的速度相等，主线程与工作线程形成较强的竞争的情况下，Hipe-Steady对比Hipe-Balance更加卓越。其中的关键就是Hipe-Steady通过队列交换实现了部分读写分离，减少了一部分**潜在的**竞争。（每次测试20次并取平均值）
 
 ```
 =============================================
@@ -268,8 +298,6 @@ thread-numb: 4  | task-numb: 1000000  | test-times: 20 | mean-time-cost: 0.21142
 ### 批量提交接口测试
 
 注意：单次批量提交的任务数为**10个**。每次测试之间留有**30秒以上**的时间间隔。
-
-
 
 **<<测试1>>**
 
@@ -331,11 +359,23 @@ threads: 16 | task-type: empty task | task-numb: 100000000 | time-cost: 16.73147
 
 ### 关于稳定性
 
-在稳定性测试过程中，我给Hipe-Steady和Hipe-Balance做了快速推入大量任务的测试。调用了`submit()`、`submitForReturn()`和`submitInBatch`三个接口，分别推入**1000000个**任务。最后用`run.sh`脚本测试了**1000个用例**，通过率为100%。而对Hipe-Dynamic的测试除了测试提交任务的接口，还测试了添加线程`addThreads()`、减少线程`delThreads`和调整线程数`adjustThreads`的接口。我跑了**10000个用例**，最终都通过测试。
+在稳定性测试过程中，我给Hipe-Steady和Hipe-Balance做了快速推入大量任务的测试。调用了`submit()`、`submitForReturn()`和`submitInBatch`三个接口，分别推入**1000000个**任务。最后用`run.sh`脚本测试了**1000个用例**，通过率为100%。而对Hipe-Dynamic的测试除了测试提交任务的接口，还测试了添加线程`addThreads()`、减少线程`delThreads`和调整线程数`adjustThreads`的接口。我跑了**10000个用例**，通过率也为100%。
 
 尽管如此，Hipe仍需要时间的检验，也需要诸位的帮助。希望大家能一起出力，将Hipe变得更好吧。
 
+## 关于Hipe接下来改进方向的提议
 
+1. 通过优化锁来提高三个线程池的性能
+
+2. 在基本不影响原来性能的前提下，为Hipe-Balance和Hipe-Steady添加扩缩容机制。（私以为可以将采用util::block来保存线程，当然这只是一个设想）
+
+3. 在基本不影响原来性能的前提下，为Hipe-Balance和Hipe-Steady添加性能监测机制。
+
+4. 为Hipe制作图形化界面，用于监控Hipe的执行速度并提供日志功能。
+
+5. 如果采用C++14以上的C++版本能做到更高的性能的话，提供相应的版本。
+
+最后，本人学识有限，目前也是在不断地学习中。如果您发现了Hipe的不足之处，请在issue中提出或者通过下方联系方式联系我。我非常欢迎，也非常希望各位能为打造这样一个功能强大的高性能线程池框架共同努力。世事无常，也许有一天Hipe能在C++并发领域成长为真正的佼佼者，解决众多开发者的并发难题。
 
 ## 文件树
 
@@ -364,7 +404,7 @@ threads: 16 | task-type: empty task | task-numb: 100000000 | time-cost: 16.73147
 ├── stability                            稳定性测试
 │   ├── makefile
 │   ├── run.sh                           协助测试的脚本
-│   ├── test_dynamic.cpp                 测试动态线程池的稳定性
+│   ├── test_dynamic.cpp                 测试动态线程池的稳定性（推入大量任务并做多次测试）
 |   ├── test_balance.cpp                 测试均衡线程池的稳定性（推入大量任务并做多次测试）
 │   └── test_steady.cpp                  测试稳定线程池的稳定性（推入大量任务并做多次测试）
 ├── steady_pond.h                        稳定线程池
