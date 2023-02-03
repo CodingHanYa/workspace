@@ -442,7 +442,7 @@ protected:
      * @param right right edge(not included)
     */ 
     template <typename T>
-    void taskOverFlow(T&& tasks, size_t left, size_t right) 
+    void taskOverFlow(T&& tasks, int left, int right) 
     {
         overflow_tasks.reset(right-left);
 
