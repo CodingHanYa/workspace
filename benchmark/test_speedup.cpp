@@ -70,8 +70,6 @@ void test_BS()
         pool.wait_for_tasks();
     };
 
-    double min_cost = __DBL_MAX__;
-    int min_cost_tasks = 0;
 
     for (int i = 0; i < 6; ++i, task_numb += 12) 
     {
@@ -85,14 +83,8 @@ void test_BS()
         printf("threads: %-2d | task-type: %s | task-numb: %-2d | time-cost-per-task: %.5f(ms)\n",
                 thread_numb, "compute mode", task_numb, multi_per_task);
 
-        // get min one
-        min_cost = std::min(min_cost, multi_per_task);
-        if (min_cost == multi_per_task) {
-            min_cost_tasks = task_numb;
-        }
     }
 
-    // Maximum speedup obtained by multithreading vs. single-threading: 18.7x, using 24 tasks.
 
 }
 
@@ -118,8 +110,6 @@ void test_Hipe_steady()
         pond.waitForTasks();
     };
 
-    double min_cost = __DBL_MAX__;
-    int min_cost_tasks = 0;
 
     for (int i = 0; i < 6; ++i, task_numb += 12) 
     {
@@ -132,12 +122,6 @@ void test_Hipe_steady()
 
         printf("threads: %-2d | task-type: %s | task-numb: %-2d | time-cost-per-task: %.5f(ms)\n",
                 thread_numb, "compute mode", task_numb, multi_per_task);
-
-        // get min one
-        min_cost = std::min(min_cost, multi_per_task);
-        if (min_cost == multi_per_task) {
-            min_cost_tasks = task_numb;
-        }
     }
 
 }
@@ -164,8 +148,6 @@ void test_Hipe_dynamic()
         pond.waitForTasks();
     };
 
-    double min_cost = __DBL_MAX__;
-    int min_cost_tasks = 0;
 
     for (int i = 0; i < 6; ++i, task_numb += 12) 
     {
@@ -178,12 +160,6 @@ void test_Hipe_dynamic()
 
         printf("threads: %-2d | task-type: %s | task-numb: %-2d | time-cost-per-task: %.5f(ms)\n",
                 thread_numb, "compute mode", task_numb, multi_per_task);
-
-        // get min one
-        min_cost = std::min(min_cost, multi_per_task);
-        if (min_cost == multi_per_task) {
-            min_cost_tasks = task_numb;
-        }
     }
 
 }
@@ -209,9 +185,6 @@ void test_Hipe_balance()
         pond.waitForTasks();
     };
 
-    double min_cost = __DBL_MAX__;
-    int min_cost_tasks = 0;
-
     for (int i = 0; i < 6; ++i, task_numb += 12) 
     {
         double total = 0.0;
@@ -224,11 +197,6 @@ void test_Hipe_balance()
         printf("threads: %-2d | task-type: %s | task-numb: %-2d | time-cost-per-task: %.5f(ms)\n",
                 thread_numb, "compute mode", task_numb, multi_per_task);
 
-        // get min one
-        min_cost = std::min(min_cost, multi_per_task);
-        if (min_cost == multi_per_task) {
-            min_cost_tasks = task_numb;
-        }
     }
 }
 
@@ -236,8 +204,8 @@ void test_Hipe_balance()
 //Notice that don't do two tests at once
 int main() {
 
-    // test_single_thread();
-    test_BS();
+    test_single_thread();
+    // test_BS();
     // test_Hipe_dynamic();
     // test_Hipe_steady();
     // test_Hipe_balance();

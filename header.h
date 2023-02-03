@@ -270,7 +270,6 @@ public:
         if (thread_cap) 
         {
             moveCursorToLeastBusy();
-            int start = cursor;
             for (size_t i = 0; i < size; ++i) 
             {
                 // admit one task

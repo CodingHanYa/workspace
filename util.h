@@ -332,14 +332,15 @@ namespace util {
 
 
         Block(Block&& other) 
-            : blok(std::move(other.blok))
-            , sz(other.sz)
-            , end(other.end) {
+            : sz(other.sz)
+            , end(other.end) 
+            , blok(std::move(other.blok)) {
         }
 
-        Block(size_t sz)
-            : blok(new T[sz]) 
-            , sz(sz) {
+        Block(size_t size)
+            : sz(size)
+            , end(0) 
+            , blok(new T[size]) {
         }
 
         Block(const Block& other) = delete;
@@ -373,6 +374,12 @@ namespace util {
         void add(T&& tar) {
             blok[end++] = std::forward<T>(tar);
         }
+
+        // pop up the last element
+        void reduce() {
+            end--;
+        }
+
 
         // fill element. Notice that the element must can be copied !
         void fill(const T& tar) {

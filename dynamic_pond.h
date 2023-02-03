@@ -233,7 +233,7 @@ public:
         {
             HipeLockGuard lock(shared_locker);
             total_tasks += size;
-            for (int i = 0; i < size; ++i) {
+            for (size_t i = 0; i < size; ++i) {
                 shared_tq.emplace(std::move(cont[i]));
             }
         }
