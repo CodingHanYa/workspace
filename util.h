@@ -390,7 +390,7 @@ namespace util {
         void reset(size_t new_sz) {
             blok.reset(new T[new_sz]);
             sz = new_sz;
-            end = 0;/
+            end = 0;
         }
 
         // release the heap space
