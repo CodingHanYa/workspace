@@ -54,7 +54,7 @@ namespace util {
      * *   title   *
      * =============
     */
-    inline std::string title(std::string tar, size_t left_right_edge = 4) 
+    inline std::string title(std::string tar, int left_right_edge = 4) 
     {
         static std::string ele1 = "=";
         static std::string ele2 = " ";
@@ -80,7 +80,7 @@ namespace util {
      * just like this
      * <[ something ]>
     */
-    inline std::string strong(std::string tar, size_t left_right_edge = 2) 
+    inline std::string strong(std::string tar, int left_right_edge = 2) 
     {
         static std::string ele1 = "<[";
         static std::string ele2 = "]>";
@@ -97,7 +97,7 @@ namespace util {
 
     }  
 
-    inline std::string boundary(char element, size_t length = 10) {
+    inline std::string boundary(char element, int length = 10) {
         return std::string(length, element);
     } 
 
@@ -390,7 +390,7 @@ namespace util {
         void reset(size_t new_sz) {
             blok.reset(new T[new_sz]);
             sz = new_sz;
-            end = 0;
+            end = 0;/
         }
 
         // release the heap space
