@@ -108,7 +108,7 @@ void test_task_overflow()
 
 }
 
-void test_other_interface(SteadyThreadPond& pond, uint thread_numb) 
+void test_other_interface(SteadyThreadPond& pond, int thread_numb) 
 {
     stream.print("\n", util::boundary('=', 11), util::strong("other interface"), util::boundary('=', 13));
 

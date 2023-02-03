@@ -6,7 +6,7 @@ int main()
     hipe::DynamicThreadPond pond(8);
 
     std::atomic_int var(0);
-    uint each_task_nums = 100;
+    int each_task_nums = 100;
 
     for (int i = 1; i < 20; ++i) {
         pond.addThreads(i);
@@ -21,7 +21,7 @@ int main()
         pond.submitForReturn([&]{ var++; });
     }
 
-    uint block_size = 100;
+    int block_size = 100;
     util::Block<std::function<void()>> block(block_size);
 
     for (int i = 0; i < each_task_nums/block_size; ++i) 

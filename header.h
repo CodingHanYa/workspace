@@ -1,6 +1,7 @@
 #pragma once
 #include "./util.h"
 #include <vector>
+#include <cstddef>
 #include <string>
 #include <queue>
 #include <mutex>
@@ -50,7 +51,7 @@ protected:
 
 public:
 
-    uint getTasksNumb() {
+    int getTasksNumb() {
         return task_numb.load();
     }
 
@@ -120,7 +121,7 @@ protected:
     std::unique_ptr<Ttype[]> threads = {nullptr}; 
 
     // task capacity per thread
-    uint thread_cap = 0;
+    int thread_cap = 0;
 
     // tasks that failed to submit
     util::Block<HipeTask> overflow_tasks = {0};
@@ -134,11 +135,14 @@ protected:
      * @param thread_numb fixed thread number
      * @param task_capacity task capacity of the pond, default: unlimited
     */
-    FixedThreadPond(uint thread_numb = 0, uint task_capacity = HipeUnlimited) 
+    FixedThreadPond(int thread_numb = 0, int task_capacity = HipeUnlimited) 
     {
+        assert(thread_numb >= 0);
+        assert(task_capacity >= 0);
+
         // calculate thread number
         if (!thread_numb) {
-            uint tmp = std::thread::hardware_concurrency();
+            int tmp = std::thread::hardware_concurrency();
             this->thread_numb = (tmp > 0) ? tmp : 1; 
         } else {
             this->thread_numb = thread_numb;
@@ -200,9 +204,9 @@ public:
     /**
      * get block tasks number now
     */
-    uint getTasksRemain() 
+    int getTasksRemain() 
     {
-        uint ret = 0;
+        int ret = 0;
         for (int i = 0; i < thread_numb; ++i) {
             ret += threads[i].getTasksNumb();
         }
@@ -213,7 +217,7 @@ public:
     /**
      * get the number of threads 
     */
-    uint getThreadNumb() {
+    int getThreadNumb() {
         return thread_numb;
     }
 
@@ -261,13 +265,13 @@ public:
      * @param size the size of the container
     */
     template <typename _Container>
-    void submitInBatch(_Container&& container, uint size) 
+    void submitInBatch(_Container&& container, size_t size) 
     {
         if (thread_cap) 
         {
             moveCursorToLeastBusy();
             int start = cursor;
-            for (int i = 0; i < size; ++i) 
+            for (size_t i = 0; i < size; ++i) 
             {
                 // admit one task
                 if (admit()) {
@@ -332,11 +336,13 @@ protected:
 public:
 
     // enable task stealing between threads
-    void enableStealTasks(uint max_numb = 0) 
+    void enableStealTasks(int max_numb = 0) 
     {
+        assert(max_numb >= 0);
+
         if (!max_numb) {
             max_numb = std::max(thread_numb/4, 1);
-            max_numb = std::min(max_numb, (uint)8);
+            max_numb = std::min(max_numb, 8);
         }
         if (max_numb >= thread_numb) {
             throw std::invalid_argument("The number of stealing threads must smaller than thread number and greater than zero");
@@ -395,7 +401,7 @@ protected:
      * This function will possibly move the cursor of the thread pond for enough capacity.
      * @param tar_capacity target capacity
     */
-    bool admit(uint tar_capacity = 1) 
+    bool admit(int tar_capacity = 1) 
     {
         if (!thread_cap) {
             return true;

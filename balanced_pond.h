@@ -47,9 +47,9 @@ public:
 
     // push tasks to the task queue
     template <typename _Container>
-    void enqueue(_Container& cont, uint size) {
+    void enqueue(_Container& cont, size_t size) {
         util::spinlock_guard lock(tq_locker);
-        for (int i = 0; i < size; ++i) {
+        for (size_t i = 0; i < size; ++i) {
             tq.emplace(std::move(cont[i]));
             task_numb++;
         }
@@ -88,7 +88,7 @@ public:
      * @param thread_numb fixed thread number
      * @param task_capacity task capacity of the pond, default: unlimited
     */
-    BalancedThreadPond(uint thread_numb = 0, uint task_capacity = HipeUnlimited) 
+    BalancedThreadPond(int thread_numb = 0, int task_capacity = HipeUnlimited) 
         : FixedThreadPond(thread_numb, task_capacity)
     {
         // create

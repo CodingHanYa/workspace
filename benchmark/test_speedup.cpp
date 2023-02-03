@@ -4,17 +4,17 @@
 
 
 double single_result = 0.0;
-uint repeat_times = 5;
+int repeat_times = 5;
 
-uint vec_size = 4096;
-uint vec_nums = 2048;
+int vec_size = 4096;
+int vec_nums = 2048;
 std::vector<std::vector<double>> results(vec_nums, std::vector<double>(vec_size));
 
 // computation intensive task
 void computation_intensive_task() 
 {
     for (int i = 0; i < vec_nums; ++i) {
-        for (size_t j = 0; j < vec_size; ++j) {
+        for (int j = 0; j < vec_size; ++j) {
             results[i][j] = std::log(std::sqrt(std::exp(std::sin(i) + std::cos(j))));
         }
     }

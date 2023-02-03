@@ -5,20 +5,20 @@
 #include "../hipe.h"
 
 bool closed = false;
-uint tnumb = 8;
-uint tasks_numb = 15000;  
-uint milli_per_submit = 500; // 0.5s
+int tnumb = 8;
+int tasks_numb = 15000;  
+int milli_per_submit = 500; // 0.5s
 
 void manager(hipe::DynamicThreadPond* pond) 
 {   
     enum class Action {add, del};
     Action last_act = Action::add;
 
-    uint unit = 2;
-    uint prev_load = 0;
-    uint max_thread_numb = 200;
-    uint min_thread_numb = 8;
-    uint total = 0;
+    int unit = 2;
+    int prev_load = 0;
+    int max_thread_numb = 200;
+    int min_thread_numb = 8;
+    int total = 0;
     
 
     while (!closed) 

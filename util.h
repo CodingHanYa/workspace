@@ -5,33 +5,30 @@
 #include <mutex>
 #include <future>
 #include <atomic>
+#include <cstddef>
 #include <memory>
 #include <iostream>
 
-
 namespace hipe {
-
-
 
 /**
  * util for hipe
 */
-namespace util 
-{
+namespace util {
 
-    inline void sleep_for_seconds(uint sec) {
+    inline void sleep_for_seconds(int sec) {
         std::this_thread::sleep_for(std::chrono::seconds(sec));
     }
 
-    inline void sleep_for_milli(uint milli) {
+    inline void sleep_for_milli(int milli) {
         std::this_thread::sleep_for(std::chrono::milliseconds(milli));
     }
 
-    inline void sleep_for_micro(uint micro) {
+    inline void sleep_for_micro(int micro) {
         std::this_thread::sleep_for(std::chrono::microseconds(micro));
     }
 
-    inline void sleep_for_nano(uint nano) {
+    inline void sleep_for_nano(int nano) {
         std::this_thread::sleep_for(std::chrono::nanoseconds(nano));
     }
 
@@ -407,10 +404,6 @@ namespace util
         virtual void sort() {}
 
     };
-
 };
-
-
-
 
 }

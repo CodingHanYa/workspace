@@ -4,8 +4,8 @@
 //       compare the performance of the interface "submit" between Hipe-Steady and Hipe-Balance
 // =========================================================================================================
 
-uint task_numb = 1000000;
-uint max_thread_numb = 50;
+int task_numb = 1000000;
+int max_thread_numb = 50;
 
 int main() 
 {

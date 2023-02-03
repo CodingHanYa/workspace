@@ -21,7 +21,7 @@ class DynamicThreadPond
     bool waiting = {false};
 
     // task number
-    std::atomic_uint total_tasks = {0};
+    std::atomic_int total_tasks = {0};
 
     // shared task queue
     std::queue<HipeTask> shared_tq = {};
@@ -39,13 +39,13 @@ class DynamicThreadPond
     std::vector<std::thread> pond;
 
     // the shrinking number of threads
-    std::atomic_uint shrink_numb = {0};
+    std::atomic_int shrink_numb = {0};
 
     // deleted thread index
     std::queue<int> deleted_threads;
 
     // number of the tasks loaded by thread
-    std::atomic_uint task_loaded = {0};
+    std::atomic_int task_loaded = {0};
 
 
 
@@ -55,8 +55,9 @@ public:
      * @brief construct DynamicThreadPond
      * @param tnumb initial thread number
     */
-    DynamicThreadPond(uint tnumb = 0): thread_numb(tnumb)
+    DynamicThreadPond(int tnumb = 0): thread_numb(tnumb)
     {
+        assert(tnumb >= 0);
         for (int i = 0; i < thread_numb; ++i) {
             pond.emplace_back(std::thread(&DynamicThreadPond::worker, this, i));
         }
@@ -154,12 +155,12 @@ public:
 
 
     // get task number of the pond, tasks in progress are also counted.
-    uint getTasksRemain() {
+    int getTasksRemain() {
         return total_tasks.load();
     }
 
     // get number of the tasks loaded by thread
-    uint getTaskLoaded() {
+    int getTaskLoaded() {
         return task_loaded.load();
     }
 
@@ -167,12 +168,12 @@ public:
      * reset the number of tasks loaded by thread and return the old value (atomic operation)
      * @return the old value
     */ 
-    uint resetTaskLoaded() {
+    int resetTaskLoaded() {
         return task_loaded.exchange(0);
     }
 
     // get thread number now
-    uint getThreadNumb() {
+    int getThreadNumb() {
         return thread_numb;
     }
 
@@ -227,7 +228,7 @@ public:
      * @param size the size of the container
     */
     template <typename _Container>
-    void submitInBatch(_Container& cont, uint size) 
+    void submitInBatch(_Container& cont, size_t size) 
     {
         {
             HipeLockGuard lock(shared_locker);

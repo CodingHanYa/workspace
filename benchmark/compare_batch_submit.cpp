@@ -6,9 +6,9 @@ using namespace hipe;
 // =========================================================================================================
 
 int  thread_numb = 16;
-uint batch_size = 10;
-uint min_task_numb = 100;
-uint max_task_numb = 100000000;
+int batch_size = 10;
+int min_task_numb = 100;
+int max_task_numb = 100000000;
 
 void test_Hipe_steady_batch_submit() 
 {
@@ -17,7 +17,7 @@ void test_Hipe_steady_batch_submit()
     hipe::SteadyThreadPond pond(thread_numb, thread_numb*1000);
     hipe::util::Block<hipe::HipeTask> task_block(batch_size);
 
-    auto foo = [&](uint task_numb) 
+    auto foo = [&](int task_numb) 
     {
         for (int i = 0; i < task_numb;) 
         {
@@ -31,7 +31,7 @@ void test_Hipe_steady_batch_submit()
         //util::print("steady-count = ", count);
     };
 
-    for (uint nums = min_task_numb; nums <= max_task_numb; nums *= 10) 
+    for (int nums = min_task_numb; nums <= max_task_numb; nums *= 10) 
     {
         double time_cost = hipe::util::timewait(foo, nums);
         printf("threads: %-2d | task-type: empty task | task-numb: %-9d | time-cost: %.5f(s)\n",
@@ -48,7 +48,7 @@ void test_Hipe_Balance_batch_submit()
     hipe::BalancedThreadPond pond(thread_numb, thread_numb*1000);
     hipe::util::Block<hipe::HipeTask> task_block(batch_size);
 
-    auto foo = [&](uint task_numb) 
+    auto foo = [&](int task_numb) 
     {
         for (int i = 0; i < task_numb;) 
         {
@@ -61,7 +61,7 @@ void test_Hipe_Balance_batch_submit()
         pond.waitForTasks();
     };
 
-    for (uint nums = min_task_numb; nums <= max_task_numb; nums *= 10) 
+    for (int nums = min_task_numb; nums <= max_task_numb; nums *= 10) 
     {
         double time_cost = hipe::util::timewait(foo, nums);
         printf("threads: %-2d | task-type: empty task | task-numb: %-9d | time-cost: %.5f(s)\n",

@@ -7,7 +7,7 @@ int main()
     pond.enableStealTasks(4);
 
     std::atomic_int var(0);
-    uint each_task_nums = 1000000;
+    int each_task_nums = 1000000;
 
     for (int i = 0; i < each_task_nums; ++i) {
         pond.submit([&]{ var++; });
@@ -16,7 +16,7 @@ int main()
         pond.submitForReturn([&]{ var++; });
     }
 
-    uint block_size = 100;
+    int block_size = 100;
     util::Block<std::function<void()>> block(block_size);
 
     for (int i = 0; i < each_task_nums/block_size; ++i) 
