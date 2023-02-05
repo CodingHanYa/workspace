@@ -129,7 +129,7 @@ Hipe-Steady所调用的线程类`DqThread`为每个线程都分配了公开任�
 
 **框架图**
 
-![Hipe-Steady](https://pic.imgdb.cn/item/63df2e464757feff33bbe0bf.jpg)
+![Hipe-Steady.jpg](https://s2.loli.net/2023/02/05/ky6OcLd1MrjzU84.jpg)
 
 ## Hipe-BalancedThreadPond
 
@@ -143,7 +143,7 @@ Hipe-Balance对比Hipe-Steady除了对其所使用的线程类做了简化之外
 
 **框架图**
 
-![Hipe-Balance](https://pic.imgdb.cn/item/63df2f234757feff33bd2de3.jpg)
+![Hipe-Balance.jpg](https://s2.loli.net/2023/02/05/xlpTYmAjCzXnUGF.jpg)
 
 
 ## Hipe-DynamicThreadPond
@@ -158,7 +158,7 @@ Hipe-Dynamic采用的是**多线程竞争单任务队列**的模型。该任务�
 
 **框架图**
 
-![](https://pic.imgdb.cn/item/63df295f4757feff33b379d7.jpg)
+![Hipe-Dynamic.jpg](https://s2.loli.net/2023/02/05/lYnbNxmREkzKAH7.jpg)
 
 
 
