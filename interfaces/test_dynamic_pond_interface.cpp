@@ -3,7 +3,7 @@
 using namespace hipe;
 
 util::SyncStream stream;
-uint thread_numb = 16;
+int thread_numb = 16;
 
 void foo1()
 {

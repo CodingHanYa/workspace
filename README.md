@@ -150,13 +150,13 @@ Hipe-Dynamic采用的是**多线程竞争单任务队列**
 //    computation intensive task(计算密集型任务)
 // ================================================
 
-uint vec_size = 4096;
-uint vec_nums = 2048;
+int vec_size = 4096;
+int vec_nums = 2048;
 std::vector<std::vector<double>> results(vec_nums, std::vector<double>(vec_size));
 
 void computation_intensive_task() {
     for (int i = 0; i < vec_nums; ++i) {
-        for (size_t j = 0; j < vec_size; ++j) {
+        for (int j = 0; j < vec_size; ++j) {
             results[i][j] = std::log(std::sqrt(std::exp(std::sin(i) + std::cos(j))));
         }
     }
