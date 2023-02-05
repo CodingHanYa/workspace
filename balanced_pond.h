@@ -46,8 +46,8 @@ public:
     }
 
     // push tasks to the task queue
-    template <typename _Container>
-    void enqueue(_Container& cont, size_t size) {
+    template <typename Container_>
+    void enqueue(Container_& cont, size_t size) {
         util::spinlock_guard lock(tq_locker);
         for (size_t i = 0; i < size; ++i) {
             tq.emplace(std::move(cont[i]));
@@ -88,16 +88,17 @@ public:
      * @param thread_numb fixed thread number
      * @param task_capacity task capacity of the pond, default: unlimited
     */
-    BalancedThreadPond(int thread_numb = 0, int task_capacity = HipeUnlimited) 
+    explicit BalancedThreadPond(int thread_numb = 0, int task_capacity = HipeUnlimited)
         : FixedThreadPond(thread_numb, task_capacity)
     {
         // create
         threads.reset(new OqThread[this->thread_numb]);
+		
         for (int i = 0; i < this->thread_numb; ++i) {
-            threads[i].bindHandle(std::thread(&BalancedThreadPond::worker, this, i));
+            threads[i].bindHandle(AutoThread(&BalancedThreadPond::worker, this, i));
         }
     }
-    ~BalancedThreadPond() {}
+    ~BalancedThreadPond() override = default;
 
 private:
 
@@ -107,7 +108,7 @@ private:
 
         while (!stop) 
         {
-            // yeild if no tasks
+            // yield if no tasks
             if (self.notask()) 
             {
                 if (self.isWaiting()) {

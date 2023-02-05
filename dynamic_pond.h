@@ -55,11 +55,11 @@ public:
      * @brief construct DynamicThreadPond
      * @param tnumb initial thread number
     */
-    DynamicThreadPond(int tnumb = 0): thread_numb(tnumb)
+    explicit DynamicThreadPond(int tnumb = 0): thread_numb(tnumb)
     {
         assert(tnumb >= 0);
         for (int i = 0; i < thread_numb; ++i) {
-            pond.emplace_back(std::thread(&DynamicThreadPond::worker, this, i));
+            pond.emplace_back(&DynamicThreadPond::worker, this, i);
         }
     }
 
@@ -112,8 +112,8 @@ public:
 
             } else {
                 shared_locker.unlock();
-                int idx = pond.size();
-                pond.emplace_back(std::thread(&DynamicThreadPond::worker, this, idx));
+                int index = static_cast<int>(pond.size());
+                pond.emplace_back(&DynamicThreadPond::worker, this, index);
             } 
             thread_numb++;
         }
@@ -173,7 +173,7 @@ public:
     }
 
     // get thread number now
-    int getThreadNumb() {
+    int getThreadNumb() const {
         return thread_numb;
     }
 
@@ -188,14 +188,14 @@ public:
 
     /**
      * @brief submit task
-     * @param foo An runable object
+     * @param foo An runnable object
     */
-    template <typename _Runable>
-    void submit(_Runable&& foo) 
+    template <typename Runnable_>
+    void submit(Runnable_&& foo)
     {
         {
             HipeLockGuard lock(shared_locker);
-            shared_tq.emplace(std::forward<_Runable>(foo));
+            shared_tq.emplace(std::forward<Runnable_>(foo));
             ++total_tasks;
         }
         awake_cv.notify_one();
@@ -203,14 +203,14 @@ public:
 
     /**
      * @brief submit task and get return
-     * @param foo a runable object
+     * @param foo a runnable object
      * @return a future 
     */
-    template <typename _Runable>
-    auto submitForReturn(_Runable&& foo) -> std::future<typename std::result_of<_Runable()>::type> 
+    template <typename Runnable_>
+    auto submitForReturn(Runnable_&& foo) -> std::future<typename std::result_of<Runnable_()>::type>
     {
-        using RT = typename std::result_of<_Runable()>::type;
-        std::packaged_task<RT()> pack(std::move(foo));
+        using RT = typename std::result_of<Runnable_()>::type;
+        std::packaged_task<RT()> pack(std::forward<Runnable_>(foo));
         std::future<RT> fut(pack.get_future()); 
 
         {
@@ -227,12 +227,12 @@ public:
      * @param cont task container
      * @param size the size of the container
     */
-    template <typename _Container>
-    void submitInBatch(_Container& cont, size_t size) 
+    template <typename Container_>
+    void submitInBatch(Container_& cont, size_t size)
     {
         {
             HipeLockGuard lock(shared_locker);
-            total_tasks += size;
+            total_tasks += static_cast<int>(size);
             for (size_t i = 0; i < size; ++i) {
                 shared_tq.emplace(std::move(cont[i]));
             }
@@ -274,7 +274,7 @@ private:
                 --total_tasks;
 
                 if (waiting) {
-                    HipeUniqGuard locker(shared_locker);
+                    HipeUniqGuard inner_locker(shared_locker);
                     task_done_cv.notify_one();
                 }
             }
@@ -284,4 +284,4 @@ private:
 };
 
 
-};
+}
