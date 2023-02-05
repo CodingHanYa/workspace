@@ -1,8 +1,10 @@
-# 一个采用C++11编写的高性能、跨平台、简单易用且功能强大的线程池框架（threadpool framework）
+# 一个采用C++11编写的高性能、跨平台、简单易用且功能强大的线程池框架（A threadpool framework）
 
-**Hipe**是基于C++11编写的跨平台的、高性能的、简单易用且功能强大的线程池框架（threadpool framework），每秒能够空跑**几百万**的任务。其内置了三个职责分明的独立线程池：SteadyThreadPond稳定线程池、DynamicThreadPond动态线程池和BalancedThreadPond均衡线程池，并提供了诸如任务包装器、计时器、支持重定向的同步输出流、C++11自旋锁等实用的工具。使用者可以根据业务类型单独使用或者结合使用三种线程池来提供高并发服务。以下三种线程池分别称为Hipe-Steady、Hipe-Balance和Hipe-Dynamic。
+**Hipe**是基于C++11编写的跨平台的、高性能的、简单易用且功能强大的线程池框架（threadpool framework），每秒能够空跑**几百万以上**的任务。其内置了三个职责分明的独立线程池：SteadyThreadPond稳定线程池、DynamicThreadPond动态线程池和BalancedThreadPond均衡线程池，并提供了诸如任务包装器、计时器、支持重定向的同步输出流、C++11自旋锁等实用的工具。使用者可以根据业务类型单独使用或者结合使用三种线程池来提供高并发服务。以下三种线程池分别称为Hipe-Steady、Hipe-Balance和Hipe-Dynamic。
 
 bilibili源码剖析视频：https://space.bilibili.com/499976060 （根据源码迭代持续更新）
+
+
 
 ## 我们从简单地提交一点任务开始
 
@@ -74,10 +76,9 @@ int main()
 {
     // 均衡线程池，参数2为线程池缓冲任务容量
     BalancedThreadPond pond(8, 800); 
-
+    
     // 任务容器
     std::vector<std::function<void()>> tasks;
-
     
     int task_numb = 5;
     for (int i = 0; i < task_numb; ++i) {
@@ -92,18 +93,43 @@ int main()
 
 ```
 
-
-
 更多接口的调用请大家阅读`hipe/interfaces/`，里面有几乎全部的接口测试，并且每一个函数调用都有较为详细的注释。
 
 
 
+## 注意事项
+
+编译：导入头文件后无需再链接头文件（采用的编译工具能自动识别头文件），在编译末尾加上`-lpthread`即可。如在linux系统终端采用：
+
+`g++ ./demo1.cpp -o demo -lpthread && ./demo`
+
+
+
+一些错误使用方法：
+
+1 - 将`waitForTasks()`接口作为**同一个线程池**的任务来执行，会导致执行该任务的线程永远阻塞。例如：
+
+```C++
+SteadyThreadPond pond(8);
+pond.submut([&]{pond.waitForTasks();});
+```
+
+2 - 主线程和异步线程调用相同的线程池接口，导致数据竞争，引发程序中断。需要注意！Hipe的所有接口都**不是线程安全**的，所有接口在实现时均不考虑线程之间的竞争问题。
+
+​	
+
 ## Hipe-SteadyThreadPond
 Hipe-Steady是Hipe提供的稳定的、具有固定线程数的线程池。支持批量提交任务和批量执行任务、支持有界任务队列和无界任务队列、支持池中线程的**任务窃取机制**。任务溢出时支持**注册回调**并执行或者**抛出异常**。
 
-Hipe-Steady所调用的线程类`DqThread`为每个线程都分配了公开任务队列、缓冲任务队列和控制线程的同步变量（thread-local机制），尽量降低**乒乓缓存**和**线程同步**对线程池性能的影响。工作线程通过队列替换**批量下载**公开队列的任务到缓冲队列中执行。生产线程则通过公开任务队列为工作线程**分配任务**（采用了一种优于轮询的**负载均衡**机制）。通过公开队列和缓冲队列（或说私有队列）替换的机制进行**读写分离**，再通过加**轻锁**（C++11原子量实现的自旋锁）的方式极大地提高了线程池的性能。
+Hipe-Steady所调用的线程类`DqThread`为每个线程都分配了公开任务队列、缓冲任务队列和控制线程的同步变量（thread-local机制），尽量降低**乒乓缓存**和**线程同步**对线程池性能的影响。工作线程通过队列替换**批量下载**公开队列的任务到缓冲队列中执行。生产线程则通过公开任务队列为工作线程**分配任务**（采用了一种优于轮询的**负载均衡**机制）。公开队列和缓冲队列（或说私有队列）替换的机制进行**读写分离**，再通过加**轻锁**（C++11原子量实现的自旋锁）的方式极大地提高了线程池的性能。
 
 由于其底层的实现机制，Hipe-Steady适用于**稳定的**（避免超时任务阻塞线程）、**任务量大**（任务传递的优势得以体现）的任务流。也可以说Hipe-Steady适合作为核心线程池（能够处理基准任务并长时间运行），而当可以**定制容量**的Hipe-Steady面临任务数量超过设定值时 —— 即**任务溢出**时，我们可以通过定制的**回调函数**拉取出溢出的任务，并把这些任务推到我们的动态线程池DynamicThreadPond中。在这个情景中，DynamicThreadPond或许可以被叫做CacheThreadPond缓冲线程池。关于二者之间如何协调运作，大家可以阅读`Hipe/demo/demo1`.在这个demo中我们展示了如何把DynamicThreadPond用作Hipe-Steady的缓冲池。
+
+
+
+**框架图**
+
+![Hipe-Steady](https://pic.imgdb.cn/item/63df2e464757feff33bbe0bf.jpg)
 
 ## Hipe-BalancedThreadPond
 
@@ -114,6 +140,12 @@ Hipe-Balance对比Hipe-Steady除了对其所使用的线程类做了简化之外
 相比于Hipe-Steady，Hipe-Balanced在异步线程与主线程之间**竞争次数较多**的时候性能会有所下降，同时其**批量提交**接口的表现也会有所下降，甚至有可能低于其提交单个任务的接口（具体还要考虑任务类型等许多复杂的因素）。但是由于线程类中只有一条任务队列，因此所有任务都是可以被**窃取**的。这也导致Hipe-Balance在面对**不稳定的任务流**时（可能会有超时任务）具有更好的表现。
 
 
+
+**框架图**
+
+![Hipe-Balance](https://pic.imgdb.cn/item/63df2f234757feff33bd2de3.jpg)
+
+
 ## Hipe-DynamicThreadPond
 
 Hipe-Dynamic是Hipe提供的动态的、能够**扩缩容**的线程池。支持批量提交任务、支持线程池吞吐任务速率监测、支持无界队列。当没有任务时所有线程会被自动挂起（阻塞等待条件变量的通知），较为节约CPU资源。
@@ -121,6 +153,14 @@ Hipe-Dynamic是Hipe提供的动态的、能够**扩缩容**的线程池。支持
 Hipe-Dynamic采用的是**多线程竞争单任务队列**的模型。该任务队列是无界的，能够容蓄大量的任务，直至系统资源耗尽。由于Hipe-Dynamic管理的线程没有私有的任务队列且面向单个任务，因此能够被灵活地调度。同时，为了能动态调节线程数，Hipe-Dynamic还提供了能监测线程池执行速率的接口，其使用实例在`Hipe/demo/demo2`。
 
 由于Hipe-Dynamic的接口较为简单，如果需要了解更多接口的调用，可以阅读接口测试文件`Hipe/interfaces/`或者`Hipe/demo/demo2`。
+
+
+
+**框架图**
+
+![](https://pic.imgdb.cn/item/63df295f4757feff33b379d7.jpg)
+
+
 
 
 
