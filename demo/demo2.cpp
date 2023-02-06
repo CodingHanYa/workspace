@@ -5,7 +5,7 @@
 #include "../hipe.h"
 
 bool closed = false;
-int tnumb = 8;
+int g_tnumb = 8;
 int tasks_numb = 15000;  
 int milli_per_submit = 500; // 0.5s
 
@@ -67,7 +67,7 @@ void manager(hipe::DynamicThreadPond* pond)
 
 int main() 
 {
-    hipe::DynamicThreadPond pond(tnumb);
+    hipe::DynamicThreadPond pond(g_tnumb);
 
     // total 0.1s
     auto task1 = []{hipe::util::sleep_for_milli(20);};

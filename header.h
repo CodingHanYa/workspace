@@ -38,12 +38,111 @@ template <typename T>
 using HipeFutures  = util::Futures<T>;
 
 
+class ThreadPoolError : public std::exception
+{
+private:
+	std::string message;
+public:
+	explicit ThreadPoolError(std::string msg) : message{ std::move(msg) } {}
+	
+	const char* what() const noexcept override
+	{
+		return message.data();
+	}
+};
+
+class TaskOverflowError: public ThreadPoolError
+{
+	
+};
+
+// A thread that can automatically joined.
+class AutoThread
+{
+private:
+	std::thread thread_;
+
+public:
+	AutoThread() noexcept = default;
+	
+	template <typename Callable, typename... Args>
+	explicit AutoThread(Callable&& func, Args&& ... args)
+			: thread_{ std::forward<Callable>(func), std::forward<Args>(args)... } {}
+	
+	AutoThread(const AutoThread&) = delete;
+	
+	AutoThread& operator=(const AutoThread&) = delete;
+	
+	AutoThread(AutoThread&&) noexcept = default;
+	
+	AutoThread& operator=(AutoThread&& other) noexcept
+	{
+		AutoThread(std::move(other)).swap(*this);
+		return *this;
+	}
+	
+	~AutoThread()
+	{
+		if (joinable())
+		{
+			join();
+		}
+	}
+	
+	void swap(AutoThread& other) noexcept
+	{
+		std::swap(thread_, other.thread_);
+	}
+	
+	friend
+	void swap(AutoThread& lhs, AutoThread& rhs) noexcept
+	{
+		lhs.swap(rhs);
+	}
+	
+	
+	bool joinable() const noexcept
+	{
+		return thread_.joinable();
+	}
+	
+	void join()
+	{
+		thread_.join();
+	}
+	
+	void detach()
+	{
+		thread_.detach();
+	}
+	
+	using id = std::thread::id;
+	
+	id get_id() const noexcept
+	{
+		return thread_.get_id();
+	}
+	
+	using native_handle_type = std::thread::native_handle_type;
+	
+	native_handle_type native_handle()
+	{
+		return thread_.native_handle();
+	}
+	
+	
+	static unsigned hardware_concurrency() noexcept
+	{
+		return std::thread::hardware_concurrency();
+	}
+};
+
 class ThreadBase 
 {
 protected:
 
     bool waiting = false;
-    std::thread handle;
+    AutoThread handle;
 
     std::atomic_int task_numb = {0};
     std::condition_variable task_done_cv;
@@ -63,11 +162,11 @@ public:
         handle.join();
     }
 
-    void bindHandle(std::thread&& handle) {
-        this->handle = std::move(handle);
+    void bindHandle(AutoThread&& handle_) {
+        this->handle = std::move(handle_);
     }
 
-    bool isWaiting() {
+    bool isWaiting() const {
         return waiting;
     }
 
@@ -92,7 +191,7 @@ public:
 
 /**
  * @brief Basic class of thread pond that has defined all mechanism except async thread's loop.
- * @tparam The type of thread wrepper class that inherited from ThreadBase.
+ * @tparam The type of thread wrapper class that inherited from ThreadBase.
 */
 template <typename Ttype>
 class FixedThreadPond 
@@ -124,7 +223,7 @@ protected:
     int thread_cap = 0;
 
     // tasks that failed to submit
-    util::Block<HipeTask> overflow_tasks = {0};
+    util::Block<HipeTask> overflow_tasks {0};
 
     // task overflow call back
     HipeTask refuse_cb;
@@ -135,14 +234,14 @@ protected:
      * @param thread_numb fixed thread number
      * @param task_capacity task capacity of the pond, default: unlimited
     */
-    FixedThreadPond(int thread_numb = 0, int task_capacity = HipeUnlimited) 
+    explicit FixedThreadPond(int thread_numb = 0, int task_capacity = HipeUnlimited) 
     {
         assert(thread_numb >= 0);
         assert(task_capacity >= 0);
 
         // calculate thread number
         if (!thread_numb) {
-            int tmp = std::thread::hardware_concurrency();
+            int tmp = static_cast<int>(std::thread::hardware_concurrency());
             this->thread_numb = (tmp > 0) ? tmp : 1; 
         } else {
             this->thread_numb = thread_numb;
@@ -225,15 +324,15 @@ public:
      * @brief submit task
      * @param foo a runable object
     */
-    template <typename _Runable>
-    void submit(_Runable&& foo) 
+    template <typename Runnable_>
+    void submit(Runnable_&& foo)
     {
         if (!admit()) {
-            taskOverFlow(std::forward<_Runable>(foo));
+            taskOverFlow(std::forward<Runnable_>(foo));
             return;
         }
         auto t = getLeastBusyThread();
-        t->enqueue(std::forward<_Runable>(foo));
+        t->enqueue(std::forward<Runnable_>(foo));
     }
 
     /**
@@ -241,16 +340,16 @@ public:
      * @param foo a runable object
      * @return a future 
     */
-    template <typename _Runable>
-    auto submitForReturn(_Runable&& foo) -> std::future<typename std::result_of<_Runable()>::type> 
+    template <typename Runnable_>
+    auto submitForReturn(Runnable_&& foo) -> std::future<typename std::result_of<Runnable_()>::type>
     {
         if (!admit()) {
-            taskOverFlow(std::forward<_Runable>(foo));
-            return std::future<typename std::result_of<_Runable()>::type>();
+            taskOverFlow(std::forward<Runnable_>(foo));
+            return std::future<typename std::result_of<Runnable_()>::type>();
         }
 
-        using RT = typename std::result_of<_Runable()>::type;
-        std::packaged_task<RT()> pack(std::move(foo));
+        using RT = typename std::result_of<Runnable_()>::type;
+        std::packaged_task<RT()> pack(std::forward<Runnable_>(foo));
         std::future<RT> fut(pack.get_future()); 
 
         auto t = getLeastBusyThread();
@@ -264,8 +363,8 @@ public:
      * @param cont tasks container
      * @param size the size of the container
     */
-    template <typename _Container>
-    void submitInBatch(_Container&& container, size_t size) 
+    template <typename Container_>
+    void submitInBatch(Container_&& container, size_t size) 
     {
         if (thread_cap) 
         {
@@ -276,12 +375,12 @@ public:
                 if (admit()) {
                     getThreadNow()->enqueue(std::move(container[i]));
                 } else {
-                    taskOverFlow(std::forward<_Container>(container), i, size);
+                    taskOverFlow(std::forward<Container_>(container), i, size);
                     break;
                 }
             }
         } else {
-            getLeastBusyThread()->enqueue(std::forward<_Container>(container), size);
+            getLeastBusyThread()->enqueue(std::forward<Container_>(container), size);
         } 
     }
 
@@ -322,12 +421,13 @@ protected:
     }
 
     // calculate best cursor move limit
-    int getBestMoveLimit(int thread_numb) 
-    {
-        if (thread_numb == 1) {
+	// fixme: Declaration shadows a field of 'FixedThreadPond<Ttype>'
+    int getBestMoveLimit(int thread_number) 
+    {	
+        if (thread_number == 1) {
             return 0;
         }
-        int tmp = thread_numb / 4;
+        int tmp = thread_number / 4;
         tmp = (tmp < 1) ? 1 : tmp;
         return (tmp > 4) ? 4 : tmp;
     }
@@ -368,13 +468,13 @@ public:
      * If the capacity is unlimited , the hipe will throw a logic error. 
      * If didn't set and refuse call back, the hipe will throw logic error and abort the program. 
     */
-    template <typename F, typename... _Argv>
-    void setRefuseCallBack(F&& foo, _Argv&&... argv) 
+    template <typename F, typename... Argv_>
+    void setRefuseCallBack(F&& foo, Argv_&&... argv) 
     {
-        if (!thread_cap) {
-            throw std::logic_error("The refuse callback will never be invoked because the capacity has been setted unlimited");
+        if (!thread_cap) {	
+            throw std::logic_error("The refuse callback will never be invoked because the capacity has been set unlimited");
         } else {
-            refuse_cb.reset(std::bind(std::forward<F>(foo), std::forward<_Argv>(argv)...));
+            refuse_cb.reset(std::bind(std::forward<F>(foo), std::forward<Argv_>(argv)...));
         }
     }
 
@@ -427,7 +527,7 @@ protected:
         overflow_tasks.reset(1);
         overflow_tasks.add(std::forward<T>(task));
 
-        if (refuse_cb.is_setted()) {
+        if (refuse_cb.is_set()) {
             util::invoke(refuse_cb);
         } else {
             throw std::runtime_error("Hipe: Task overflow while submitting task");
@@ -448,7 +548,7 @@ protected:
         for (int i = left; i < right; ++i) {
             overflow_tasks.add(std::move(tasks[i]));
         }
-        if (refuse_cb.is_setted()) {
+        if (refuse_cb.is_set()) {
             util::invoke(refuse_cb);
         } else {
             throw std::runtime_error("Hipe: Task overflow while submitting tasks in batch");

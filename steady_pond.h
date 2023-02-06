@@ -29,20 +29,20 @@ public:
         tq_locker.lock();
         public_tq.swap(buffer_tq);
         tq_locker.unlock();
-        return buffer_tq.size() > 0;
+        return !buffer_tq.empty();
     }
 
     bool tryGiveTasks(DqThread& t)
     {
         if (tq_locker.try_lock()) 
         {
-            if (public_tq.size()) 
+            if (!public_tq.empty())
             {
                 auto numb = public_tq.size(); 
                 public_tq.swap(t.buffer_tq);
                 tq_locker.unlock();
-                task_numb -= numb;
-                t.task_numb += numb;
+                task_numb -= static_cast<int>(numb);
+                t.task_numb += static_cast<int>(numb);
                 return true;
 
             } else {
@@ -60,8 +60,8 @@ public:
         task_numb++;
     }
 
-    template <typename _Container>
-    void enqueue(_Container& cont, size_t size) {
+    template <typename Container_>
+    void enqueue(Container_& cont, size_t size) {
         util::spinlock_guard lock(tq_locker);
         for (size_t i = 0; i < size; ++i) {
             public_tq.emplace(std::move(cont[i]));
@@ -85,17 +85,17 @@ public:
      * @param thread_numb fixed thread number
      * @param task_capacity task capacity of the pond, default: unlimited
     */
-    SteadyThreadPond(int thread_numb = 0, int task_capacity = HipeUnlimited) 
+    explicit SteadyThreadPond(int thread_numb = 0, int task_capacity = HipeUnlimited)
         : FixedThreadPond(thread_numb, task_capacity)
     {
         // create threads
         threads.reset(new DqThread[this->thread_numb]);
         for (int i = 0; i < this->thread_numb; ++i) {
-            threads[i].bindHandle(std::thread(&SteadyThreadPond::worker, this, i));
+            threads[i].bindHandle(AutoThread(&SteadyThreadPond::worker, this, i));
         }
     }
     
-    ~SteadyThreadPond() {}
+    ~SteadyThreadPond() override = default;
 
 private:
 

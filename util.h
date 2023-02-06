@@ -37,10 +37,10 @@ namespace util {
         std::cout<<std::forward<T>(t)<<std::endl;
     }
 
-    template <typename T, typename... _Args>
-    void print(T&& t, _Args&&... argv) {
+    template <typename T, typename... Args_>
+    void print(T&& t, Args_&&... argv) {
         std::cout<<std::forward<T>(t);
-        print(std::forward<_Args>(argv)...);
+        print(std::forward<Args_>(argv)...);
     }
 
     template <typename F>
@@ -54,7 +54,7 @@ namespace util {
      * *   title   *
      * =============
     */
-    inline std::string title(std::string tar, int left_right_edge = 4) 
+    inline std::string title(const std::string& tar, int left_right_edge = 4)
     {
         static std::string ele1 = "=";
         static std::string ele2 = " ";
@@ -62,17 +62,17 @@ namespace util {
 
         std::string res;
 
-        repeat([&]{ res.append(ele1);}, left_right_edge * 2 + tar.size());
+        repeat([&]{ res.append(ele1);}, left_right_edge * 2 + static_cast<int>(tar.size()));
         res.append("\n");
 
         res.append(ele3);
-        repeat([&]{ res.append(ele2); }, left_right_edge - ele3.size());
+        repeat([&]{ res.append(ele2); }, left_right_edge - static_cast<int>(ele3.size()));
         res.append(tar);
-        repeat([&]{ res.append(ele2); }, left_right_edge - ele3.size());
+        repeat([&]{ res.append(ele2); }, left_right_edge - static_cast<int>(ele3.size()));
         res.append(ele3);
         res.append("\n");
 
-        repeat([&]{ res.append(ele1);}, left_right_edge * 2 + tar.size());
+        repeat([&]{ res.append(ele1);}, left_right_edge * 2 + static_cast<int>(tar.size()));
         return res;
     }
 
@@ -80,7 +80,7 @@ namespace util {
      * just like this
      * <[ something ]>
     */
-    inline std::string strong(std::string tar, int left_right_edge = 2) 
+    inline std::string strong(const std::string& tar, int left_right_edge = 2)
     {
         static std::string ele1 = "<[";
         static std::string ele2 = "]>";
@@ -88,9 +88,9 @@ namespace util {
         std::string res;
         res.append(ele1);
 
-        repeat([&]{ res.append(" ");}, left_right_edge - ele1.size());
+        repeat([&]{ res.append(" ");}, left_right_edge - static_cast<int>(ele1.size()));
         res.append(tar);
-        repeat([&]{ res.append(" ");}, left_right_edge - ele2.size());
+        repeat([&]{ res.append(" ");}, left_right_edge - static_cast<int>(ele2.size()));
 
         res.append(ele2);
         return res;
@@ -101,19 +101,19 @@ namespace util {
         return std::string(length, element);
     } 
 
-    template <typename _Executable, typename... _Args>
-    void invoke(_Executable& call, _Args&&... argv) {
-        call(std::forward<_Args>(argv)...);
+    template <typename Executable_, typename... Args_>
+    void invoke(Executable_&& call, Args_&&... argv) {
+        std::forward<Executable_>(call)(std::forward<Args_>(argv)...);
     }
 
-    template <typename T, typename... _Args>
-    void error(T&& err, _Args&&... argv) {
-        print("[Hipe Error] ", std::forward<T>(err), std::forward<_Args>(argv)...);
+    template <typename T, typename... Args_>
+    void error(T&& err, Args_&&... argv) {
+        print("[Hipe Error] ", std::forward<T>(err), std::forward<Args_>(argv)...);
         abort();
     }
 
-    template <typename _Var>
-    void recyclePlus(_Var& var, _Var left_border, _Var right_border) {
+    template <typename Var_>
+    void recyclePlus(Var_& var, Var_ left_border, Var_ right_border) {
         var = (++var == right_border) ? left_border : var;
     }
 
@@ -163,25 +163,26 @@ namespace util {
 
 
     /**
-     * Time wait for the runable object
+     * Time wait for the runnable object
      * Use std::milli or std::micro or std::nano to fill template parameter
     */
-    template <typename _Precision, typename F, typename... _Args>
-    double timewait(F&& foo, _Args&&... argv) {
+    // todo: rename to time_elapsed
+    template <typename Precision_, typename F, typename... Args_>
+    double timewait(F&& foo, Args_&&... argv) {
         auto time_start = std::chrono::steady_clock::now();
-        foo(std::forward<_Args>(argv)...);
+        foo(std::forward<Args_>(argv)...);
         auto time_end = std::chrono::steady_clock::now();
-        return std::chrono::duration<double, _Precision>(time_end-time_start).count();
+        return std::chrono::duration<double, Precision_>(time_end - time_start).count();
     }
 
     /**
-     * Time wait for the runable object
-     * And the presition is std::chrono::second
+     * Time wait for the runnable object
+     * And the precision is std::chrono::second
     */
-    template <typename F, typename... _Args>
-    double timewait(F&& foo, _Args&&... argv) {
+    template <typename F, typename... Args_>
+    double timewait(F&& foo, Args_&&... argv) {
         auto time_start = std::chrono::steady_clock::now();
-        foo(std::forward<_Args>(argv)...);
+        foo(std::forward<Args_>(argv)...);
         auto time_end = std::chrono::steady_clock::now();
         return std::chrono::duration<double>(time_end-time_start).count();
     }
@@ -196,7 +197,7 @@ namespace util {
         std::recursive_mutex io_locker;
 
     public:
-        SyncStream(std::ostream& out_stream = std::cout)
+        explicit SyncStream(std::ostream& out_stream = std::cout)
             : out_stream(out_stream) {
         }
         template <typename T>
@@ -240,7 +241,7 @@ namespace util {
     {
         spinlock* lck = nullptr;
     public:
-        spinlock_guard(spinlock& locker) {
+        explicit spinlock_guard(spinlock& locker) {
             lck = &locker;
             lck->lock();
         }
@@ -259,55 +260,48 @@ namespace util {
     {      
         struct BaseExec {
             virtual void call() = 0;
-            virtual ~BaseExec() {};
+            virtual ~BaseExec() = default;
         };
 
         template <typename F>
         struct GenericExec: BaseExec { 
             F foo;
-            GenericExec(F&& f): foo(std::forward<F>(f)) {}
+            explicit GenericExec(F&& f): foo(std::forward<F>(f)) {}
+			~GenericExec() override = default;
+			
             void call() override { foo();}
         };  
 
     public:
 
         Task() = default;
-        ~Task() { delete ptr; }
-
-
-        Task(Task&) = delete;
-        Task(const Task&) = delete;
-        Task& operator = (const Task&) = delete;
-
-
-        template <typename F> 
-        Task(F&& f): ptr(new GenericExec<F>(std::forward<F>(f))) {}
-        Task(Task&& tmp): ptr(tmp.ptr) { tmp.ptr = nullptr; }
-
+		~Task() = default;
+		
+		// Constructor accepting a forwarding reference can hide the move constructor
+		// Task(F&& f): ptr(new GenericExec<F>(std::forward<F>(f))) {}
+		template <typename F>
+		Task(F f): ptr(new GenericExec<F>(std::move(f))) {}
+	
+		Task(Task&& tmp) noexcept = default;
+		Task& operator= (Task&& tmp)  noexcept = default;
+		
 
         template <typename Func> 
         void reset(Func&& f) {
-            delete ptr;
-            ptr = new GenericExec<Func>(std::forward<Func>(f));
+           
+            ptr.reset(new GenericExec<Func>(std::forward<Func>(f)));
         }
 
-        bool is_setted() {
-            return ptr != nullptr;
+        bool is_set() {
+            return static_cast<bool>(ptr);
         }
-
-        Task& operator = (Task&& tmp) {
-            delete ptr;
-            ptr = tmp.ptr;
-            tmp.ptr = nullptr;  
-            return *this;
-        }
-
+		
         void operator()() { 
             ptr->call();
         }
 
     private:
-        BaseExec* ptr = nullptr;     
+        std::unique_ptr<BaseExec> ptr;
 
     };
 
@@ -328,16 +322,16 @@ namespace util {
     public:
 
         Block() = default;
-        virtual ~Block() {}
+        virtual ~Block() = default;
 
 
-        Block(Block&& other) 
+        Block(Block&& other) noexcept
             : sz(other.sz)
             , end(other.end) 
             , blok(std::move(other.blok)) {
         }
 
-        Block(size_t size)
+        explicit Block(size_t size)
             : sz(size)
             , end(0) 
             , blok(new T[size]) {
@@ -381,7 +375,7 @@ namespace util {
         }
 
 
-        // fill element. Notice that the element must can be copied !
+        // fill element. Notice that the element must be copied !
         void fill(const T& tar) {
             while (end != sz) {
                 blok[end++] = tar;
@@ -411,6 +405,6 @@ namespace util {
         virtual void sort() {}
 
     };
-};
+}
 
 }
