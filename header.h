@@ -70,7 +70,7 @@ public:
     AutoThread() noexcept = default;
 
     template <typename Callable, typename... Args>
-    explicit AutoThread(Callable &&func, Args &&... args)
+    explicit AutoThread(Callable &&func, Args &&...args)
         : thread_{std::forward<Callable>(func), std::forward<Args>(args)...} {
     }
 
@@ -430,7 +430,7 @@ public:
      * If didn't set and refuse call back, the hipe will throw logic error and abort the program.
      */
     template <typename F, typename... Argv_>
-    void setRefuseCallBack(F &&foo, Argv_ &&... argv) {
+    void setRefuseCallBack(F &&foo, Argv_ &&...argv) {
         if (!thread_cap) {
             throw std::logic_error(
                 "The refuse callback will never be invoked because the capacity has been set unlimited");
