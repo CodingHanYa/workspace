@@ -133,6 +133,9 @@ protected:
     std::mutex cv_locker;
 
 public:
+    ThreadBase() = default;
+    virtual ~ThreadBase() = default;
+
     int getTasksNumb() {
         return task_numb.load();
     }

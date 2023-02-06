@@ -38,7 +38,7 @@ void print(T &&t) {
 }
 
 template <typename T, typename... Args_>
-void print(T &&t, Args_ &&... argv) {
+void print(T &&t, Args_ &&...argv) {
     std::cout << std::forward<T>(t);
     print(std::forward<Args_>(argv)...);
 }
@@ -101,12 +101,12 @@ inline std::string boundary(char element, int length = 10) {
 }
 
 template <typename Executable_, typename... Args_>
-void invoke(Executable_ &&call, Args_ &&... argv) {
+void invoke(Executable_ &&call, Args_ &&...argv) {
     std::forward<Executable_>(call)(std::forward<Args_>(argv)...);
 }
 
 template <typename T, typename... Args_>
-void error(T &&err, Args_ &&... argv) {
+void error(T &&err, Args_ &&...argv) {
     print("[Hipe Error] ", std::forward<T>(err), std::forward<Args_>(argv)...);
     abort();
 }
@@ -165,7 +165,7 @@ public:
  * Use std::milli or std::micro or std::nano to fill template parameter
  */
 template <typename Precision_, typename F, typename... Args_>
-double timewait(F &&foo, Args_ &&... argv) {
+double timewait(F &&foo, Args_ &&...argv) {
     auto time_start = std::chrono::steady_clock::now();
     foo(std::forward<Args_>(argv)...);
     auto time_end = std::chrono::steady_clock::now();
@@ -177,7 +177,7 @@ double timewait(F &&foo, Args_ &&... argv) {
  * And the precision is std::chrono::second
  */
 template <typename F, typename... Args_>
-double timewait(F &&foo, Args_ &&... argv) {
+double timewait(F &&foo, Args_ &&...argv) {
     auto time_start = std::chrono::steady_clock::now();
     foo(std::forward<Args_>(argv)...);
     auto time_end = std::chrono::steady_clock::now();
@@ -204,7 +204,7 @@ public:
         io_locker.unlock();
     }
     template <typename T, typename... A>
-    void print(T &&item, A &&... items) {
+    void print(T &&item, A &&...items) {
         io_locker.lock();
         out_stream << std::forward<T>(item);
         this->print(std::forward<A>(items)...);
@@ -262,11 +262,10 @@ class Task
     template <typename F>
     struct GenericExec : BaseExec {
         F foo;
-        explicit GenericExec(F &&f)
+        GenericExec(F &&f)
             : foo(std::forward<F>(f)) {
         }
         ~GenericExec() override = default;
-
         void call() override {
             foo();
         }
@@ -274,27 +273,39 @@ class Task
 
 public:
     Task() = default;
-    ~Task() = default;
+    Task(Task &) = delete;
+    Task(const Task &) = delete;
+    Task &operator=(const Task &) = delete;
 
-    // Constructor accepting a forwarding reference can hide the move constructor
-    // Task(F&& f): ptr(new GenericExec<F>(std::forward<F>(f))) {}
+    ~Task() {
+        delete ptr;
+    }
+
     template <typename F>
     Task(F f)
         : ptr(new GenericExec<F>(std::move(f))) {
     }
-
-    Task(Task &&tmp) noexcept = default;
-    Task &operator=(Task &&tmp) noexcept = default;
+    Task(Task &&other)
+        : ptr(other.ptr) {
+        other.ptr = nullptr;
+    }
 
 
     template <typename Func>
     void reset(Func &&f) {
-
-        ptr.reset(new GenericExec<Func>(std::forward<Func>(f)));
+        delete ptr;
+        ptr = new GenericExec<Func>(std::forward<Func>(f));
     }
 
     bool is_set() {
-        return static_cast<bool>(ptr);
+        return ptr != nullptr;
+    }
+
+    Task &operator=(Task &&tmp) {
+        delete ptr;
+        ptr = tmp.ptr;
+        tmp.ptr = nullptr;
+        return *this;
     }
 
     void operator()() {
@@ -302,7 +313,7 @@ public:
     }
 
 private:
-    std::unique_ptr<BaseExec> ptr;
+    BaseExec *ptr = nullptr;
 };
 
 
