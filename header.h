@@ -60,6 +60,9 @@ class TaskOverflowError : public ThreadPoolError
 // A thread that can automatically joined.
 class AutoThread
 {
+    using id = std::thread::id;
+    using native_handle_type = std::thread::native_handle_type;
+
 private:
     std::thread thread_;
 
@@ -72,9 +75,7 @@ public:
     }
 
     AutoThread(const AutoThread &) = delete;
-
     AutoThread &operator=(const AutoThread &) = delete;
-
     AutoThread(AutoThread &&) noexcept = default;
 
     AutoThread &operator=(AutoThread &&other) noexcept {
@@ -96,7 +97,6 @@ public:
         lhs.swap(rhs);
     }
 
-
     bool joinable() const noexcept {
         return thread_.joinable();
     }
@@ -109,18 +109,13 @@ public:
         thread_.detach();
     }
 
-    using id = std::thread::id;
-
     id get_id() const noexcept {
         return thread_.get_id();
     }
 
-    using native_handle_type = std::thread::native_handle_type;
-
     native_handle_type native_handle() {
         return thread_.native_handle();
     }
-
 
     static unsigned hardware_concurrency() noexcept {
         return std::thread::hardware_concurrency();
@@ -391,7 +386,6 @@ protected:
     }
 
     // calculate best cursor move limit
-    // fixme: Declaration shadows a field of 'FixedThreadPond<Ttype>'
     int getBestMoveLimit(int thread_number) {
         if (thread_number == 1) {
             return 0;
