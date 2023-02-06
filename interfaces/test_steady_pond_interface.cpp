@@ -12,26 +12,24 @@ void foo2(std::string name) {
     stream.print(name, " call foo2");
 }
 
-struct Functor 
-{
+struct Functor {
     void operator()() {
         stream.print("functor executed");
     }
 };
 
-void test_submit(SteadyThreadPond& pond) 
-{
+void test_submit(SteadyThreadPond &pond) {
     stream.print("\n", util::boundary('=', 15), util::strong("submit"), util::boundary('=', 16));
 
 
     // no return
-    pond.submit(&foo1);                                      // function pointer
-    pond.submit([]{stream.print("HanYa say hello world");}); // lambda
-    pond.submit(std::bind(foo2, "HanYa"));                   // std::function<void()>
-    pond.submit(Functor());                                  // functor
+    pond.submit(&foo1);                                         // function pointer
+    pond.submit([] { stream.print("HanYa say hello world"); }); // lambda
+    pond.submit(std::bind(foo2, "HanYa"));                      // std::function<void()>
+    pond.submit(Functor());                                     // functor
 
-    // If you need return  
-    auto ret = pond.submitForReturn([]{ return 2023; });
+    // If you need return
+    auto ret = pond.submitForReturn([] { return 2023; });
     stream.print("get return ", ret.get());
 
 
@@ -40,59 +38,55 @@ void test_submit(SteadyThreadPond& pond)
     HipeFutures<int> futures;
 
     for (int i = 0; i < n; ++i) {
-        futures.push_back(pond.submitForReturn([i]{ return i; }));
+        futures.push_back(pond.submitForReturn([i] { return i; }));
     }
 
     // wait for all futures
     futures.wait();
     auto results = std::move(futures.get());
 
-    for (auto& res: results) {
+    for (auto &res : results) {
         stream.print("res = ", res);
     }
-    
 }
 
-void test_submit_in_batch(SteadyThreadPond& pond) 
-{
+void test_submit_in_batch(SteadyThreadPond &pond) {
     stream.print("\n", util::boundary('=', 11), util::strong("submit in batch"), util::boundary('=', 11));
 
-    // pond: std::queue<HipeTask>;   
+    // pond: std::queue<HipeTask>;
     // hipe::HipeTask = hipe::util::Task;
     int n = 2;
     util::Block<HipeTask> blok(n);
 
-    for (int i = 0; i < n; ++i) { 
-        blok.add([i]{stream.print("block task ", i);});
+    for (int i = 0; i < n; ++i) {
+        blok.add([i] { stream.print("block task ", i); });
     }
     pond.submitInBatch(blok, blok.element_numb());
 
 
-    // use std::vector 
+    // use std::vector
     // the vector has overloaded []
     std::vector<HipeTask> vec;
 
     for (int i = 0; i < n; ++i) {
-        vec.emplace_back([i]{stream.print("vector task ", i);});
+        vec.emplace_back([i] { stream.print("vector task ", i); });
     }
     pond.submitInBatch(vec, vec.size());
 
 
     // you can even do it like this
-    util::repeat([&]{pond.submit([]{stream.print("submit task");});}, 2);
+    util::repeat([&] { pond.submit([] { stream.print("submit task"); }); }, 2);
 
     pond.waitForTasks();
 }
 
-void test_task_overflow() 
-{
+void test_task_overflow() {
     stream.print("\n", util::boundary('=', 11), util::strong("task overflow"), util::boundary('=', 13));
 
-    // task capacity is 100 
-    SteadyThreadPond pond(10, 100); 
+    // task capacity is 100
+    SteadyThreadPond pond(10, 100);
 
-    pond.setRefuseCallBack([&]
-    {
+    pond.setRefuseCallBack([&] {
         stream.print("Task overflow !");
         auto blok = std::move(pond.pullOverFlowTasks());
         stream.print("Losed ", blok.element_numb(), " tasks"); // 1
@@ -101,35 +95,31 @@ void test_task_overflow()
     util::Block<HipeTask> my_block(101);
 
     for (int i = 0; i < 101; ++i) {
-        my_block.add([]{util::sleep_for_milli(10);});
+        my_block.add([] { util::sleep_for_milli(10); });
     }
 
     pond.submitInBatch(my_block, 101);
-
 }
 
-void test_other_interface(SteadyThreadPond& pond, int thread_numb) 
-{
+void test_other_interface(SteadyThreadPond &pond, int thread_numb) {
     stream.print("\n", util::boundary('=', 11), util::strong("other interface"), util::boundary('=', 13));
 
     util::print("enable rob tasks");
 
     // enable steal neighbor thread and reduce the impact of abnormal tasks blocking threads
-    pond.enableStealTasks(thread_numb/2);
+    pond.enableStealTasks(thread_numb / 2);
 
     util::print("disable rob tasks");
     // than we just disable this function
     pond.disableStealTasks();
-
 }
 
 
-int main() 
-{
+int main() {
     stream.print(util::title("Test SteadyThreadPond", 10));
 
     // unlimited task capacity
-    SteadyThreadPond pond(8, 800); 
+    SteadyThreadPond pond(8, 800);
 
     // unlimited task capacity pond can't set refuse callback
     // pond.setRefuseCallBack([]{stream.print("task overflow!!!");});
@@ -140,12 +130,11 @@ int main()
     test_submit_in_batch(pond);
     util::sleep_for_seconds(1);
 
-    test_task_overflow(); 
+    test_task_overflow();
     util::sleep_for_seconds(1);
 
-    test_other_interface(pond, 8); 
+    test_other_interface(pond, 8);
     util::sleep_for_seconds(1);
 
     stream.print("\n", util::title("End of the test", 5));
-
 }

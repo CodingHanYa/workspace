@@ -1,17 +1,16 @@
 /**
  * How to adjust the dynamic thread pool.
  * This is just a reference.
-*/
+ */
 #include "../hipe.h"
 
 bool closed = false;
 int g_tnumb = 8;
-int tasks_numb = 15000;  
+int tasks_numb = 15000;
 int milli_per_submit = 500; // 0.5s
 
-void manager(hipe::DynamicThreadPond* pond) 
-{   
-    enum class Action {add, del};
+void manager(hipe::DynamicThreadPond *pond) {
+    enum class Action { add, del };
     Action last_act = Action::add;
 
     int unit = 2;
@@ -19,20 +18,18 @@ void manager(hipe::DynamicThreadPond* pond)
     int max_thread_numb = 200;
     int min_thread_numb = 8;
     int total = 0;
-    
 
-    while (!closed) 
-    {   
+
+    while (!closed) {
         auto new_load = pond->resetTaskLoaded();
         auto tnumb = pond->getThreadNumb();
-        total += new_load; 
+        total += new_load;
 
         printf("threads: %-3d remain: %-4d loaded: %d\n", tnumb, pond->getTasksRemain(), new_load);
         fflush(stdout);
 
         // if (!prev_load),  we still try add threads and have a look at the performance
-        if (new_load > prev_load)  
-        {
+        if (new_load > prev_load) {
             if (tnumb < max_thread_numb) {
                 pond->addThreads(unit);
                 last_act = Action::add;
@@ -43,13 +40,11 @@ void manager(hipe::DynamicThreadPond* pond)
             if (last_act == Action::add && tnumb > min_thread_numb) {
                 pond->delThreads(unit);
                 last_act = Action::del;
-            } 
-            else if (last_act == Action::del) {
+            } else if (last_act == Action::del) {
                 pond->addThreads(unit);
                 last_act = Action::add;
             }
-        } 
-        else {
+        } else {
             if (!pond->getTasksRemain() && tnumb > min_thread_numb) {
                 pond->delThreads(unit);
                 last_act = Action::del;
@@ -65,14 +60,13 @@ void manager(hipe::DynamicThreadPond* pond)
     hipe::util::print("total load ", total);
 }
 
-int main() 
-{
+int main() {
     hipe::DynamicThreadPond pond(g_tnumb);
 
     // total 0.1s
-    auto task1 = []{hipe::util::sleep_for_milli(20);};
-    auto task2 = []{hipe::util::sleep_for_milli(30);};
-    auto task3 = []{hipe::util::sleep_for_milli(50);}; 
+    auto task1 = [] { hipe::util::sleep_for_milli(20); };
+    auto task2 = [] { hipe::util::sleep_for_milli(30); };
+    auto task3 = [] { hipe::util::sleep_for_milli(50); };
 
     auto tasks_per_second = 600;
 
@@ -84,16 +78,15 @@ int main()
     std::thread mger(manager, &pond);
 
     // 600 tasks per second
-    int count = (tasks_numb/3)/100;
-    while (count--) 
-    {   
+    int count = (tasks_numb / 3) / 100;
+    while (count--) {
         // 300 tasks
         for (int i = 0; i < 100; ++i) {
             pond.submit(task1);
             pond.submit(task2);
             pond.submit(task3);
         }
-        hipe::util::sleep_for_milli(500); //0.5s
+        hipe::util::sleep_for_milli(500); // 0.5s
     }
 
     // wait for task done and than close the manager
@@ -101,5 +94,4 @@ int main()
 
     closed = true;
     mger.join();
-
 }
