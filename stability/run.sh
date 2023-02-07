@@ -65,9 +65,9 @@ g++ test_steady.cpp -o test_steady -lpthread
 
 println "====================================="
 println "=\t\tSTART STABILITY TEST\t\t="
-println "====================================="
+println "=====================================\n"
 
-println "Git Info:"
+println "Your Last Commit Info:"
 m1=$(tail -n 1 ../.git/logs/HEAD)
 echo $m1 | sed "s/ /\n/2" >> $log_file
 println "------------------------------"
@@ -78,7 +78,7 @@ run_test_file test_balance 100 10
 run_test_file test_dynamic 1000 100
 
 
-println "============================="
+println "\n============================="
 println "=\t\tEND OF THE TEST\t\t="
 println "============================="
 

@@ -285,6 +285,7 @@ public:
     Task(F f)
         : ptr(new GenericExec<F>(std::move(f))) {
     }
+
     Task(Task &&other)
         : ptr(other.ptr) {
         other.ptr = nullptr;

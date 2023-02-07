@@ -378,12 +378,14 @@ threads: 16 | task-type: empty task | task-numb: 100000000 | time-cost: 16.73147
 
 ## 关于使用
 
-编译：导入头文件后无需再链接头文件（采用的编译工具能自动识别头文件），在编译末尾加上`-lpthread`即可。如在linux系统终端采用：
+**编译:**
+
+导入头文件后无需再链接头文件（采用的编译工具能自动识别头文件），在编译末尾加上`-lpthread`即可。如采用g++进行编译：
 
 `g++ ./demo1.cpp -o demo -lpthread && ./demo`
 
 
-一些**错误**使用方法：
+**一些错误使用方法:**
 
 1 将`waitForTasks()`接口作为**同一个线程池**的任务来执行，会导致执行该任务的线程永远阻塞。例如：
 
@@ -397,7 +399,7 @@ pond.submut([&]{pond.waitForTasks();});
 
 ## 关于稳定性
 
-在稳定性测试过程中，我给Hipe-Steady和Hipe-Balance做了快速推入大量任务的测试。调用了`submit()`、`submitForReturn()`和`submitInBatch`三个接口，分别推入**1000000个**任务。最后用`run.sh`脚本测试了**1000个用例**，通过率为100%。而对Hipe-Dynamic的测试除了测试提交任务的接口，还测试了添加线程`addThreads()`、减少线程`delThreads`和调整线程数`adjustThreads`的接口。我跑了**10000个用例**，通过率也为100%。
+在稳定性测试过程中，我给Hipe-Steady和Hipe-Balance做了快速推入大量任务的测试。调用了submit()、submitForReturn()和submitInBatch三个接口，分别推入**1000000个**任务。而对Hipe-Dynamic的测试除了测试提交任务的接口，还测试了添加线程addThreads()、减少线程delThreads和调整线程数adjustThreads的接口。通过运行`stability/run.sh`脚本对以上测试文件编译后的文件进行测试，最终对Hipe-Steady、Hipe-Balance测试了100次，对Hipe-Dynamic测试了10000次，通过率结尾100%。结果见`stability/run.sh`
 
 尽管如此，Hipe仍需要时间的检验，也需要诸位的帮助。希望大家能一起出力，将Hipe变得更好吧。
 
@@ -406,7 +408,7 @@ pond.submut([&]{pond.waitForTasks();});
 1. 通过优化锁来提高三个线程池的性能
 2. 在基本不影响原来性能的前提下，为Hipe-Balance和Hipe-Steady添加扩缩容机制。（私以为可以采用util::block来保存线程，当然这只是一个设想）
 3. 在基本不影响原来性能的前提下，为Hipe-Balance和Hipe-Steady添加性能监测机制。
-4. 为Hipe制作图形化界面，用于监控Hipe的执行速度并提供日志功能。
+4. 为Hipe提供执行的日志系统，用于监测Hipe执行的总体情况
 5. 如果采用C++14以上的C++版本能做到更高的性能的话，提供相应的版本。
 
 最后，本人学识有限，目前也是在不断地学习中。如果您发现了Hipe的不足之处，请在issue中提出或者提PR，我非常欢迎并在此提前感谢各位。世事无常，也许有一天Hipe能在C++并发领域成长为真正的佼佼者，解决众多开发者的并发难题！对此我十分期待。
@@ -414,12 +416,14 @@ pond.submut([&]{pond.waitForTasks();});
 ## 关于如何为Hipe提交PR
 
 有几点小小的规范，请诸君谅解并遵守: 
-1. 通过**稳定性测试** （运行`Hipe/stability/run.sh`脚本进行测试，测试结果会被保存到了`Hipe/stability/result.txt`。注意! 不要为了加快运行时间而调低脚本参数，当然调高参数以提高测试强度是可以被接受的。在我的机器上每一次测试持续大约8~12分钟。）
-2. 通过`Hipe/.clang-format`进行统一的格式化
-3. 每次的改动**尽量小**一些
-4. 尽量在每个改动的附件附上**改动理由**（形式不限）
-5. 除非有合理的理由，否则尽量不要修改变量名
+- 通过**稳定性测试** 
+- 通过`Hipe/.clang-format`进行统一的格式化
+- 每次的改动**尽量小**一些
+- 尽量在每个改动的附件附上**改动理由**（形式不限）
+- 除非有合理的理由，否则尽量不要修改变量名
 
+> 稳定性测试: 运行`Hipe/stability/run.sh`脚本进行测试，测试结果会被保存到了`Hipe/stability/result.txt`。
+> 注意! 不要为了加快运行时间而调低脚本参数，当然调高参数以提高测试强度是可以被接受的。在我的机器上每一次测试持续大约8~12分钟。）
 
 
 ## 文件树
@@ -461,7 +465,7 @@ pond.submut([&]{pond.waitForTasks();});
 
 ## 鸣谢
 
-Hipe贡献者
+Hipe参与贡献者
 
 一直支持我的女朋友小江和我的父母、姐姐。
 
