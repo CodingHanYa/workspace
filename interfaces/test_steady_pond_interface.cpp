@@ -18,7 +18,7 @@ struct Functor {
     }
 };
 
-void test_submit(SteadyThreadPond &pond) {
+void test_submit(SteadyThreadPond& pond) {
     stream.print("\n", util::boundary('=', 15), util::strong("submit"), util::boundary('=', 16));
 
 
@@ -45,12 +45,12 @@ void test_submit(SteadyThreadPond &pond) {
     futures.wait();
     auto results = std::move(futures.get());
 
-    for (auto &res : results) {
+    for (auto& res : results) {
         stream.print("res = ", res);
     }
 }
 
-void test_submit_in_batch(SteadyThreadPond &pond) {
+void test_submit_in_batch(SteadyThreadPond& pond) {
     stream.print("\n", util::boundary('=', 11), util::strong("submit in batch"), util::boundary('=', 11));
 
     // pond: std::queue<HipeTask>;
@@ -101,7 +101,7 @@ void test_task_overflow() {
     pond.submitInBatch(my_block, 101);
 }
 
-void test_other_interface(SteadyThreadPond &pond, int thread_numb) {
+void test_other_interface(SteadyThreadPond& pond, int thread_numb) {
     stream.print("\n", util::boundary('=', 11), util::strong("other interface"), util::boundary('=', 13));
 
     util::print("enable rob tasks");

@@ -9,7 +9,7 @@ void foo1() {
     stream.print("call foo1");
 }
 
-void test_submit_tasks(DynamicThreadPond &pond) {
+void test_submit_tasks(DynamicThreadPond& pond) {
     stream.print("\n", util::boundary('=', 15), util::strong("submit"), util::boundary('=', 16));
 
     // no return
@@ -32,14 +32,14 @@ void test_submit_tasks(DynamicThreadPond &pond) {
     futures.wait();
     auto results = std::move(futures.get());
 
-    for (auto &res : results) {
+    for (auto& res : results) {
         stream.print("res = ", res);
     }
 
     pond.waitForTasks();
 }
 
-void test_submit_in_batch(DynamicThreadPond &pond) {
+void test_submit_in_batch(DynamicThreadPond& pond) {
     stream.print("\n", util::boundary('=', 11), util::strong("submit by batch"), util::boundary('=', 11));
 
     // use util::block
@@ -65,7 +65,7 @@ void test_submit_in_batch(DynamicThreadPond &pond) {
     pond.waitForTasks();
 }
 
-void test_motify_thread_numb(DynamicThreadPond &pond) {
+void test_motify_thread_numb(DynamicThreadPond& pond) {
     stream.print("\n", util::boundary('=', 11), util::strong("modify threads"), util::boundary('=', 11));
 
     stream.print("thread-numb = ", pond.getThreadNumb());

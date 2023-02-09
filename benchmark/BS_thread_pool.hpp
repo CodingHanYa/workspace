@@ -84,7 +84,7 @@ public:
      * @param i The index of the desired future.
      * @return The future.
      */
-    [[nodiscard]] std::future<T> &operator[](const size_t i) {
+    [[nodiscard]] std::future<T>& operator[](const size_t i) {
         return futures[i];
     }
 
@@ -339,7 +339,7 @@ public:
      */
     template <typename F, typename T1, typename T2, typename T = std::common_type_t<T1, T2>,
               typename R = std::invoke_result_t<std::decay_t<F>, T, T>>
-    [[nodiscard]] multi_future<R> parallelize_loop(const T1 first_index, const T2 index_after_last, F &&loop,
+    [[nodiscard]] multi_future<R> parallelize_loop(const T1 first_index, const T2 index_after_last, F&& loop,
                                                    const size_t num_blocks = 0) {
         blocks blks(first_index, index_after_last, num_blocks ? num_blocks : thread_count);
         if (blks.get_total_size() > 0) {
@@ -372,7 +372,7 @@ public:
      * a value, the multi_future object can also be used to obtain the values returned by each block.
      */
     template <typename F, typename T, typename R = std::invoke_result_t<std::decay_t<F>, T, T>>
-    [[nodiscard]] multi_future<R> parallelize_loop(const T index_after_last, F &&loop, const size_t num_blocks = 0) {
+    [[nodiscard]] multi_future<R> parallelize_loop(const T index_after_last, F&& loop, const size_t num_blocks = 0) {
         return parallelize_loop(0, index_after_last, std::forward<F>(loop), num_blocks);
     }
 
@@ -405,7 +405,7 @@ public:
      * threads in the pool.
      */
     template <typename F, typename T1, typename T2, typename T = std::common_type_t<T1, T2>>
-    void push_loop(const T1 first_index, const T2 index_after_last, F &&loop, const size_t num_blocks = 0) {
+    void push_loop(const T1 first_index, const T2 index_after_last, F&& loop, const size_t num_blocks = 0) {
         blocks blks(first_index, index_after_last, num_blocks ? num_blocks : thread_count);
         if (blks.get_total_size() > 0) {
             for (size_t i = 0; i < blks.get_num_blocks(); ++i)
@@ -431,7 +431,7 @@ public:
      * threads in the pool.
      */
     template <typename F, typename T>
-    void push_loop(const T index_after_last, F &&loop, const size_t num_blocks = 0) {
+    void push_loop(const T index_after_last, F&& loop, const size_t num_blocks = 0) {
         push_loop(0, index_after_last, std::forward<F>(loop), num_blocks);
     }
 
@@ -681,7 +681,7 @@ public:
      *
      * @param out_stream_ The output stream to print to. The default value is std::cout.
      */
-    synced_stream(std::ostream &out_stream_ = std::cout)
+    synced_stream(std::ostream& out_stream_ = std::cout)
       : out_stream(out_stream_) {
     }
 
@@ -716,19 +716,19 @@ public:
      * character to the stream, and then flushes it. Should only be used if flushing is desired, otherwise '\n' should
      * be used instead.
      */
-    inline static std::ostream &(&endl)(std::ostream &) = static_cast<std::ostream &(&)(std::ostream &)>(std::endl);
+    inline static std::ostream& (&endl)(std::ostream&) = static_cast<std::ostream& (&)(std::ostream&)>(std::endl);
 
     /**
      * @brief A stream manipulator to pass to a synced_stream (an explicit cast of std::flush). Used to flush the
      * stream.
      */
-    inline static std::ostream &(&flush)(std::ostream &) = static_cast<std::ostream &(&)(std::ostream &)>(std::flush);
+    inline static std::ostream& (&flush)(std::ostream&) = static_cast<std::ostream& (&)(std::ostream&)>(std::flush);
 
 private:
     /**
      * @brief The output stream to print to.
      */
-    std::ostream &out_stream;
+    std::ostream& out_stream;
 
     /**
      * @brief A mutex to synchronize printing.

@@ -48,7 +48,7 @@ public:
       : message{std::move(msg)} {
     }
 
-    const char *what() const noexcept override {
+    const char* what() const noexcept override {
         return message.data();
     }
 };
@@ -70,15 +70,15 @@ public:
     AutoThread() noexcept = default;
 
     template <typename Callable, typename... Args>
-    explicit AutoThread(Callable &&func, Args &&... args)
+    explicit AutoThread(Callable&& func, Args&&... args)
       : thread_{std::forward<Callable>(func), std::forward<Args>(args)...} {
     }
 
-    AutoThread(const AutoThread &) = delete;
-    AutoThread &operator=(const AutoThread &) = delete;
-    AutoThread(AutoThread &&) noexcept = default;
+    AutoThread(const AutoThread&) = delete;
+    AutoThread& operator=(const AutoThread&) = delete;
+    AutoThread(AutoThread&&) noexcept = default;
 
-    AutoThread &operator=(AutoThread &&other) noexcept {
+    AutoThread& operator=(AutoThread&& other) noexcept {
         AutoThread(std::move(other)).swap(*this);
         return *this;
     }
@@ -89,11 +89,11 @@ public:
         }
     }
 
-    void swap(AutoThread &other) noexcept {
+    void swap(AutoThread& other) noexcept {
         std::swap(thread_, other.thread_);
     }
 
-    friend void swap(AutoThread &lhs, AutoThread &rhs) noexcept {
+    friend void swap(AutoThread& lhs, AutoThread& rhs) noexcept {
         lhs.swap(rhs);
     }
 
@@ -148,7 +148,7 @@ public:
         handle.join();
     }
 
-    void bindHandle(AutoThread &&handle_) {
+    void bindHandle(AutoThread&& handle_) {
         this->handle = std::move(handle_);
     }
 
@@ -302,7 +302,7 @@ public:
      * @param foo a runable object
      */
     template <typename Runnable_>
-    void submit(Runnable_ &&foo) {
+    void submit(Runnable_&& foo) {
         if (!admit()) {
             taskOverFlow(std::forward<Runnable_>(foo));
             return;
@@ -317,7 +317,7 @@ public:
      * @return a future
      */
     template <typename Runnable_>
-    auto submitForReturn(Runnable_ &&foo) -> std::future<typename std::result_of<Runnable_()>::type> {
+    auto submitForReturn(Runnable_&& foo) -> std::future<typename std::result_of<Runnable_()>::type> {
         if (!admit()) {
             taskOverFlow(std::forward<Runnable_>(foo));
             return std::future<typename std::result_of<Runnable_()>::type>();
@@ -339,7 +339,7 @@ public:
      * @param size the size of the container
      */
     template <typename Container_>
-    void submitInBatch(Container_ &&container, size_t size) {
+    void submitInBatch(Container_&& container, size_t size) {
         if (thread_cap) {
             moveCursorToLeastBusy();
             for (size_t i = 0; i < size; ++i) {
@@ -367,7 +367,7 @@ protected:
      * Move cursor to the least busy thread and then get
      * pointer of it.
      */
-    Ttype *getLeastBusyThread() {
+    Ttype* getLeastBusyThread() {
         moveCursorToLeastBusy();
         return &threads[cursor];
     }
@@ -433,7 +433,7 @@ public:
      * If didn't set and refuse call back, the hipe will throw logic error and abort the program.
      */
     template <typename F, typename... Argv_>
-    void setRefuseCallBack(F &&foo, Argv_ &&... argv) {
+    void setRefuseCallBack(F&& foo, Argv_&&... argv) {
         if (!thread_cap) {
             throw std::logic_error(
                 "The refuse callback will never be invoked because the capacity has been set unlimited");
@@ -452,7 +452,7 @@ public:
     }
 
 protected:
-    Ttype *getThreadNow() {
+    Ttype* getThreadNow() {
         return &threads[cursor];
     }
 
@@ -468,7 +468,7 @@ protected:
             return true;
         }
         int prev = cursor;
-        auto spare = [this, tar_capacity](Ttype &t) { return (t.getTasksNumb() + tar_capacity) <= thread_cap; };
+        auto spare = [this, tar_capacity](Ttype& t) { return (t.getTasksNumb() + tar_capacity) <= thread_cap; };
         while (!spare(threads[cursor])) {
             util::recyclePlus(cursor, 0, thread_numb);
             if (cursor == prev)
@@ -480,7 +480,7 @@ protected:
 
     // task overflow callback for one task
     template <typename T>
-    void taskOverFlow(T &&task) {
+    void taskOverFlow(T&& task) {
         overflow_tasks.reset(1);
         overflow_tasks.add(std::forward<T>(task));
 
@@ -498,7 +498,7 @@ protected:
      * @param right right edge(not included)
      */
     template <typename T>
-    void taskOverFlow(T &&tasks, int left, int right) {
+    void taskOverFlow(T&& tasks, int left, int right) {
         overflow_tasks.reset(right - left);
 
         for (int i = left; i < right; ++i) {

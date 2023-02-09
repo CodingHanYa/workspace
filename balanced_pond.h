@@ -15,7 +15,7 @@ public:
      * @param other another thread
      * @return if succeed —— return true, or return false
      */
-    bool tryGiveTask(OqThread &another) {
+    bool tryGiveTask(OqThread& another) {
         if (tq_locker.try_lock()) {
             if (!tq.empty()) {
                 another.task = std::move(tq.front());
@@ -35,7 +35,7 @@ public:
 
     // push task to the task queue
     template <typename T>
-    void enqueue(T &&tar) {
+    void enqueue(T&& tar) {
         util::spinlock_guard lock(tq_locker);
         tq.emplace(std::forward<T>(tar));
         task_numb++;
@@ -43,7 +43,7 @@ public:
 
     // push tasks to the task queue
     template <typename Container_>
-    void enqueue(Container_ &cont, size_t size) {
+    void enqueue(Container_& cont, size_t size) {
         util::spinlock_guard lock(tq_locker);
         for (size_t i = 0; i < size; ++i) {
             tq.emplace(std::move(cont[i]));
@@ -93,7 +93,7 @@ public:
 
 private:
     void worker(int index) {
-        auto &self = threads[index];
+        auto& self = threads[index];
 
         while (!stop) {
             // yield if no tasks

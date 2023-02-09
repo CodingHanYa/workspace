@@ -30,7 +30,7 @@ public:
         return !buffer_tq.empty();
     }
 
-    bool tryGiveTasks(DqThread &t) {
+    bool tryGiveTasks(DqThread& t) {
         if (tq_locker.try_lock()) {
             if (!public_tq.empty()) {
                 auto numb = public_tq.size();
@@ -49,14 +49,14 @@ public:
     }
 
     template <typename T>
-    void enqueue(T &&tar) {
+    void enqueue(T&& tar) {
         util::spinlock_guard lock(tq_locker);
         public_tq.emplace(std::forward<T>(tar));
         task_numb++;
     }
 
     template <typename Container_>
-    void enqueue(Container_ &cont, size_t size) {
+    void enqueue(Container_& cont, size_t size) {
         util::spinlock_guard lock(tq_locker);
         for (size_t i = 0; i < size; ++i) {
             public_tq.emplace(std::move(cont[i]));
@@ -90,7 +90,7 @@ public:
 
 private:
     void worker(int index) {
-        auto &self = threads[index];
+        auto& self = threads[index];
 
         while (!stop) {
             // yeild if no tasks

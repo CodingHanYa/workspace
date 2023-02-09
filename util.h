@@ -33,18 +33,18 @@ inline void sleep_for_nano(int nano) {
 }
 
 template <typename T>
-void print(T &&t) {
+void print(T&& t) {
     std::cout << std::forward<T>(t) << std::endl;
 }
 
 template <typename T, typename... Args_>
-void print(T &&t, Args_ &&... argv) {
+void print(T&& t, Args_&&... argv) {
     std::cout << std::forward<T>(t);
     print(std::forward<Args_>(argv)...);
 }
 
 template <typename F>
-void repeat(F &&foo, int times = 1) {
+void repeat(F&& foo, int times = 1) {
     for (int i = 0; i < times; ++i) {
         foo();
     }
@@ -56,7 +56,7 @@ void repeat(F &&foo, int times = 1) {
  * *   title   *
  * =============
  */
-inline std::string title(const std::string &tar, int left_right_edge = 4) {
+inline std::string title(const std::string& tar, int left_right_edge = 4) {
     static std::string ele1 = "=";
     static std::string ele2 = " ";
     static std::string ele3 = "*";
@@ -81,7 +81,7 @@ inline std::string title(const std::string &tar, int left_right_edge = 4) {
  * just like this
  * <[ something ]>
  */
-inline std::string strong(const std::string &tar, int left_right_edge = 2) {
+inline std::string strong(const std::string& tar, int left_right_edge = 2) {
     static std::string ele1 = "<[";
     static std::string ele2 = "]>";
 
@@ -101,18 +101,18 @@ inline std::string boundary(char element, int length = 10) {
 }
 
 template <typename Executable_, typename... Args_>
-void invoke(Executable_ &&call, Args_ &&... argv) {
+void invoke(Executable_&& call, Args_&&... argv) {
     std::forward<Executable_>(call)(std::forward<Args_>(argv)...);
 }
 
 template <typename T, typename... Args_>
-void error(T &&err, Args_ &&... argv) {
+void error(T&& err, Args_&&... argv) {
     print("[Hipe Error] ", std::forward<T>(err), std::forward<Args_>(argv)...);
     abort();
 }
 
 template <typename Var_>
-void recyclePlus(Var_ &var, Var_ left_border, Var_ right_border) {
+void recyclePlus(Var_& var, Var_ left_border, Var_ right_border) {
     var = (++var == right_border) ? left_border : var;
 }
 
@@ -131,7 +131,7 @@ public:
     }
 
     // return results contained by the built-in vector
-    std::vector<T> &get() {
+    std::vector<T>& get() {
         results.resize(futures.size());
         for (size_t i = 0; i < futures.size(); ++i) {
             results[i] = futures[i].get();
@@ -139,11 +139,11 @@ public:
         return results;
     }
 
-    std::future<T> &operator[](size_t i) {
+    std::future<T>& operator[](size_t i) {
         return futures[i];
     }
 
-    void push_back(std::future<T> &&future) {
+    void push_back(std::future<T>&& future) {
         futures.push_back(std::move(future));
     }
 
@@ -165,7 +165,7 @@ public:
  * Use std::milli or std::micro or std::nano to fill template parameter
  */
 template <typename Precision_, typename F, typename... Args_>
-double timewait(F &&foo, Args_ &&... argv) {
+double timewait(F&& foo, Args_&&... argv) {
     auto time_start = std::chrono::steady_clock::now();
     foo(std::forward<Args_>(argv)...);
     auto time_end = std::chrono::steady_clock::now();
@@ -177,7 +177,7 @@ double timewait(F &&foo, Args_ &&... argv) {
  * And the precision is std::chrono::second
  */
 template <typename F, typename... Args_>
-double timewait(F &&foo, Args_ &&... argv) {
+double timewait(F&& foo, Args_&&... argv) {
     auto time_start = std::chrono::steady_clock::now();
     foo(std::forward<Args_>(argv)...);
     auto time_end = std::chrono::steady_clock::now();
@@ -190,21 +190,21 @@ double timewait(F &&foo, Args_ &&... argv) {
  */
 class SyncStream
 {
-    std::ostream &out_stream;
+    std::ostream& out_stream;
     std::recursive_mutex io_locker;
 
 public:
-    explicit SyncStream(std::ostream &out_stream = std::cout)
+    explicit SyncStream(std::ostream& out_stream = std::cout)
       : out_stream(out_stream) {
     }
     template <typename T>
-    void print(T &&items) {
+    void print(T&& items) {
         io_locker.lock();
         out_stream << std::forward<T>(items) << std::endl;
         io_locker.unlock();
     }
     template <typename T, typename... A>
-    void print(T &&item, A &&... items) {
+    void print(T&& item, A&&... items) {
         io_locker.lock();
         out_stream << std::forward<T>(item);
         this->print(std::forward<A>(items)...);
@@ -235,10 +235,10 @@ public:
 // locker guard for spinlock
 class spinlock_guard
 {
-    spinlock *lck = nullptr;
+    spinlock* lck = nullptr;
 
 public:
-    explicit spinlock_guard(spinlock &locker) {
+    explicit spinlock_guard(spinlock& locker) {
         lck = &locker;
         lck->lock();
     }
@@ -262,7 +262,7 @@ class Task
     template <typename F>
     struct GenericExec : BaseExec {
         F foo;
-        GenericExec(F &&f)
+        GenericExec(F&& f)
           : foo(std::forward<F>(f)) {
         }
         ~GenericExec() override = default;
@@ -273,9 +273,9 @@ class Task
 
 public:
     Task() = default;
-    Task(Task &) = delete;
-    Task(const Task &) = delete;
-    Task &operator=(const Task &) = delete;
+    Task(Task&) = delete;
+    Task(const Task&) = delete;
+    Task& operator=(const Task&) = delete;
 
     ~Task() {
         delete ptr;
@@ -286,14 +286,14 @@ public:
       : ptr(new GenericExec<F>(std::move(f))) {
     }
 
-    Task(Task &&other)
+    Task(Task&& other)
       : ptr(other.ptr) {
         other.ptr = nullptr;
     }
 
 
     template <typename Func>
-    void reset(Func &&f) {
+    void reset(Func&& f) {
         delete ptr;
         ptr = new GenericExec<Func>(std::forward<Func>(f));
     }
@@ -302,7 +302,7 @@ public:
         return ptr != nullptr;
     }
 
-    Task &operator=(Task &&tmp) {
+    Task& operator=(Task&& tmp) {
         delete ptr;
         ptr = tmp.ptr;
         tmp.ptr = nullptr;
@@ -314,7 +314,7 @@ public:
     }
 
 private:
-    BaseExec *ptr = nullptr;
+    BaseExec* ptr = nullptr;
 };
 
 
@@ -335,7 +335,7 @@ public:
     virtual ~Block() = default;
 
 
-    Block(Block &&other) noexcept
+    Block(Block&& other) noexcept
       : sz(other.sz)
       , end(other.end)
       , blok(std::move(other.blok)) {
@@ -347,10 +347,10 @@ public:
       , blok(new T[size]) {
     }
 
-    Block(const Block &other) = delete;
+    Block(const Block& other) = delete;
 
 
-    T &operator[](size_t idx) {
+    T& operator[](size_t idx) {
         return blok[idx];
     }
 
@@ -375,7 +375,7 @@ public:
     }
 
     // add an element
-    void add(T &&tar) {
+    void add(T&& tar) {
         blok[end++] = std::forward<T>(tar);
     }
 
@@ -386,7 +386,7 @@ public:
 
 
     // fill element. Notice that the element must be copied !
-    void fill(const T &tar) {
+    void fill(const T& tar) {
         while (end != sz) {
             blok[end++] = tar;
         }

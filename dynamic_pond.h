@@ -78,7 +78,7 @@ public:
             stop = true;
             awake_cv.notify_all();
         }
-        for (auto &thread : pond) {
+        for (auto& thread : pond) {
             thread.join();
         }
     }
@@ -180,7 +180,7 @@ public:
      * @param foo An runnable object
      */
     template <typename Runnable_>
-    void submit(Runnable_ &&foo) {
+    void submit(Runnable_&& foo) {
         {
             HipeLockGuard lock(shared_locker);
             shared_tq.emplace(std::forward<Runnable_>(foo));
@@ -195,7 +195,7 @@ public:
      * @return a future
      */
     template <typename Runnable_>
-    auto submitForReturn(Runnable_ &&foo) -> std::future<typename std::result_of<Runnable_()>::type> {
+    auto submitForReturn(Runnable_&& foo) -> std::future<typename std::result_of<Runnable_()>::type> {
         using RT = typename std::result_of<Runnable_()>::type;
         std::packaged_task<RT()> pack(std::forward<Runnable_>(foo));
         std::future<RT> fut(pack.get_future());
@@ -215,7 +215,7 @@ public:
      * @param size the size of the container
      */
     template <typename Container_>
-    void submitInBatch(Container_ &cont, size_t size) {
+    void submitInBatch(Container_& cont, size_t size) {
         {
             HipeLockGuard lock(shared_locker);
             total_tasks += static_cast<int>(size);
