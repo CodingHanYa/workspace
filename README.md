@@ -399,15 +399,15 @@ pond.submut([&]{pond.waitForTasks();});
 
 ## 关于稳定性
 
-在稳定性测试过程中，我给Hipe-Steady和Hipe-Balance做了快速推入大量任务的测试。调用了submit()、submitForReturn()和submitInBatch三个接口，分别推入**1000000个**任务。而对Hipe-Dynamic的测试除了测试提交任务的接口，还测试了添加线程addThreads()、减少线程delThreads和调整线程数adjustThreads的接口。通过运行`stability/run.sh`脚本对以上测试文件编译后的文件进行测试，最终对Hipe-Steady、Hipe-Balance测试了100次，对Hipe-Dynamic测试了10000次，通过率结尾100%。结果见`stability/run.sh`
+在稳定性测试过程中，我给Hipe-Steady和Hipe-Balance做了快速推入大量任务的测试。调用了submit()、submitForReturn()和submitInBatch三个接口，分别推入**1000000个**任务。而对Hipe-Dynamic的测试除了测试提交任务的接口，还测试了添加线程addThreads()、减少线程delThreads和调整线程数adjustThreads的接口。通过运行`stability/run.sh`脚本对以上测试文件编译后的文件进行测试，最终对Hipe-Steady和Hipe-Balance测试了200次，对Hipe-Dynamic测试了10000次，通过率结尾100%。结果见`stability/run.sh`
 
 尽管如此，Hipe仍需要时间的检验，也需要诸位的帮助。希望大家能一起出力，将Hipe变得更好吧。
 
 ## 关于Hipe接下来改进方向的提议
 
 1. 通过优化锁来提高三个线程池的性能
-2. 在基本不影响原来性能的前提下，为Hipe-Balance和Hipe-Steady添加扩缩容机制。（私以为可以采用util::block来保存线程，当然这只是一个设想）
-3. 在基本不影响原来性能的前提下，为Hipe-Balance和Hipe-Steady添加性能监测机制。
+2. 通过优化任务来提高线程池的性能（采用栈空间构造任务，当然是否有真正的提升还需要测试）
+3. 在基本不影响原来性能的前提下，为Hipe-Balance和Hipe-Steady添加扩缩容机制。（私以为可以采用util::block来预先设置最大容量，再在内部做线程数调整）
 4. 为Hipe提供执行的日志系统，用于监测Hipe执行的总体情况
 5. 如果采用C++14以上的C++版本能做到更高的性能的话，提供相应的版本。
 
@@ -418,12 +418,11 @@ pond.submut([&]{pond.waitForTasks();});
 有几点小小的规范，请诸君谅解并遵守: 
 - 通过**稳定性测试** 
 - 通过`Hipe/.clang-format`进行统一的格式化
-- 每次的改动**尽量小**一些
-- 尽量在每个改动的附件附上**改动理由**（形式不限）
-- 除非有合理的理由，否则尽量不要修改变量名
+- 尽量在每次改动（可能有几个改动）的附近附上**改动理由**（形式不限）
+- 除非有合理的理由，否则不要随意修改变量名
 
 > 稳定性测试: 运行`Hipe/stability/run.sh`脚本进行测试，测试结果会被保存到了`Hipe/stability/result.txt`。
-> 注意! 不要为了加快运行时间而调低脚本参数，当然调高参数以提高测试强度是可以被接受的。在我的机器上每一次测试持续大约8~12分钟。）
+> 注意! 尽量不要为了加快运行时间而调低脚本参数，当然调高参数以提高测试强度是可以被接受的。在我的机器上每一次测试持续大约20~30分钟。）
 
 
 ## 文件树
@@ -452,7 +451,6 @@ pond.submut([&]{pond.waitForTasks();});
 │   ├── test_dynamic_pond_interface.cpp
 │   └── test_steady_pond_interface.cpp
 ├── stability                            稳定性测试
-│   ├── makefile
 │   ├── run.sh                           协助测试的脚本
 │   ├── test_dynamic.cpp                 测试动态线程池的稳定性（推入大量任务并做多次测试）
 |   ├── test_balance.cpp                 测试均衡线程池的稳定性（推入大量任务并做多次测试）
