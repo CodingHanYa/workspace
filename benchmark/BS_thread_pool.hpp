@@ -56,7 +56,7 @@ public:
      * @param num_futures_ The desired number of futures to store.
      */
     multi_future(const size_t num_futures_ = 0)
-        : futures(num_futures_) {
+      : futures(num_futures_) {
     }
 
     /**
@@ -146,9 +146,9 @@ public:
      * @param num_blocks_ The desired number of blocks to divide the range into.
      */
     blocks(const T1 first_index_, const T2 index_after_last_, const size_t num_blocks_)
-        : first_index(static_cast<T>(first_index_))
-        , index_after_last(static_cast<T>(index_after_last_))
-        , num_blocks(num_blocks_) {
+      : first_index(static_cast<T>(first_index_))
+      , index_after_last(static_cast<T>(index_after_last_))
+      , num_blocks(num_blocks_) {
         if (index_after_last < first_index)
             std::swap(index_after_last, first_index);
         total_size = static_cast<size_t>(index_after_last - first_index);
@@ -249,8 +249,8 @@ public:
      * core is hyperthreaded, it will count as two threads.
      */
     thread_pool(const concurrency_t thread_count_ = 0)
-        : thread_count(determine_thread_count(thread_count_))
-        , threads(std::make_unique<std::thread[]>(determine_thread_count(thread_count_))) {
+      : thread_count(determine_thread_count(thread_count_))
+      , threads(std::make_unique<std::thread[]>(determine_thread_count(thread_count_))) {
         create_threads();
     }
 
@@ -682,7 +682,7 @@ public:
      * @param out_stream_ The output stream to print to. The default value is std::cout.
      */
     synced_stream(std::ostream &out_stream_ = std::cout)
-        : out_stream(out_stream_) {
+      : out_stream(out_stream_) {
     }
 
     /**

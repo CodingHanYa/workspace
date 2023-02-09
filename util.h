@@ -38,7 +38,7 @@ void print(T &&t) {
 }
 
 template <typename T, typename... Args_>
-void print(T &&t, Args_ &&...argv) {
+void print(T &&t, Args_ &&... argv) {
     std::cout << std::forward<T>(t);
     print(std::forward<Args_>(argv)...);
 }
@@ -101,12 +101,12 @@ inline std::string boundary(char element, int length = 10) {
 }
 
 template <typename Executable_, typename... Args_>
-void invoke(Executable_ &&call, Args_ &&...argv) {
+void invoke(Executable_ &&call, Args_ &&... argv) {
     std::forward<Executable_>(call)(std::forward<Args_>(argv)...);
 }
 
 template <typename T, typename... Args_>
-void error(T &&err, Args_ &&...argv) {
+void error(T &&err, Args_ &&... argv) {
     print("[Hipe Error] ", std::forward<T>(err), std::forward<Args_>(argv)...);
     abort();
 }
@@ -126,8 +126,8 @@ class Futures
 
 public:
     Futures()
-        : futures(0)
-        , results(0) {
+      : futures(0)
+      , results(0) {
     }
 
     // return results contained by the built-in vector
@@ -165,7 +165,7 @@ public:
  * Use std::milli or std::micro or std::nano to fill template parameter
  */
 template <typename Precision_, typename F, typename... Args_>
-double timewait(F &&foo, Args_ &&...argv) {
+double timewait(F &&foo, Args_ &&... argv) {
     auto time_start = std::chrono::steady_clock::now();
     foo(std::forward<Args_>(argv)...);
     auto time_end = std::chrono::steady_clock::now();
@@ -177,7 +177,7 @@ double timewait(F &&foo, Args_ &&...argv) {
  * And the precision is std::chrono::second
  */
 template <typename F, typename... Args_>
-double timewait(F &&foo, Args_ &&...argv) {
+double timewait(F &&foo, Args_ &&... argv) {
     auto time_start = std::chrono::steady_clock::now();
     foo(std::forward<Args_>(argv)...);
     auto time_end = std::chrono::steady_clock::now();
@@ -195,7 +195,7 @@ class SyncStream
 
 public:
     explicit SyncStream(std::ostream &out_stream = std::cout)
-        : out_stream(out_stream) {
+      : out_stream(out_stream) {
     }
     template <typename T>
     void print(T &&items) {
@@ -204,7 +204,7 @@ public:
         io_locker.unlock();
     }
     template <typename T, typename... A>
-    void print(T &&item, A &&...items) {
+    void print(T &&item, A &&... items) {
         io_locker.lock();
         out_stream << std::forward<T>(item);
         this->print(std::forward<A>(items)...);
@@ -263,7 +263,7 @@ class Task
     struct GenericExec : BaseExec {
         F foo;
         GenericExec(F &&f)
-            : foo(std::forward<F>(f)) {
+          : foo(std::forward<F>(f)) {
         }
         ~GenericExec() override = default;
         void call() override {
@@ -283,11 +283,11 @@ public:
 
     template <typename F>
     Task(F f)
-        : ptr(new GenericExec<F>(std::move(f))) {
+      : ptr(new GenericExec<F>(std::move(f))) {
     }
 
     Task(Task &&other)
-        : ptr(other.ptr) {
+      : ptr(other.ptr) {
         other.ptr = nullptr;
     }
 
@@ -336,15 +336,15 @@ public:
 
 
     Block(Block &&other) noexcept
-        : sz(other.sz)
-        , end(other.end)
-        , blok(std::move(other.blok)) {
+      : sz(other.sz)
+      , end(other.end)
+      , blok(std::move(other.blok)) {
     }
 
     explicit Block(size_t size)
-        : sz(size)
-        , end(0)
-        , blok(new T[size]) {
+      : sz(size)
+      , end(0)
+      , blok(new T[size]) {
     }
 
     Block(const Block &other) = delete;

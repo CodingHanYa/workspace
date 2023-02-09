@@ -81,7 +81,7 @@ public:
      * @param task_capacity task capacity of the pond, default: unlimited
      */
     explicit BalancedThreadPond(int thread_numb = 0, int task_capacity = HipeUnlimited)
-        : FixedThreadPond(thread_numb, task_capacity) {
+      : FixedThreadPond(thread_numb, task_capacity) {
         // create
         threads.reset(new OqThread[this->thread_numb]);
 

@@ -54,7 +54,7 @@ public:
      * @param tnumb initial thread number
      */
     explicit DynamicThreadPond(int tnumb = 0)
-        : thread_numb(tnumb) {
+      : thread_numb(tnumb) {
         assert(tnumb >= 0);
         for (int i = 0; i < thread_numb; ++i) {
             pond.emplace_back(&DynamicThreadPond::worker, this, i);

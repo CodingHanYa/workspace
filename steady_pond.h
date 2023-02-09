@@ -78,7 +78,7 @@ public:
      * @param task_capacity task capacity of the pond, default: unlimited
      */
     explicit SteadyThreadPond(int thread_numb = 0, int task_capacity = HipeUnlimited)
-        : FixedThreadPond(thread_numb, task_capacity) {
+      : FixedThreadPond(thread_numb, task_capacity) {
         // create threads
         threads.reset(new DqThread[this->thread_numb]);
         for (int i = 0; i < this->thread_numb; ++i) {
