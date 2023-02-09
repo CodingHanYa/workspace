@@ -12,6 +12,7 @@
 #include <queue>
 #include <string>
 #include <thread>
+#include <type_traits>
 #include <vector>
 
 namespace hipe {
@@ -47,7 +48,6 @@ public:
     explicit ThreadPoolError(std::string msg)
       : message{std::move(msg)} {
     }
-
     const char* what() const noexcept override {
         return message.data();
     }
@@ -215,8 +215,11 @@ protected:
     /**
      * @param thread_numb fixed thread number
      * @param task_capacity task capacity of the pond, default: unlimited
+     * @param type_limit  Use SFINAE to restrict the type of template parameter only to be inherited from ThreadBase
      */
-    explicit FixedThreadPond(int thread_numb = 0, int task_capacity = HipeUnlimited) {
+    explicit FixedThreadPond(int thread_numb = 0, int task_capacity = HipeUnlimited,
+                             typename std::enable_if<std::is_base_of<ThreadBase, Ttype>::value>::type* type_limit = nullptr) {
+
         assert(thread_numb >= 0);
         assert(task_capacity >= 0);
 
