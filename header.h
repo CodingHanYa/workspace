@@ -217,8 +217,9 @@ protected:
      * @param task_capacity task capacity of the pond, default: unlimited
      * @param type_limit  Use SFINAE to restrict the type of template parameter only to be inherited from ThreadBase
      */
-    explicit FixedThreadPond(int thread_numb = 0, int task_capacity = HipeUnlimited,
-                             typename std::enable_if<std::is_base_of<ThreadBase, Ttype>::value>::type* type_limit = nullptr) {
+    explicit FixedThreadPond(
+        int thread_numb = 0, int task_capacity = HipeUnlimited,
+        typename std::enable_if<std::is_base_of<ThreadBase, Ttype>::value>::type* type_limit = nullptr) {
 
         assert(thread_numb >= 0);
         assert(task_capacity >= 0);
