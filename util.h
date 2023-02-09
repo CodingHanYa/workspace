@@ -273,48 +273,43 @@ class Task
 
 public:
     Task() = default;
+    Task(Task&& other) = default;
+
     Task(Task&) = delete;
     Task(const Task&) = delete;
     Task& operator=(const Task&) = delete;
 
-    ~Task() {
-        delete ptr;
-    }
+    ~Task() = default;
 
     template <typename F>
     Task(F f)
-      : ptr(new GenericExec<F>(std::move(f))) {
+      : exe(new GenericExec<F>(std::move(f))) {
     }
 
-    Task(Task&& other)
-      : ptr(other.ptr) {
-        other.ptr = nullptr;
-    }
-
-
+    // reset the task
     template <typename Func>
     void reset(Func&& f) {
-        delete ptr;
-        ptr = new GenericExec<Func>(std::forward<Func>(f));
+        exe.reset(new GenericExec<Func>(std::forward<Func>(f)));
     }
 
+    // the task was set
     bool is_set() {
-        return ptr != nullptr;
+        return static_cast<bool>(exe);
     }
 
+    // override "="
     Task& operator=(Task&& tmp) {
-        delete ptr;
-        ptr = tmp.ptr;
-        tmp.ptr = nullptr;
+        exe.reset(tmp.exe.release());
         return *this;
     }
 
+    // runnable
     void operator()() {
-        ptr->call();
+        exe->call();
     }
 
 private:
-    BaseExec* ptr = nullptr;
+    std::unique_ptr<BaseExec> exe = nullptr;
 };
 
 

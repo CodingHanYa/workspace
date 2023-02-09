@@ -73,9 +73,9 @@ echo $m1 | sed "s/ /\n/2" >> $log_file
 println "------------------------------"
 
 
-run_test_file test_steady  100 10
-run_test_file test_balance 100 10
-run_test_file test_dynamic 1000 100
+run_test_file test_steady  200 10
+run_test_file test_balance 200 10
+run_test_file test_dynamic 10000 500
 
 
 println "\n============================="
