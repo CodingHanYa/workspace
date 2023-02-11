@@ -105,26 +105,28 @@ int main() {
     // 添加线程
     pond.addThreads(8);
 
-    // 等待线程进入工作
+    // 等待线程进入工作循环中
     pond.waitForThreads();
 
     // 获取已在运行的线程数
     util::print("Now the the number of running thread is: ", pond.getRunningThreadNumb());
 
-    // 调整线程数为零，或者调用: pond.delThreads(16);
+    // 调整线程数为零。与调用: pond.delThreads(16)的作用相同;
     pond.adjustThreads(0); 
 
-    // 当调用调整线程数的接口时，线程数的期望值为即刻改变
+    // 当调用调整线程数的接口时，线程数的期望值会立刻改变
     util::print("Expect the number of thread now is: ", pond.getExpectThreadNumb());
 
-    // 此时线程可能还来不及反应，因此此时运行中的线程的数量不会是零
+    // 但此时线程可能还在删除过程中，因此此时运行中的线程的数量不会是零，会逐渐减少。
     util::print("Get running thread count again: ", pond.getRunningThreadNumb());
 
-    // 等待线程全部关闭后合并退出的线程，回收线程资源，否则线程池析构时再进行合并
+    // 等待线程全部关闭
     pond.waitForThreads();
+
+    // 回收关闭的线程，否则当线程池析构时自动回收所有关闭的线程
     pond.joinDeadThreads();
 
-    // 关闭时回收可能存在的死亡线程
+    // 删除所有线程并回收所有死亡线程（线程池析构时也会自动调用close）
     pond.close();
 }
 
@@ -453,12 +455,12 @@ pond.submut([&]{pond.waitForTasks();});
 
 有几点小小的规范，请诸君谅解并遵守: 
 - 通过**稳定性测试** 
-- 通过`Hipe/.clang-format`进行统一的格式化
+- 通过`Hipe/.clang-format`进行统一的格式化（可以直接运行脚本`bash format.sh`，记得先下载clang-format）
 - 尽量在每次改动（可能有几个改动）的附近附上**改动理由**（形式不限）
 - 除非有合理的理由，否则不要随意修改变量名
 
-> 稳定性测试: 运行`Hipe/stability/run.sh`脚本进行测试，测试结果会被保存到了`Hipe/stability/result.txt`。
-> 注意! 尽量不要为了加快运行时间而调低脚本参数，当然调高参数以提高测试强度是可以被接受的。在我的机器上每一次测试持续大约20~30分钟。）
+> 稳定性测试: 运行`Hipe/stability/run.sh`脚本进行测试，测试结果会被保存到了`Hipe/stability/result.txt`。这个步骤应该放到提交完所有的改动之后。
+> 最后一次`commit`应该是用于合并稳定性测试的结果。注意! 尽量不要为了加快运行时间而调低脚本参数，当然调高参数以提高测试强度是可以被接受的。在我的机器上每一次测试持续大约1~2分钟。）
 
 
 ## 文件树
@@ -476,19 +478,21 @@ pond.submut([&]{pond.waitForTasks();});
 │   ├── makefile
 │   ├── test_empty_task.cpp              测试几种线程池执行空任务的性能
 │   └── test_speedup.cpp                 加速比测试
+├── compat.h                             封装一点编译优化指令
+├── format.sh                            格式化源文件的简单脚本
 ├── demo 
 │   ├── demo1.cpp                        将动态线程池用作缓冲池
 │   └── demo2.cpp                        动态调整动态线程池
 ├── dynamic_pond.h                       动态线程池
 ├── header.h                             定义类线程类基类和Hipe-Steady+Hipe-Balance的基类（定义了提交任务、任务溢出、负载均衡）
-├── hipe.h                               头文件
+├── hipe.h                               头文件（导入此文件即可使用）
 ├── interfaces                           测试接口
 │   ├── makefile
 │   ├── test_dynamic_pond_interface.cpp
 │   └── test_steady_pond_interface.cpp
 ├── stability                            稳定性测试
 │   ├── run.sh                           协助测试的脚本
-│   ├── test_dynamic.cpp                 测试动态线程池的稳定性（推入大量任务并做多次测试）
+│   ├── test_dynamic.cpp                 测试动态线程池的稳定性（推入大量任务、动态调整线程并做多次测试）
 |   ├── test_balance.cpp                 测试均衡线程池的稳定性（推入大量任务并做多次测试）
 │   └── test_steady.cpp                  测试稳定线程池的稳定性（推入大量任务并做多次测试）
 ├── steady_pond.h                        稳定线程池
@@ -511,7 +515,7 @@ BS的贡献者
 
 小林技术交流群中的各位大佬
 
-B站 Chunel 
+阿里大佬 Chunel 
 
 ## 联系我
 
