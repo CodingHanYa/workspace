@@ -84,8 +84,8 @@ println "------------------------------"
 
 
 run_test_file test_dynamic 10000 500
-run_test_file test_steady  200 10
-run_test_file test_balance 200 10
+run_test_file test_steady  1000 50
+run_test_file test_balance 1000 50
 
 
 println "\n=========================="
