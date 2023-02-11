@@ -1,17 +1,17 @@
 #pragma once
 #include "./util.h"
 #include <atomic>
-#include <iterator>
 #include <cassert>
 #include <condition_variable>
 #include <cstddef>
 #include <functional>
 #include <future>
 #include <iostream>
+#include <iterator>
+#include <list>
 #include <memory>
 #include <mutex>
 #include <queue>
-#include <list>
 #include <string>
 #include <thread>
 #include <type_traits>
@@ -440,7 +440,7 @@ public:
      */
     template <typename F, typename... Args>
     void setRefuseCallBack(F&& foo, Args&&... args) {
-        static_assert(util::is_runnable<F, Args ...>::value, "[HipeError]: The refuse callback is a non-runnable object");
+        static_assert(util::is_runnable<F, Args...>::value, "[HipeError]: The refuse callback is a non-runnable object");
         if (!thread_cap) {
             throw std::logic_error(
                 "[HipeError]: The refuse callback will never be invoked because the capacity has been set unlimited");

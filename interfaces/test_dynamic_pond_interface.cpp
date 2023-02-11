@@ -73,25 +73,25 @@ void test_motify_thread_numb(DynamicThreadPond& pond) {
 
     stream.print("Now we push some time consuming tasks(the count equal thread number) and delete all the threads");
     for (int i = 0; i < pond.getRunningThreadNumb(); ++i) {
-        pond.submit([]{util::sleep_for_milli(300);});
+        pond.submit([] { util::sleep_for_milli(300); });
     }
     // wait for all tasks got
     util::sleep_for_milli(100);
     pond.delThreads(pond.getRunningThreadNumb());
 
-    // the threads are still working 
-    stream.print("Get-Running-thread-numb = ", pond.getRunningThreadNumb()); 
-    stream.print("Get-Expect-thread-numb = ", pond.getExpectThreadNumb(), "\n"); 
+    // the threads are still working
+    stream.print("Get-Running-thread-numb = ", pond.getRunningThreadNumb());
+    stream.print("Get-Expect-thread-numb = ", pond.getExpectThreadNumb(), "\n");
 
     // wait for threads deleted
     stream.print("Wait for threads deleted ...");
     pond.waitForThreads();
 
     // join dead threads to recycle thread resource
-    pond.joinDeadThreads();  
+    pond.joinDeadThreads();
 
-    stream.print("Get-Running-thread-numb-again = ", pond.getRunningThreadNumb()); 
-    stream.print("Get-Expect-thread-numb-again = ", pond.getExpectThreadNumb()); 
+    stream.print("Get-Running-thread-numb-again = ", pond.getRunningThreadNumb());
+    stream.print("Get-Expect-thread-numb-again = ", pond.getExpectThreadNumb());
 
 
     // tasks block in task queue

@@ -10,7 +10,8 @@ int tasks_numb = 15000;
 int milli_per_submit = 500; // 0.5s
 
 void manager(hipe::DynamicThreadPond* pond) {
-    enum class Action { add, del };
+    enum class Action { add,
+                        del };
     Action last_act = Action::add;
 
     int unit = 2;

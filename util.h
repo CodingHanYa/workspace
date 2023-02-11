@@ -1,4 +1,5 @@
 #pragma once
+#include "./compat.h"
 #include <atomic>
 #include <cstddef>
 #include <future>
@@ -9,7 +10,6 @@
 #include <thread>
 #include <type_traits>
 #include <vector>
-#include "./compat.h"
 
 namespace hipe {
 
@@ -87,8 +87,8 @@ public:
 // ===========================
 
 // judge whether template param is a runnable object
-template <typename F, typename... Args>       
-using is_runnable = std::is_constructible<std::function<void(Args ...)>, std::reference_wrapper<typename std::remove_reference<F>::type>>;
+template <typename F, typename... Args>
+using is_runnable = std::is_constructible<std::function<void(Args...)>, std::reference_wrapper<typename std::remove_reference<F>::type>>;
 
 // judge whether whether the runnable object F's return type is R
 template <typename F, typename R>
@@ -102,7 +102,7 @@ void repeat(F&& foo, int times = 1) {
     }
 }
 
-// spin and wait for short time 
+// spin and wait for short time
 template <typename F, typename = typename std::enable_if<is_return<F, bool>::value>::type>
 void waitForShort(F&& foo) {
     int count = 0;
@@ -123,7 +123,7 @@ void waitForShort(F&& foo) {
 
 template <typename F, typename... Args>
 void invoke(F&& call, Args&&... args) {
-    static_assert(is_runnable<F, Args ...>::value, "[HipeError]: Invoke non-runnable object !");
+    static_assert(is_runnable<F, Args...>::value, "[HipeError]: Invoke non-runnable object !");
     call(std::forward<Args>(args)...);
 }
 
@@ -139,7 +139,7 @@ void recyclePlus(Var& var, Var left_border, Var right_border) {
  */
 template <typename Precision, typename F, typename... Args>
 double timewait(F&& foo, Args&&... argv) {
-    static_assert(is_runnable<F, Args ...>::value, "[HipeError]: timewait for non-runnable object !");
+    static_assert(is_runnable<F, Args...>::value, "[HipeError]: timewait for non-runnable object !");
     auto time_start = std::chrono::steady_clock::now();
     foo(std::forward<Args>(argv)...);
     auto time_end = std::chrono::steady_clock::now();
@@ -152,7 +152,7 @@ double timewait(F&& foo, Args&&... argv) {
  */
 template <typename F, typename... Args>
 double timewait(F&& foo, Args&&... argv) {
-    static_assert(is_runnable<F, Args ...>::value, "[HipeError]: timewait for non-runnable object !");
+    static_assert(is_runnable<F, Args...>::value, "[HipeError]: timewait for non-runnable object !");
     auto time_start = std::chrono::steady_clock::now();
     foo(std::forward<Args>(argv)...);
     auto time_end = std::chrono::steady_clock::now();

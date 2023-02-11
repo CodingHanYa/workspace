@@ -29,9 +29,9 @@
 #include <mutex>              // std::mutex, std::scoped_lock, std::unique_lock
 #include <queue>              // std::queue
 #include <thread>             // std::thread
-#include <type_traits> // std::common_type_t, std::conditional_t, std::decay_t, std::invoke_result_t, std::is_void_v
-#include <utility>     // std::forward, std::move, std::swap
-#include <vector>      // std::vector
+#include <type_traits>        // std::common_type_t, std::conditional_t, std::decay_t, std::invoke_result_t, std::is_void_v
+#include <utility>            // std::forward, std::move, std::swap
+#include <vector>             // std::vector
 
 namespace BS {
 /**

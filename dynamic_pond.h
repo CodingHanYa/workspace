@@ -14,7 +14,7 @@ class DynamicThreadPond
     // stop the pond
     bool stop = {false};
 
-    // the number of running threads 
+    // the number of running threads
     std::atomic_int running_tnumb = {0};
 
     // expect running thread number
@@ -165,7 +165,7 @@ public:
         return running_tnumb.load();
     }
 
-    // get the number of expective running thread 
+    // get the number of expective running thread
     int getExpectThreadNumb() const {
         return expect_tnumb.load();
     }
@@ -175,7 +175,7 @@ public:
     void waitForThreads() {
         is_waiting_for_thread = true;
         HipeUniqGuard locker(shared_locker);
-        thread_cv.wait(locker, [this] {return expect_tnumb == running_tnumb; });
+        thread_cv.wait(locker, [this] { return expect_tnumb == running_tnumb; });
         is_waiting_for_thread = false;
     }
 
@@ -264,8 +264,8 @@ private:
             // receive deletion inform
             if (shrink_numb) {
                 shrink_numb--;
-                dead_threads.emplace(std::move(*it));   // save std::thread
-                pond.erase((++it).base());     
+                dead_threads.emplace(std::move(*it)); // save std::thread
+                pond.erase((++it).base());
                 break;
             }
             task = std::move(shared_tq.front());

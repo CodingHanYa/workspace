@@ -7,13 +7,13 @@ int main() {
     std::atomic_int var(0);
     int each_task_nums = 100;
 
-    pond.addThreads(8); // 8 + 8 = 16
-    pond.waitForThreads();  // wait for thread adjust
+    pond.addThreads(8);    // 8 + 8 = 16
+    pond.waitForThreads(); // wait for thread adjust
 
     assert(16 == pond.getRunningThreadNumb());
 
     // delete all the threads
-    pond.delThreads(pond.getRunningThreadNumb());  
+    pond.delThreads(pond.getRunningThreadNumb());
     pond.waitForThreads();
     pond.joinDeadThreads();
 
