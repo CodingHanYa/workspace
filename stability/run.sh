@@ -5,11 +5,11 @@ log_file=./result.txt
 
 
 print() {
-    echo -e -n $@ >> $log_file
+    echo -e -n "$@" >> $log_file
 }
 
 println() {
-    echo -e $@ >> $log_file
+    echo -e "$@" >> $log_file
 }
 
 
@@ -63,8 +63,18 @@ g++ test_balance.cpp -o test_balance -lpthread
 g++ test_dynamic.cpp -o test_dynamic -lpthread
 g++ test_steady.cpp -o test_steady -lpthread
 
+daildate=`date`
+time=`echo $daildate | cut -f4 -d' '`
+
+echo "========================================"
+echo -e "          Hipe Stability Test"
+echo "========================================"
+echo "LogFile: ./Hipe/stability/result.txt"
+echo "LogTime: "$time
+echo "......"
+
 println "====================================="
-println "=\t\tSTART STABILITY TEST\t\t="
+println "=        START STABILITY TEST       ="
 println "=====================================\n"
 
 println "Your Last Commit Info:"
@@ -73,14 +83,16 @@ echo $m1 | sed "s/ /\n/2" >> $log_file
 println "------------------------------"
 
 
+run_test_file test_dynamic 10000 500
 run_test_file test_steady  200 10
 run_test_file test_balance 200 10
-run_test_file test_dynamic 10000 500
 
 
-println "\n============================="
-println "=\t\tEND OF THE TEST\t\t="
-println "============================="
+println "\n=========================="
+println "=     END OF THE TEST     ="
+println "==========================="
+
+echo -e "================= END =================="
 
 
 

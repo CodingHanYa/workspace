@@ -1,6 +1,7 @@
 #pragma once
 #include "./util.h"
 #include <atomic>
+#include <iterator>
 #include <cassert>
 #include <condition_variable>
 #include <cstddef>
@@ -10,6 +11,7 @@
 #include <memory>
 #include <mutex>
 #include <queue>
+#include <list>
 #include <string>
 #include <thread>
 #include <type_traits>
@@ -305,14 +307,14 @@ public:
      * @brief submit task
      * @param foo a runable object
      */
-    template <typename Runnable_>
-    void submit(Runnable_&& foo) {
+    template <typename F>
+    void submit(F&& foo) {
         if (!admit()) {
-            taskOverFlow(std::forward<Runnable_>(foo));
+            taskOverFlow(std::forward<F>(foo));
             return;
         }
         auto t = getLeastBusyThread();
-        t->enqueue(std::forward<Runnable_>(foo));
+        t->enqueue(std::forward<F>(foo));
     }
 
     /**
@@ -320,15 +322,15 @@ public:
      * @param foo a runable object
      * @return a future
      */
-    template <typename Runnable_>
-    auto submitForReturn(Runnable_&& foo) -> std::future<typename std::result_of<Runnable_()>::type> {
+    template <typename F>
+    auto submitForReturn(F&& foo) -> std::future<typename std::result_of<F()>::type> {
         if (!admit()) {
-            taskOverFlow(std::forward<Runnable_>(foo));
-            return std::future<typename std::result_of<Runnable_()>::type>();
+            taskOverFlow(std::forward<F>(foo));
+            return std::future<typename std::result_of<F()>::type>();
         }
 
-        using RT = typename std::result_of<Runnable_()>::type;
-        std::packaged_task<RT()> pack(std::forward<Runnable_>(foo));
+        using RT = typename std::result_of<F()>::type;
+        std::packaged_task<RT()> pack(std::forward<F>(foo));
         std::future<RT> fut(pack.get_future());
 
         auto t = getLeastBusyThread();
@@ -413,7 +415,7 @@ public:
         }
         if (max_numb >= thread_numb) {
             throw std::invalid_argument(
-                "The number of stealing threads must smaller than thread number and greater than zero");
+                "[HipeError]: The number of stealing threads must smaller than thread number and greater than zero");
         }
         max_steal = max_numb;
         enable_steal_tasks = true;
@@ -436,13 +438,14 @@ public:
      * If the capacity is unlimited , the hipe will throw a logic error.
      * If didn't set and refuse call back, the hipe will throw logic error and abort the program.
      */
-    template <typename F, typename... Argv_>
-    void setRefuseCallBack(F&& foo, Argv_&&... argv) {
+    template <typename F, typename... Args>
+    void setRefuseCallBack(F&& foo, Args&&... args) {
+        static_assert(util::is_runnable<F, Args ...>::value, "[HipeError]: The refuse callback is a non-runnable object");
         if (!thread_cap) {
             throw std::logic_error(
-                "The refuse callback will never be invoked because the capacity has been set unlimited");
+                "[HipeError]: The refuse callback will never be invoked because the capacity has been set unlimited");
         } else {
-            refuse_cb.reset(std::bind(std::forward<F>(foo), std::forward<Argv_>(argv)...));
+            refuse_cb.reset(std::bind(std::forward<F>(foo), std::forward<Args>(args)...));
         }
     }
 
@@ -491,7 +494,7 @@ protected:
         if (refuse_cb.is_set()) {
             util::invoke(refuse_cb);
         } else {
-            throw std::runtime_error("Hipe: Task overflow while submitting task");
+            throw std::runtime_error("[HipeError]: Task overflow while submitting task");
         }
     }
 
@@ -511,7 +514,7 @@ protected:
         if (refuse_cb.is_set()) {
             util::invoke(refuse_cb);
         } else {
-            throw std::runtime_error("Hipe: Task overflow while submitting tasks in batch");
+            throw std::runtime_error("[HipeError]: Task overflow while submitting tasks in batch");
         }
     }
 };

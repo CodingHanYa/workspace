@@ -21,8 +21,8 @@ void manager(hipe::DynamicThreadPond* pond) {
 
 
     while (!closed) {
-        auto new_load = pond->resetTaskLoaded();
-        auto tnumb = pond->getThreadNumb();
+        auto new_load = pond->resetTasksLoaded();
+        auto tnumb = pond->getExpectThreadNumb();
         total += new_load;
 
         printf("threads: %-3d remain: %-4d loaded: %d\n", tnumb, pond->getTasksRemain(), new_load);
@@ -32,6 +32,7 @@ void manager(hipe::DynamicThreadPond* pond) {
         if (new_load > prev_load) {
             if (tnumb < max_thread_numb) {
                 pond->addThreads(unit);
+                pond->waitForThreads();
                 last_act = Action::add;
             }
 
@@ -39,14 +40,17 @@ void manager(hipe::DynamicThreadPond* pond) {
 
             if (last_act == Action::add && tnumb > min_thread_numb) {
                 pond->delThreads(unit);
+                pond->waitForThreads();
                 last_act = Action::del;
             } else if (last_act == Action::del) {
                 pond->addThreads(unit);
+                pond->waitForThreads();
                 last_act = Action::add;
             }
         } else {
             if (!pond->getTasksRemain() && tnumb > min_thread_numb) {
                 pond->delThreads(unit);
+                pond->waitForThreads();
                 last_act = Action::del;
             }
         }
@@ -56,7 +60,7 @@ void manager(hipe::DynamicThreadPond* pond) {
         hipe::util::sleep_for_seconds(1); // 1s
     }
 
-    total += pond->resetTaskLoaded();
+    total += pond->resetTasksLoaded();
     hipe::util::print("total load ", total);
 }
 

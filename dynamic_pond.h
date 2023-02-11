@@ -14,11 +14,17 @@ class DynamicThreadPond
     // stop the pond
     bool stop = {false};
 
-    // thread number
-    int thread_numb = {0};
+    // the number of running threads 
+    std::atomic_int running_tnumb = {0};
 
-    // waiting for tasks
-    bool waiting = {false};
+    // expect running thread number
+    std::atomic_int expect_tnumb = {0};
+
+    // waiting for task done
+    bool is_waiting_for_task = {false};
+
+    // waiting for threads deleted
+    bool is_waiting_for_thread = {false};
 
     // task number
     std::atomic_int total_tasks = {0};
@@ -30,22 +36,25 @@ class DynamicThreadPond
     std::mutex shared_locker;
 
     // cv to awake the paused thread
-    std::condition_variable awake_cv;
+    std::condition_variable awake_cv = {};
 
     // task done
-    std::condition_variable task_done_cv;
+    std::condition_variable task_done_cv = {};
+
+    // thread started or deleted
+    std::condition_variable thread_cv = {};
 
     // dynamic thread pond
-    std::vector<std::thread> pond;
+    std::list<std::thread> pond;
+
+    // keep dead threads
+    std::queue<std::thread> dead_threads;
 
     // the shrinking number of threads
     std::atomic_int shrink_numb = {0};
 
-    // deleted thread index
-    std::queue<int> deleted_threads;
-
     // number of the tasks loaded by thread
-    std::atomic_int task_loaded = {0};
+    std::atomic_int tasks_loaded = {0};
 
 
 public:
@@ -53,12 +62,8 @@ public:
      * @brief construct DynamicThreadPond
      * @param tnumb initial thread number
      */
-    explicit DynamicThreadPond(int tnumb = 0)
-      : thread_numb(tnumb) {
-        assert(tnumb >= 0);
-        for (int i = 0; i < thread_numb; ++i) {
-            pond.emplace_back(&DynamicThreadPond::worker, this, i);
-        }
+    explicit DynamicThreadPond(int tnumb = 0) {
+        addThreads(tnumb);
     }
 
     ~DynamicThreadPond() {
@@ -73,41 +78,23 @@ public:
      * Tasks blocking in the queue will be thrown.
      */
     void close() {
-        {
-            HipeUniqGuard locker(shared_locker);
-            stop = true;
-            awake_cv.notify_all();
-        }
-        for (auto& thread : pond) {
-            thread.join();
-        }
+        stop = true;
+        adjustThreads(0);
+        waitForThreads();
+        joinDeadThreads();
     }
 
     /**
      * @brief add threads
      * @param tnumb thread number
-     * The pond will recycle the deleted thread firstly. But if there are  deleted threads,
-     * the pond will expand through creating new thread.
+     * The pond will expand through creating new thread.
      */
     void addThreads(int tnumb = 1) {
-        int idx = 0;
         assert(tnumb >= 0);
+        expect_tnumb += tnumb;
+        HipeLockGuard lock(shared_locker);
         while (tnumb--) {
-            shared_locker.lock();
-            if (!deleted_threads.empty()) {
-                idx = deleted_threads.front();
-                deleted_threads.pop();
-                shared_locker.unlock();
-
-                pond[idx].join();
-                pond[idx] = std::thread(&DynamicThreadPond::worker, this, idx);
-
-            } else {
-                shared_locker.unlock();
-                int index = static_cast<int>(pond.size());
-                pond.emplace_back(&DynamicThreadPond::worker, this, index);
-            }
-            thread_numb++;
+            pond.emplace_back(&DynamicThreadPond::worker, this, pond.rbegin());
         }
     }
 
@@ -115,15 +102,15 @@ public:
     /**
      * @brief delete some threads
      * @param tnumb thread number
-     * If there are not enough threads, the Hipe will throw error.
-     * The deletion will not happen immediately, but just notify that
-     * there are some threads need to be deleted, as a result,
-     * it is nonblocking.
+     * If there are not enough threads, the program will be interrupted.
+     * The deletion will not happen immediately, but just notify that there are some threads 
+     * need to be deleted, as a result, it is nonblocking.
      */
     void delThreads(int tnumb = 1) {
-        assert((tnumb <= thread_numb) && (tnumb >= 0));
+        assert((tnumb <= expect_tnumb) && (tnumb >= 0));
+        expect_tnumb -= tnumb;
         shrink_numb += tnumb;
-        thread_numb -= tnumb;
+        HipeLockGuard lock(shared_locker);
         awake_cv.notify_all();
     }
 
@@ -133,13 +120,24 @@ public:
      */
     void adjustThreads(int target_tnumb) {
         assert(target_tnumb >= 0);
-        if (target_tnumb > thread_numb) {
-            addThreads(target_tnumb - thread_numb);
+        if (target_tnumb > expect_tnumb) {
+            addThreads(target_tnumb - expect_tnumb);
             return;
         }
-        if (target_tnumb < thread_numb) {
-            delThreads(thread_numb - target_tnumb);
+        if (target_tnumb < expect_tnumb) {
+            delThreads(expect_tnumb - target_tnumb);
             return;
+        }
+    }
+
+    // join dead threads to recycle thread resource
+    void joinDeadThreads() {
+        while (!dead_threads.empty()) {
+            shared_locker.lock();
+            auto t = std::move(dead_threads.front());
+            dead_threads.pop();
+            shared_locker.unlock();
+            t.join();
         }
     }
 
@@ -150,40 +148,55 @@ public:
     }
 
     // get number of the tasks loaded by thread
-    int getTaskLoaded() {
-        return task_loaded.load();
+    int getTasksLoaded() {
+        return tasks_loaded.load();
     }
 
     /**
      * reset the number of tasks loaded by thread and return the old value (atomic operation)
      * @return the old value
      */
-    int resetTaskLoaded() {
-        return task_loaded.exchange(0);
+    int resetTasksLoaded() {
+        return tasks_loaded.exchange(0);
     }
 
-    // get thread number now
-    int getThreadNumb() const {
-        return thread_numb;
+    // get the number of running threads now
+    int getRunningThreadNumb() const {
+        return running_tnumb.load();
     }
+
+    // get the number of expective running thread 
+    int getExpectThreadNumb() const {
+        return expect_tnumb.load();
+    }
+
+
+    // wait for threads adjust
+    void waitForThreads() {
+        is_waiting_for_thread = true;
+        HipeUniqGuard locker(shared_locker);
+        thread_cv.wait(locker, [this] {return expect_tnumb == running_tnumb; });
+        is_waiting_for_thread = false;
+    }
+
 
     // wait for tasks in the pond done
     void waitForTasks() {
-        waiting = true;
+        is_waiting_for_task = true;
         HipeUniqGuard locker(shared_locker);
         task_done_cv.wait(locker, [this] { return !total_tasks; });
-        waiting = false;
+        is_waiting_for_task = false;
     }
 
     /**
      * @brief submit task
      * @param foo An runnable object
      */
-    template <typename Runnable_>
-    void submit(Runnable_&& foo) {
+    template <typename Runnable>
+    void submit(Runnable&& foo) {
         {
             HipeLockGuard lock(shared_locker);
-            shared_tq.emplace(std::forward<Runnable_>(foo));
+            shared_tq.emplace(std::forward<Runnable>(foo));
             ++total_tasks;
         }
         awake_cv.notify_one();
@@ -194,12 +207,11 @@ public:
      * @param foo a runnable object
      * @return a future
      */
-    template <typename Runnable_>
-    auto submitForReturn(Runnable_&& foo) -> std::future<typename std::result_of<Runnable_()>::type> {
-        using RT = typename std::result_of<Runnable_()>::type;
-        std::packaged_task<RT()> pack(std::forward<Runnable_>(foo));
+    template <typename Runnable>
+    auto submitForReturn(Runnable&& foo) -> std::future<typename std::result_of<Runnable()>::type> {
+        using RT = typename std::result_of<Runnable()>::type;
+        std::packaged_task<RT()> pack(std::forward<Runnable>(foo));
         std::future<RT> fut(pack.get_future());
-
         {
             HipeLockGuard lock(shared_locker);
             shared_tq.emplace(std::move(pack));
@@ -228,37 +240,53 @@ public:
 
 
 private:
+    using Iter = std::list<std::thread>::reverse_iterator;
+
+    void notifyThreadAdjust() {
+        HipeLockGuard lock(shared_locker);
+        thread_cv.notify_one();
+    }
+
     // working threads' default loop
-    void worker(int index) {
+    void worker(Iter it) {
         // task container
         HipeTask task;
 
-        while (!stop) {
-            // wait notify
-            HipeUniqGuard locker(shared_locker);
-            awake_cv.wait(locker, [this] { return !shared_tq.empty() || stop || shrink_numb > 0; });
+        running_tnumb++;
+        if (is_waiting_for_thread) {
+            notifyThreadAdjust();
+        }
 
+        do {
+            HipeUniqGuard locker(shared_locker);
+            awake_cv.wait(locker, [this] { return !shared_tq.empty() || shrink_numb > 0; });
+
+            // receive deletion inform
             if (shrink_numb) {
                 shrink_numb--;
-                deleted_threads.push(index);
+                dead_threads.emplace(std::move(*it));   // save std::thread
+                pond.erase((++it).base());     
                 break;
             }
-            if (!stop) {
-                task = std::move(shared_tq.front());
-                shared_tq.pop();
-                locker.unlock();
+            task = std::move(shared_tq.front());
+            shared_tq.pop();
+            locker.unlock();
 
-                task_loaded++;
+            tasks_loaded++;
 
-                // just invoke
-                util::invoke(task);
-                --total_tasks;
+            util::invoke(task);
+            --total_tasks;
 
-                if (waiting) {
-                    HipeUniqGuard inner_locker(shared_locker);
-                    task_done_cv.notify_one();
-                }
+            if (is_waiting_for_task) {
+                HipeLockGuard lock(shared_locker);
+                task_done_cv.notify_one();
             }
+
+        } while (true);
+
+        running_tnumb--;
+        if (is_waiting_for_thread) {
+            notifyThreadAdjust();
         }
     }
 };

@@ -92,10 +92,45 @@ int main()
 }
 
 ```
+## 动态线程池调整线程数的简单演示
+
+```C++
+#include "./Hipe/hipe.h" 
+using namespace hipe;
+
+int main() {
+
+    DynamicThreadPond pond(8);
+
+    // 添加线程
+    pond.addThreads(8);
+
+    // 等待线程进入工作
+    pond.waitForThreads();
+
+    // 获取已在运行的线程数
+    util::print("Now the the number of running thread is: ", pond.getRunningThreadNumb());
+
+    // 调整线程数为零，或者调用: pond.delThreads(16);
+    pond.adjustThreads(0); 
+
+    // 当调用调整线程数的接口时，线程数的期望值为即刻改变
+    util::print("Expect the number of thread now is: ", pond.getExpectThreadNumb());
+
+    // 此时线程可能还来不及反应，因此此时运行中的线程的数量不会是零
+    util::print("Get running thread count again: ", pond.getRunningThreadNumb());
+
+    // 等待线程全部关闭后合并退出的线程，回收线程资源，否则线程池析构时再进行合并
+    pond.waitForThreads();
+    pond.joinDeadThreads();
+
+    // 关闭时回收可能存在的死亡线程
+    pond.close();
+}
+
+```
 
 更多接口的调用请大家阅读`hipe/interfaces/`，里面有几乎全部的接口测试，并且每一个函数调用都有较为详细的注释。
-
-
 
 ​	
 
@@ -104,7 +139,7 @@ Hipe-Steady是Hipe提供的稳定的、具有固定线程数的线程池。支�
 
 Hipe-Steady所调用的线程类`DqThread`为每个线程都分配了公开任务队列、缓冲任务队列和控制线程的同步变量（thread-local机制），尽量降低**乒乓缓存**和**线程同步**对线程池性能的影响。工作线程通过队列替换**批量下载**公开队列的任务到缓冲队列中执行。生产线程则通过公开任务队列为工作线程**分配任务**（采用了一种优于轮询的**负载均衡**机制）。公开队列和缓冲队列（或说私有队列）替换的机制进行**读写分离**，再通过加**轻锁**（C++11原子量实现的自旋锁）的方式极大地提高了线程池的性能。
 
-由于其底层的实现机制，Hipe-Steady适用于**稳定的**（避免超时任务阻塞线程）、**任务量大**（任务传递的优势得以体现）的任务流。也可以说Hipe-Steady适合作为核心线程池（能够处理基准任务并长时间运行），而当可以**定制容量**的Hipe-Steady面临任务数量超过设定值时 —— 即**任务溢出**时，我们可以通过定制的**回调函数**拉取出溢出的任务，并把这些任务推到我们的动态线程池DynamicThreadPond中。在这个情景中，DynamicThreadPond或许可以被叫做CacheThreadPond缓冲线程池。关于二者之间如何协调运作，大家可以阅读`Hipe/demo/demo1`.在这个demo中我们展示了如何把DynamicThreadPond用作Hipe-Steady的缓冲池。
+由于其底层的实现机制，Hipe-Steady适用于**稳定的**（避免超时任务阻塞线程）、**任务量大**（任务传递的优势得以体现）的任务流。也可以说Hipe-Steady适合作为核心线程池（能够处理基准任务并长时间运行），而当可以**定制容量**的Hipe-Steady面临任务数量超过设定值时 —— 即**任务溢出**时，我们可以通过定制的**回调函数**拉取出溢出的任务，并把这些任务推到我们的动态线程池DynamicThreadPond中。在这个情景中，DynamicThreadPond或许可以被叫做CacheThreadPond缓冲线程池。关于二者之间如何协调运作，大家可以阅读`Hipe/demo/demo1.cpp`.在这个demo中我们展示了如何把DynamicThreadPond用作Hipe-Steady的缓冲池。
 
 
 
@@ -394,12 +429,13 @@ SteadyThreadPond pond(8);
 pond.submut([&]{pond.waitForTasks();});
 ```
 
-2 主线程和异步线程调用相同的线程池接口，导致数据竞争，引发程序中断。需要注意！Hipe的所有接口都**不是线程安全**的，所有接口在实现时均不考虑线程之间的竞争问题。
+2 主线程和异步线程调用相同的线程池接口，导致数据竞争，引发程序中断。需要注意！Hipe的所有接口都在实现时均不考虑线程之间的竞争问题。
+可以异步调用的接口，如动态线程池调整线程数的接口等已在`Hipe/demo/demo2.cpp`中演示
 
 
 ## 关于稳定性
 
-在稳定性测试过程中，我给Hipe-Steady和Hipe-Balance做了快速推入大量任务的测试。调用了submit()、submitForReturn()和submitInBatch三个接口，分别推入**1000000个**任务。而对Hipe-Dynamic的测试除了测试提交任务的接口，还测试了添加线程addThreads()、减少线程delThreads和调整线程数adjustThreads的接口。通过运行`stability/run.sh`脚本对以上测试文件编译后的文件进行测试，最终对Hipe-Steady和Hipe-Balance测试了200次，对Hipe-Dynamic测试了10000次，通过率结尾100%。结果见`stability/run.sh`
+在稳定性测试过程中，我给Hipe-Steady和Hipe-Balance做了快速推入大量任务的测试。调用了submit()、submitForReturn()和submitInBatch三个接口，分别推入**1000000个**任务。而对Hipe-Dynamic的测试除了测试提交任务的接口，还测试了添加线程addThreads()、减少线程delThreads和调整线程数adjustThreads的接口。通过运行`Hipe/stability/run.sh`脚本对以上测试文件编译后的文件进行测试，最终对Hipe-Steady和Hipe-Balance测试了200次，对Hipe-Dynamic测试了10000次，通过率结尾100%。结果见`Hipe/stability/run.sh`
 
 尽管如此，Hipe仍需要时间的检验，也需要诸位的帮助。希望大家能一起出力，将Hipe变得更好吧。
 

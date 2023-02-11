@@ -7,14 +7,19 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <type_traits>
 #include <vector>
+#include "./compat.h"
 
 namespace hipe {
 
-/**
- * util for hipe
- */
+
+// util for hipe
 namespace util {
+
+// ======================
+//       Easy sleep
+// ======================
 
 inline void sleep_for_seconds(int sec) {
     std::this_thread::sleep_for(std::chrono::seconds(sec));
@@ -32,23 +37,133 @@ inline void sleep_for_nano(int nano) {
     std::this_thread::sleep_for(std::chrono::nanoseconds(nano));
 }
 
+
+// ======================
+//        Easy IO
+// ======================
+
+
 template <typename T>
 void print(T&& t) {
     std::cout << std::forward<T>(t) << std::endl;
 }
 
-template <typename T, typename... Args_>
-void print(T&& t, Args_&&... argv) {
+template <typename T, typename... Args>
+void print(T&& t, Args&&... argv) {
     std::cout << std::forward<T>(t);
-    print(std::forward<Args_>(argv)...);
+    print(std::forward<Args>(argv)...);
 }
 
-template <typename F>
+/**
+ * Thread sync output stream.
+ * It can protect the output from multi thread competition.
+ */
+class SyncStream
+{
+    std::ostream& out_stream;
+    std::recursive_mutex io_locker;
+
+public:
+    explicit SyncStream(std::ostream& out_stream = std::cout)
+      : out_stream(out_stream) {
+    }
+    template <typename T>
+    void print(T&& items) {
+        io_locker.lock();
+        out_stream << std::forward<T>(items) << std::endl;
+        io_locker.unlock();
+    }
+    template <typename T, typename... A>
+    void print(T&& item, A&&... items) {
+        io_locker.lock();
+        out_stream << std::forward<T>(item);
+        this->print(std::forward<A>(items)...);
+        io_locker.unlock();
+    }
+};
+
+// ===========================
+//       Grammar sugar
+// ===========================
+
+// judge whether template param is a runnable object
+template <typename F, typename... Args>       
+using is_runnable = std::is_constructible<std::function<void(Args ...)>, std::reference_wrapper<typename std::remove_reference<F>::type>>;
+
+// judge whether whether the runnable object F's return type is R
+template <typename F, typename R>
+using is_return = std::is_same<typename std::result_of<F()>::type, R>;
+
+// call "foo" for times
+template <typename F, typename = typename std::enable_if<is_runnable<F>::value>::type>
 void repeat(F&& foo, int times = 1) {
     for (int i = 0; i < times; ++i) {
-        foo();
+        std::forward<F>(foo)();
     }
 }
+
+// spin and wait for short time 
+template <typename F, typename = typename std::enable_if<is_return<F, bool>::value>::type>
+void waitForShort(F&& foo) {
+    int count = 0;
+    bool yield = (std::thread::hardware_concurrency() == 1);
+    while (!foo()) {
+        if (yield)
+            std::this_thread::yield();
+        else {
+            if (count++ > 16) {
+                std::this_thread::yield();
+                count = 0;
+            } else {
+                HIPE_PAUSE();
+            }
+        }
+    }
+}
+
+template <typename F, typename... Args>
+void invoke(F&& call, Args&&... args) {
+    static_assert(is_runnable<F, Args ...>::value, "[HipeError]: Invoke non-runnable object !");
+    call(std::forward<Args>(args)...);
+}
+
+
+template <typename Var>
+void recyclePlus(Var& var, Var left_border, Var right_border) {
+    var = (++var == right_border) ? left_border : var;
+}
+
+/**
+ * Time wait for the runnable object
+ * Use std::milli or std::micro or std::nano to fill template parameter
+ */
+template <typename Precision, typename F, typename... Args>
+double timewait(F&& foo, Args&&... argv) {
+    static_assert(is_runnable<F, Args ...>::value, "[HipeError]: timewait for non-runnable object !");
+    auto time_start = std::chrono::steady_clock::now();
+    foo(std::forward<Args>(argv)...);
+    auto time_end = std::chrono::steady_clock::now();
+    return std::chrono::duration<double, Precision>(time_end - time_start).count();
+}
+
+/**
+ * Time wait for the runnable object
+ * And the precision is std::chrono::second
+ */
+template <typename F, typename... Args>
+double timewait(F&& foo, Args&&... argv) {
+    static_assert(is_runnable<F, Args ...>::value, "[HipeError]: timewait for non-runnable object !");
+    auto time_start = std::chrono::steady_clock::now();
+    foo(std::forward<Args>(argv)...);
+    auto time_end = std::chrono::steady_clock::now();
+    return std::chrono::duration<double>(time_end - time_start).count();
+}
+
+
+// ======================================
+//            special format
+// ======================================
+
 
 /**
  * just like this:
@@ -100,21 +215,10 @@ inline std::string boundary(char element, int length = 10) {
     return std::string(length, element);
 }
 
-template <typename Executable_, typename... Args_>
-void invoke(Executable_&& call, Args_&&... argv) {
-    std::forward<Executable_>(call)(std::forward<Args_>(argv)...);
-}
 
-template <typename T, typename... Args_>
-void error(T&& err, Args_&&... argv) {
-    print("[Hipe Error] ", std::forward<T>(err), std::forward<Args_>(argv)...);
-    abort();
-}
-
-template <typename Var_>
-void recyclePlus(Var_& var, Var_ left_border, Var_ right_border) {
-    var = (++var == right_border) ? left_border : var;
-}
+// ======================================
+//             Basic module
+// ======================================
 
 
 // future container
@@ -160,59 +264,6 @@ public:
 };
 
 
-/**
- * Time wait for the runnable object
- * Use std::milli or std::micro or std::nano to fill template parameter
- */
-template <typename Precision_, typename F, typename... Args_>
-double timewait(F&& foo, Args_&&... argv) {
-    auto time_start = std::chrono::steady_clock::now();
-    foo(std::forward<Args_>(argv)...);
-    auto time_end = std::chrono::steady_clock::now();
-    return std::chrono::duration<double, Precision_>(time_end - time_start).count();
-}
-
-/**
- * Time wait for the runnable object
- * And the precision is std::chrono::second
- */
-template <typename F, typename... Args_>
-double timewait(F&& foo, Args_&&... argv) {
-    auto time_start = std::chrono::steady_clock::now();
-    foo(std::forward<Args_>(argv)...);
-    auto time_end = std::chrono::steady_clock::now();
-    return std::chrono::duration<double>(time_end - time_start).count();
-}
-
-/**
- * Thread sync output stream.
- * It can protect the output from multi thread competition.
- */
-class SyncStream
-{
-    std::ostream& out_stream;
-    std::recursive_mutex io_locker;
-
-public:
-    explicit SyncStream(std::ostream& out_stream = std::cout)
-      : out_stream(out_stream) {
-    }
-    template <typename T>
-    void print(T&& items) {
-        io_locker.lock();
-        out_stream << std::forward<T>(items) << std::endl;
-        io_locker.unlock();
-    }
-    template <typename T, typename... A>
-    void print(T&& item, A&&... items) {
-        io_locker.lock();
-        out_stream << std::forward<T>(item);
-        this->print(std::forward<A>(items)...);
-        io_locker.unlock();
-    }
-};
-
-
 // spin locker that use C++11 std::atomic_flag
 class spinlock
 {
@@ -220,8 +271,9 @@ class spinlock
 
 public:
     void lock() {
-        while (flag.test_and_set(std::memory_order_acquire))
-            ;
+        while (flag.test_and_set(std::memory_order_acquire)) {
+            HIPE_PAUSE();
+        }
     }
     void unlock() {
         flag.clear(std::memory_order_release);
@@ -259,9 +311,9 @@ class Task
         virtual ~BaseExec() = default;
     };
 
-    template <typename F>
+    template <typename F, typename T = typename std::decay<F>::type>
     struct GenericExec : BaseExec {
-        F foo;
+        T foo;
         GenericExec(F&& f)
           : foo(std::forward<F>(f)) {
         }
@@ -281,15 +333,16 @@ public:
 
     ~Task() = default;
 
-    template <typename F>
-    Task(F f)
-      : exe(new GenericExec<F>(std::move(f))) {
+    // construct a task
+    template <typename F, typename = typename std::enable_if<is_runnable<F>::value>::type>
+    Task(F&& foo)
+      : exe(new GenericExec<F>(std::forward<F>(foo))) {
     }
 
     // reset the task
-    template <typename Func>
-    void reset(Func&& f) {
-        exe.reset(new GenericExec<Func>(std::forward<Func>(f)));
+    template <typename F, typename = typename std::enable_if<is_runnable<F>::value>::type>
+    void reset(F&& foo) {
+        exe.reset(new GenericExec<F>(std::forward<F>(foo)));
     }
 
     // the task was set
