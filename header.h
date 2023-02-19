@@ -29,7 +29,7 @@ static const int HipeUnlimited = 0;
  * @brief task type that is able to contain different kinds of executable object!
  * It is quite useful.
  */
-using HipeTask = util::Task;
+using HipeTask = util::SafeTask;
 
 using HipeLockGuard = std::lock_guard<std::mutex>;
 

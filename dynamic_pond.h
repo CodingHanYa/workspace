@@ -132,11 +132,17 @@ public:
 
     // join dead threads to recycle thread resource
     void joinDeadThreads() {
-        while (!dead_threads.empty()) {
+        std::thread t;
+        while (true) {
             shared_locker.lock();
-            auto t = std::move(dead_threads.front());
-            dead_threads.pop();
-            shared_locker.unlock();
+            if (!dead_threads.empty()) {
+                t = std::move(dead_threads.front());
+                dead_threads.pop();
+                shared_locker.unlock();
+            } else {
+                shared_locker.unlock();
+                break;
+            }
             t.join();
         }
     }

@@ -83,16 +83,32 @@ public:
 };
 
 // ===========================
-//       Grammar sugar
+//            TMP 
 // ===========================
+
+
 
 // judge whether template param is a runnable object
 template <typename F, typename... Args>
-using is_runnable = std::is_constructible<std::function<void(Args...)>, std::reference_wrapper<typename std::remove_reference<F>::type>>;
+using is_runnable = std::is_constructible<std::function<void(Args...)>, typename std::remove_reference<F>::type>;
 
 // judge whether whether the runnable object F's return type is R
 template <typename F, typename R>
 using is_return = std::is_same<typename std::result_of<F()>::type, R>;
+
+// judge whether the 'U' is std::reference_wrapper<...>
+template <typename U, typename DU = typename std::decay<U>::type>
+struct is_reference_wrapper {
+    template <typename T, typename D = typename T::type>
+    static constexpr bool check(T*) { return std::is_same<T, std::reference_wrapper<D>>::value; };   
+    static constexpr bool check(...) { return false; };
+    static constexpr bool value = check(static_cast<DU*>(0));  
+};
+
+
+// =================================
+//       Simple grammar sugar 
+// =================================
 
 // call "foo" for times
 template <typename F, typename = typename std::enable_if<is_runnable<F>::value>::type>
@@ -102,7 +118,7 @@ void repeat(F&& foo, int times = 1) {
     }
 }
 
-// spin and wait for short time
+// spin and wait for short
 template <typename F, typename = typename std::enable_if<is_return<F, bool>::value>::type>
 void waitForShort(F&& foo) {
     int count = 0;
@@ -301,10 +317,11 @@ public:
 
 
 /**
- * Task that support different kinds of callable object.
- * It will alloc some heap space to save the task.
+ * It is a safe task type that support saving different kinds of runnable object.
+ * It allows the user to construct it by reference (lvalue or rvalue) and 
+ * internally construct a new runnable object by passing in a reference.
  */
-class Task
+class SafeTask
 {
     struct BaseExec {
         virtual void call() = 0;
@@ -316,6 +333,7 @@ class Task
         T foo;
         GenericExec(F&& f)
           : foo(std::forward<F>(f)) {
+            static_assert(!is_reference_wrapper<F>::value, "[HipeError]: Use 'reference_wrapper' to save temporary variable is dangerous");
         }
         ~GenericExec() override = default;
         void call() override {
@@ -324,18 +342,18 @@ class Task
     };
 
 public:
-    Task() = default;
-    Task(Task&& other) = default;
+    SafeTask() = default;
+    SafeTask(SafeTask&& other) = default;
 
-    Task(Task&) = delete;
-    Task(const Task&) = delete;
-    Task& operator=(const Task&) = delete;
+    SafeTask(SafeTask&) = delete;
+    SafeTask(const SafeTask&) = delete;
+    SafeTask& operator=(const SafeTask&) = delete;
 
-    ~Task() = default;
+    ~SafeTask() = default;
 
     // construct a task
     template <typename F, typename = typename std::enable_if<is_runnable<F>::value>::type>
-    Task(F&& foo)
+    SafeTask(F&& foo)
       : exe(new GenericExec<F>(std::forward<F>(foo))) {
     }
 
@@ -351,7 +369,73 @@ public:
     }
 
     // override "="
-    Task& operator=(Task&& tmp) {
+    SafeTask& operator=(SafeTask&& tmp) {
+        exe.reset(tmp.exe.release());
+        return *this;
+    }
+
+    // runnable
+    void operator()() {
+        exe->call();
+    }
+
+private:
+    std::unique_ptr<BaseExec> exe = nullptr;
+};
+
+/**
+ * It is a quick Task that support saving different kinds of runnable object.
+ * It allows user to construct it by reference(lvalue or rvalue). It will not contruct a new object inside it, 
+ * but extend the life of the runnable object through saving reference. 
+ */
+class QuickTask
+{
+    struct BaseExec {
+        virtual void call() = 0;
+        virtual ~BaseExec() = default;
+    };
+
+    template <typename F>
+    struct GenericExec : BaseExec {
+        F foo;
+        GenericExec(F&& f)
+          : foo(std::forward<F>(f)) {
+        }
+        ~GenericExec() override = default;
+        void call() override {
+            foo();
+        }
+    };
+
+public:
+    QuickTask() = default;
+    QuickTask(QuickTask&& other) = default;
+
+    QuickTask(QuickTask&) = delete;
+    QuickTask(const QuickTask&) = delete;
+    QuickTask& operator=(const QuickTask&) = delete;
+
+    ~QuickTask() = default;
+
+    // construct a task
+    template <typename F, typename = typename std::enable_if<is_runnable<F>::value>::type>
+    QuickTask(F&& foo)
+      : exe(new GenericExec<F>(std::forward<F>(foo))) {
+    }
+
+    // reset the task
+    template <typename F, typename = typename std::enable_if<is_runnable<F>::value>::type>
+    void reset(F&& foo) {
+        exe.reset(new GenericExec<F>(std::forward<F>(foo)));
+    }
+
+    // the task was set
+    bool is_set() {
+        return static_cast<bool>(exe);
+    }
+
+    // override "="
+    QuickTask& operator=(QuickTask&& tmp) {
         exe.reset(tmp.exe.release());
         return *this;
     }

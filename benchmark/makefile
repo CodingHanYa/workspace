@@ -9,7 +9,7 @@ test_file3 = ./compare_batch_submit.cpp
 test_file4 = ./compare_submit.cpp
 test_file5 = ./compare_other_task.cpp
 
-src = ${test_file3}
+src = ${test_file1}
 
 ${tar}: ${src}
 	g++ ${flag} ${src} -o ${tar} ${lib}
