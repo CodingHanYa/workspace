@@ -448,35 +448,44 @@ threads: 16 | task-type: empty task | task-numb: 100000000 | time-cost: 16.73147
 
 ## 关于使用
 
-**编译:**
+**使用hipe:**
 
-导入头文件后无需再链接头文件（采用的编译工具能自动识别头文件），在编译末尾加上`-lpthread`即可。如采用g++进行编译：
+假设Hipe源文件文件夹和你的工程在同一个文件夹中，我们只需要导入头文件（`./Hipe/hipe.h`）并在编译末尾加上`-lpthread`即可。如：
+`g++ ./yourfile.cpp -o yourfile -lpthread && ./yourfile`。
 
-`g++ ./demo1.cpp -o demo -lpthread && ./demo`
+**运行测试文件或者Demo:**
 
+如果你想运行我们编写好的测试文件或者是Demo，你可以采用编写好的cmake文件进行编译。具体步骤如下：
+```
+cd ./demo/build   # 切换到build文件夹中，以下步骤生成的文件都会保存在build中
+cmake ../         # 用cmake编出Makefile文件
+make              # 采用makefile进行编译，编译出所有可执行文件
+./(filename)      # 在build文件夹中，执行你想要执行的二进制文件
+```
+以上步骤也适用于`Hipe/interfaces/`和`Hipe/benchmark/`，你只需要在切换文件夹的时候注意改动文件夹名即可。
 
+重新编译Makefile文件：你只需在build文件夹中调用`rm -r *`（假设你采用的是Linux终端），删除掉所有文件，再重复以上步骤即可。
+
+重新编译可执行文件：你只需调用`make clean`，然后再调用`make`即可重新编译。
+
+注意！`Hipe/stability/`中无法使用cmake，对单个文件你只能单独编译。
 
 **一些错误使用方法:**
 
-1 将`waitForTasks()`接口作为**同一个线程池**的任务来执行，会导致执行该任务的线程永远阻塞。例如：
+1. 将`waitForTasks()`接口作为**同一个线程池**的任务来执行，会导致执行该任务的线程永远阻塞。例如：
 
 ```C++
 SteadyThreadPond pond(8);
 pond.submut([&]{pond.waitForTasks();});
 ```
 
-2 主线程和异步线程调用相同的线程池接口，导致数据竞争，引发程序中断。需要注意！Hipe的所有接口都在实现时均不考虑线程之间的竞争问题。
+2. 主线程和异步线程调用相同的线程池接口，导致数据竞争，引发程序中断。需要注意！Hipe的所有接口都在实现时均不考虑线程之间的竞争问题。
 可以异步调用的接口，如动态线程池调整线程数的接口等已在`Hipe/demo/demo2.cpp`中演示
 
 
 
-3 通过`std::ref`传入`std::reference_wrapper`保存的可执行对象。通过**引用包装器**包装可执行对象的行为是被禁止的，因为引用包装器内部保存的是构造时传入参数的指针，
+3. 通过`std::ref`传入`std::reference_wrapper`保存的可执行对象。通过**引用包装器**包装可执行对象的行为是被禁止的，因为引用包装器内部保存的是构造时传入参数的指针，
 
-## 关于稳定性
-
-在稳定性测试过程中，我给Hipe-Steady和Hipe-Balance做了快速推入大量任务的测试。调用了submit()、submitForReturn()和submitInBatch三个接口，分别推入**1000000个**任务。而对Hipe-Dynamic的测试除了测试提交任务的接口，还测试了添加线程addThreads()、减少线程delThreads和调整线程数adjustThreads的接口。通过运行`Hipe/stability/run.sh`脚本对以上测试文件编译后的文件进行测试，最终对Hipe-Steady和Hipe-Balance测试了200次，对Hipe-Dynamic测试了10000次，通过率结尾100%。结果见`Hipe/stability/run.sh`
-
-尽管如此，Hipe仍需要时间的检验，也需要诸位的帮助。希望大家能一起出力，将Hipe变得更好吧。
 
 ## 关于Hipe接下来改进方向的提议
 
