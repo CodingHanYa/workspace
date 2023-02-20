@@ -83,9 +83,8 @@ public:
 };
 
 // ===========================
-//            TMP 
+//            TMP
 // ===========================
-
 
 
 // judge whether template param is a runnable object
@@ -100,14 +99,18 @@ using is_return = std::is_same<typename std::result_of<F()>::type, R>;
 template <typename U, typename DU = typename std::decay<U>::type>
 struct is_reference_wrapper {
     template <typename T, typename D = typename T::type>
-    static constexpr bool check(T*) { return std::is_same<T, std::reference_wrapper<D>>::value; };   
-    static constexpr bool check(...) { return false; };
-    static constexpr bool value = check(static_cast<DU*>(0));  
+    static constexpr bool check(T*) {
+        return std::is_same<T, std::reference_wrapper<D>>::value;
+    };
+    static constexpr bool check(...) {
+        return false;
+    };
+    static constexpr bool value = check(static_cast<DU*>(0));
 };
 
 
 // =================================
-//       Simple grammar sugar 
+//       Simple grammar sugar
 // =================================
 
 // call "foo" for times
