@@ -1,1 +1,0 @@
-/usr/bin/c++  -std=c++17 -Wall -g -O2 -pthread  -rdynamic CMakeFiles/compare_batch_submit.dir/compare_batch_submit.cpp.o  -o compare_batch_submit 
