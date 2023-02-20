@@ -1,0 +1,1 @@
+/usr/bin/c++  -std=c++17 -Wall -g -O2 -pthread  -rdynamic CMakeFiles/compare_other_task.dir/compare_other_task.cpp.o  -o compare_other_task 

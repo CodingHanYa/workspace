@@ -3,7 +3,6 @@
 # log result
 log_file=./result.txt
 
-
 print() {
     echo -e -n "$@" >> $log_file
 }
@@ -11,7 +10,6 @@ print() {
 println() {
     echo -e "$@" >> $log_file
 }
-
 
 echo_test_result() {
     println "File: "$1" "$2"/"$3 
@@ -59,9 +57,9 @@ run_test_file() {
 # clean the old result
 printf "" > $log_file
 
-g++ test_balance.cpp -o test_balance -lpthread
-g++ test_dynamic.cpp -o test_dynamic -lpthread
-g++ test_steady.cpp -o test_steady -lpthread
+g++ -Wall test_balance.cpp -o test_balance -lpthread
+g++ -Wall test_dynamic.cpp -o test_dynamic -lpthread
+g++ -Wall test_steady.cpp -o test_steady -lpthread
 
 daildate=`date`
 time=`echo $daildate | cut -f4 -d' '`

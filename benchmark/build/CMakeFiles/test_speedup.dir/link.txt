@@ -1,0 +1,1 @@
+/usr/bin/c++  -std=c++17 -Wall -g -O2 -pthread  -rdynamic CMakeFiles/test_speedup.dir/test_speedup.cpp.o  -o test_speedup 

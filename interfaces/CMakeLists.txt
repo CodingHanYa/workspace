@@ -1,9 +1,7 @@
-include_directories(../)
+cmake_minimum_required(VERSION 3.2.5)
 
-set(LIB "-lpthread")
+include_directories(../)
+set(CMAKE_CXX_FLAGS "-std=c++11 -Wall -g -O2 -pthread")
 
 add_executable( test_steady_pond_interface test_steady_pond_interface.cpp)
-target_link_libraries(test_steady_pond_interface ${LIB})
-
 add_executable( test_dynamic_pond_interface test_dynamic_pond_interface.cpp)
-target_link_libraries(test_dynamic_pond_interface ${LIB})

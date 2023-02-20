@@ -1,0 +1,1 @@
+/usr/bin/c++  -std=c++17 -Wall -g -O2 -pthread  -rdynamic CMakeFiles/test_empty_task.dir/test_empty_task.cpp.o  -o test_empty_task 

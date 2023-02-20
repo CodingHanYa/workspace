@@ -1,10 +1,8 @@
 
-include_directories(../)
+cmake_minimum_required(VERSION 3.2.5)
 
-set(LIB "-lpthread")
+include_directories(../)
+set(CMAKE_CXX_FLAGS "-std=c++11 -Wall -g -O2 -pthread")
 
 add_executable( demo1 demo1.cpp)
-target_link_libraries(demo1 ${LIB})
-
 add_executable( demo2 demo2.cpp)
-target_link_libraries(demo2 ${LIB})
