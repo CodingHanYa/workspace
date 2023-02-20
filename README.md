@@ -512,36 +512,43 @@ pond.submut([&]{pond.waitForTasks();});
 
 ```
 .
-├── LICENSE.txt                          协议
+├── LICENSE.txt
 ├── README.md
-├── balanced_pond.h                      均衡线程池
-├── benchmark                            性能测试文件夹 
-│   ├── BS_thread_pool.hpp               BS源码
-│   ├── compare_batch_submit.cpp         对比Hipe-Steady和Hipe-Balance的批量提交接口
-│   ├── compare_other_task.cpp           对比Hipe-Steady和Hipe-Balance执行其它任务的性能（内存密集型任务）
-│   ├── compare_submit.cpp               对比Hipe-Steady和Hipe-Balance执行空任务的性能
-│   ├── makefile
-│   ├── test_empty_task.cpp              测试几种线程池执行空任务的性能
-│   └── test_speedup.cpp                 加速比测试
-├── compat.h                             封装一点编译优化指令
-├── format.sh                            格式化源文件的简单脚本
-├── demo 
-│   ├── demo1.cpp                        将动态线程池用作缓冲池
-│   └── demo2.cpp                        动态调整动态线程池
-├── dynamic_pond.h                       动态线程池
-├── header.h                             定义类线程类基类和Hipe-Steady+Hipe-Balance的基类（定义了提交任务、任务溢出、负载均衡）
-├── hipe.h                               头文件（导入此文件即可使用）
-├── interfaces                           测试接口
-│   ├── makefile
-│   ├── test_dynamic_pond_interface.cpp
-│   └── test_steady_pond_interface.cpp
-├── stability                            稳定性测试
-│   ├── run.sh                           协助测试的脚本
-│   ├── test_dynamic.cpp                 测试动态线程池的稳定性（推入大量任务、动态调整线程并做多次测试）
-|   ├── test_balance.cpp                 测试均衡线程池的稳定性（推入大量任务并做多次测试）
-│   └── test_steady.cpp                  测试稳定线程池的稳定性（推入大量任务并做多次测试）
-├── steady_pond.h                        稳定线程池
-└── util.h                               工具包（任务包装器，计时器，同步输出流......）
+├── benchmark
+│   ├── BS_thread_pool.hpp        BS源码
+│   ├── CMakeLists.txt          
+│   ├── build                     用于存放可执行文件的空文件夹
+│   ├── compare_batch_submit.cpp  对比Hipe-Steady和Hipe-Balance的批量提交接口
+│   ├── compare_other_task.cpp    对比Hipe-Steady和Hipe-Balance执行其它任务的性能（内存密集型任务）
+│   ├── compare_submit.cpp        对比Hipe-Steady和Hipe-Balance执行空任务的性能
+│   ├── test_empty_task.cpp       对比几种线程池执行空任务的性能
+│   └── test_speedup.cpp          对比几种线程池的加速比
+├── demo
+│   ├── CMakeLists.txt
+│   ├── build
+│   ├── demo1.cpp                 将动态线程池用作缓冲池
+│   └── demo2.cpp                 动态调整动态线程池的案例
+├── format.sh                     格式化所有.cc/.cpp/.h文件的脚本
+├── hipe.h                        头文件
+├── interfaces               
+│   ├── CMakeLists.txt
+│   ├── build
+│   ├── test_dynamic_pond_interface.cpp     动态线程池的接口
+│   └── test_steady_pond_interface.cpp      稳定线程池的接口
+├── src
+│   ├── balanced_pond.h           均衡线程池
+│   ├── compat.h                  对编译优化做的一点兼容
+│   ├── dynamic_pond.h            动态线程池
+│   ├── header.h                  C++头文件
+│   ├── steady_pond.h             稳定线程池
+│   └── util.h                    工具包
+└── stability                   
+    ├── clean.sh                 
+    ├── result.txt                 
+    ├── run.sh                    运行该脚本即可完成稳定性测试  
+    ├── test_balance.cpp
+    ├── test_dynamic.cpp
+    └── test_steady.cpp
 ```
 
 ## 鸣谢
