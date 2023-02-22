@@ -22,9 +22,9 @@ int main() {
 
         double res2 = hipe::util::timewait([&] {
             for (int i = 0; i < task_numb; ++i) {
-                pond1.submit([] {});
+                pond2.submit([] {});
             }
-            pond1.waitForTasks();
+            pond2.waitForTasks();
         });
 
         printf("Task-Numb: %-8d | Thread-Numb: %-3d | Steady-Time-Cost: %.5f  |  Balanced-Time-Cost: %.5f\n", task_numb,
