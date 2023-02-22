@@ -3,8 +3,8 @@
 =====================================
 
 Your Last Commit Info:
-387aabc6ddff2a287f630a7576d3b1dc89b3144d 00360d6acf03f91c05aeb9680fef5c5688416a58
-HanYa <1848395727@qq.com> 1676113779 +0800 commit: chore(test_balance, test_steady)做更多测试，降低每次测试的任务数
+a465097b669c12dcdc775b4e6a6d117d55214c8b 1df4b297e8d85b4a98ad10bcc455030fbd9653a1
+HanYa <1848395727@qq.com> 1676888554 +0800 commit: Fix: 修正了动态线程池删除线程接口的bug
 ------------------------------
 =
 ==

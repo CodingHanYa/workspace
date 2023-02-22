@@ -45,7 +45,7 @@ class DynamicThreadPond
     std::condition_variable thread_cv = {};
 
     // dynamic thread pond
-    std::list<std::thread> pond;
+    std::map<std::thread::id, std::thread> pond;
 
     // keep dead threads
     std::queue<std::thread> dead_threads;
@@ -94,7 +94,8 @@ public:
         expect_tnumb += tnumb;
         HipeLockGuard lock(shared_locker);
         while (tnumb--) {
-            pond.emplace_back(&DynamicThreadPond::worker, this, pond.rbegin());
+            std::thread t(&DynamicThreadPond::worker, this);
+            pond.emplace(std::make_pair<std::thread::id, std::thread>(t.get_id(), std::move(t)));
         }
     }
 
@@ -132,11 +133,17 @@ public:
 
     // join dead threads to recycle thread resource
     void joinDeadThreads() {
-        while (!dead_threads.empty()) {
+        std::thread t;
+        while (true) {
             shared_locker.lock();
-            auto t = std::move(dead_threads.front());
-            dead_threads.pop();
-            shared_locker.unlock();
+            if (!dead_threads.empty()) {
+                t = std::move(dead_threads.front());
+                dead_threads.pop();
+                shared_locker.unlock();
+            } else {
+                shared_locker.unlock();
+                break;
+            }
             t.join();
         }
     }
@@ -240,15 +247,13 @@ public:
 
 
 private:
-    using Iter = std::list<std::thread>::reverse_iterator;
-
     void notifyThreadAdjust() {
         HipeLockGuard lock(shared_locker);
         thread_cv.notify_one();
     }
 
     // working threads' default loop
-    void worker(Iter it) {
+    void worker() {
         // task container
         HipeTask task;
 
@@ -256,7 +261,6 @@ private:
         if (is_waiting_for_thread) {
             notifyThreadAdjust();
         }
-
         do {
             HipeUniqGuard locker(shared_locker);
             awake_cv.wait(locker, [this] { return !shared_tq.empty() || shrink_numb > 0; });
@@ -264,10 +268,12 @@ private:
             // receive deletion inform
             if (shrink_numb) {
                 shrink_numb--;
-                dead_threads.emplace(std::move(*it)); // save std::thread
-                pond.erase((++it).base());
+                auto id = std::this_thread::get_id();
+                dead_threads.emplace(std::move(pond[id])); // save std::thread
+                pond.erase(id);
                 break;
             }
+
             task = std::move(shared_tq.front());
             shared_tq.pop();
             locker.unlock();

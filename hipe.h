@@ -9,14 +9,14 @@
  * It is a steady thread pond that has constant count of threads and is suitable for stable task volume and light task.
  * It also support task stealing, batch submission, batch execution, thread load balancing.
  */
-#include "./steady_pond.h"
+#include "./src/steady_pond.h"
 
 /**
  * @brief A dynamic thread pond.
  * It is a dynamic thread pond that allows expanding the pond with some threads or delete some threads from the pond.
  * To help you know when  and how to motify the pond, it provided interfaces to monitor the speed of task digestion.
  */
-#include "./dynamic_pond.h"
+#include "./src/dynamic_pond.h"
 
 
 /**
@@ -24,4 +24,4 @@
  * It is a balanced thread pond has outstanding performance and support task stealing, batch submission, batch
  * execution, thread load balancing.
  */
-#include "./balanced_pond.h"
+#include "./src/balanced_pond.h"

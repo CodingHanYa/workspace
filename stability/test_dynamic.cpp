@@ -2,26 +2,25 @@
 using namespace hipe;
 
 int main() {
-    hipe::DynamicThreadPond pond(8);
+    hipe::DynamicThreadPond pond(4);
 
     std::atomic_int var(0);
     int each_task_nums = 100;
 
-    pond.addThreads(8);    // 8 + 8 = 16
+    pond.addThreads(4);    // 4 + 4 = 8
     pond.waitForThreads(); // wait for thread adjust
 
-    assert(16 == pond.getRunningThreadNumb());
+    assert(8 == pond.getRunningThreadNumb());
 
-    // delete all the threads
-    pond.delThreads(pond.getRunningThreadNumb());
+    pond.delThreads(5); // 8-5 = 3
     pond.waitForThreads();
     pond.joinDeadThreads();
 
-    assert(0 == pond.getRunningThreadNumb());
-    assert(0 == pond.getExpectThreadNumb());
+    assert(3 == pond.getRunningThreadNumb());
+    assert(3 == pond.getExpectThreadNumb());
 
     // adjust thread numb
-    pond.adjustThreads(1);
+    pond.adjustThreads(1); // thread number = 1
 
     // add tasks
     for (int i = 0; i < each_task_nums; ++i) {
