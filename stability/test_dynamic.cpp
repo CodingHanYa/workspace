@@ -31,14 +31,15 @@ int main() {
     }
 
     int block_size = 100;
-    util::Block<std::function<void()>> block(block_size);
+    std::vector<std::function<void()>> block;
+    block.reserve(block_size);
 
     for (int i = 0; i < each_task_nums / block_size; ++i) {
         for (int j = 0; j < block_size; ++j) {
-            block.add([&] { var++; });
+            block.emplace_back([&] { var++; });
         }
         pond.submitInBatch(block, block_size);
-        block.clean();
+        block.clear();
     }
     pond.waitForTasks();
 
