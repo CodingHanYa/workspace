@@ -7,11 +7,10 @@
 bool closed = false;
 int g_tnumb = 8;
 int tasks_numb = 15000;
-int milli_per_submit = 500; // 0.5s
+int milli_per_submit = 500;  // 0.5s
 
 void manager(hipe::DynamicThreadPond* pond) {
-    enum class Action { add,
-                        del };
+    enum class Action { add, del };
     Action last_act = Action::add;
 
     int unit = 2;
@@ -19,7 +18,6 @@ void manager(hipe::DynamicThreadPond* pond) {
     int max_thread_numb = 200;
     int min_thread_numb = 8;
     int total = 0;
-
 
     while (!closed) {
         auto new_load = pond->resetTasksLoaded();
@@ -38,7 +36,6 @@ void manager(hipe::DynamicThreadPond* pond) {
             }
 
         } else if (new_load < prev_load) {
-
             if (last_act == Action::add && tnumb > min_thread_numb) {
                 pond->delThreads(unit);
                 pond->waitForThreads();
@@ -58,7 +55,7 @@ void manager(hipe::DynamicThreadPond* pond) {
         prev_load = new_load;
 
         // I think that the interval of each sleep should be an order of magnitude more than the time a task cost.
-        hipe::util::sleep_for_seconds(1); // 1s
+        hipe::util::sleep_for_seconds(1);  // 1s
     }
 
     total += pond->resetTasksLoaded();
@@ -91,7 +88,7 @@ int main() {
             pond.submit(task2);
             pond.submit(task3);
         }
-        hipe::util::sleep_for_milli(500); // 0.5s
+        hipe::util::sleep_for_milli(500);  // 0.5s
     }
 
     // wait for task done and than close the manager

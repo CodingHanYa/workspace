@@ -64,7 +64,6 @@ void test_Hipe_steady() {
     }
 }
 
-
 // BalancedThreadPond
 void test_Hipe_balance() {
     int tnumb = std::thread::hardware_concurrency();
@@ -85,9 +84,7 @@ void test_Hipe_balance() {
     }
 }
 
-
 int main() {
-
     test_BS();
 
     hipe::util::sleep_for_seconds(5);

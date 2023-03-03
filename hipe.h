@@ -18,7 +18,6 @@
  */
 #include "./src/dynamic_pond.h"
 
-
 /**
  * @brief A balanced thread pond
  * It is a balanced thread pond has outstanding performance and support task stealing, batch submission, batch

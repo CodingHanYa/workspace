@@ -1,5 +1,4 @@
 #pragma once
-#include "./util.h"
 #include <atomic>
 #include <cassert>
 #include <condition_variable>
@@ -16,6 +15,8 @@
 #include <thread>
 #include <type_traits>
 #include <vector>
+
+#include "./util.h"
 
 namespace hipe {
 
@@ -40,41 +41,32 @@ using HipeTimePoint = std::chrono::steady_clock::time_point;
 template <typename T>
 using HipeFutures = util::Futures<T>;
 
-
-class ThreadPoolError : public std::exception
-{
-private:
+class ThreadPoolError : public std::exception {
+   private:
     std::string message;
 
-public:
+   public:
     explicit ThreadPoolError(std::string msg)
-      : message{std::move(msg)} {
-    }
-    const char* what() const noexcept override {
-        return message.data();
-    }
+      : message{std::move(msg)} {}
+    const char* what() const noexcept override { return message.data(); }
 };
 
-class TaskOverflowError : public ThreadPoolError
-{
-};
+class TaskOverflowError : public ThreadPoolError {};
 
 // A thread that can automatically joined.
-class AutoThread
-{
+class AutoThread {
     using id = std::thread::id;
     using native_handle_type = std::thread::native_handle_type;
 
-private:
+   private:
     std::thread thread_;
 
-public:
+   public:
     AutoThread() noexcept = default;
 
     template <typename Callable, typename... Args>
     explicit AutoThread(Callable&& func, Args&&... args)
-      : thread_{std::forward<Callable>(func), std::forward<Args>(args)...} {
-    }
+      : thread_{std::forward<Callable>(func), std::forward<Args>(args)...} {}
 
     AutoThread(const AutoThread&) = delete;
     AutoThread& operator=(const AutoThread&) = delete;
@@ -91,42 +83,25 @@ public:
         }
     }
 
-    void swap(AutoThread& other) noexcept {
-        std::swap(thread_, other.thread_);
-    }
+    void swap(AutoThread& other) noexcept { std::swap(thread_, other.thread_); }
 
-    friend void swap(AutoThread& lhs, AutoThread& rhs) noexcept {
-        lhs.swap(rhs);
-    }
+    friend void swap(AutoThread& lhs, AutoThread& rhs) noexcept { lhs.swap(rhs); }
 
-    bool joinable() const noexcept {
-        return thread_.joinable();
-    }
+    bool joinable() const noexcept { return thread_.joinable(); }
 
-    void join() {
-        thread_.join();
-    }
+    void join() { thread_.join(); }
 
-    void detach() {
-        thread_.detach();
-    }
+    void detach() { thread_.detach(); }
 
-    id get_id() const noexcept {
-        return thread_.get_id();
-    }
+    id get_id() const noexcept { return thread_.get_id(); }
 
-    native_handle_type native_handle() {
-        return thread_.native_handle();
-    }
+    native_handle_type native_handle() { return thread_.native_handle(); }
 
-    static unsigned hardware_concurrency() noexcept {
-        return std::thread::hardware_concurrency();
-    }
+    static unsigned hardware_concurrency() noexcept { return std::thread::hardware_concurrency(); }
 };
 
-class ThreadBase
-{
-protected:
+class ThreadBase {
+   protected:
     bool waiting = false;
     AutoThread handle;
 
@@ -134,29 +109,19 @@ protected:
     std::condition_variable task_done_cv;
     std::mutex cv_locker;
 
-public:
+   public:
     ThreadBase() = default;
     virtual ~ThreadBase() = default;
 
-    int getTasksNumb() {
-        return task_numb.load();
-    }
+    int getTasksNumb() { return task_numb.load(); }
 
-    bool notask() {
-        return !task_numb;
-    }
+    bool notask() { return !task_numb; }
 
-    void join() {
-        handle.join();
-    }
+    void join() { handle.join(); }
 
-    void bindHandle(AutoThread&& handle_) {
-        this->handle = std::move(handle_);
-    }
+    void bindHandle(AutoThread&& handle_) { this->handle = std::move(handle_); }
 
-    bool isWaiting() const {
-        return waiting;
-    }
+    bool isWaiting() const { return waiting; }
 
     void waitTasksDone() {
         waiting = true;
@@ -164,9 +129,7 @@ public:
         task_done_cv.wait(lock, [this] { return !task_numb; });
     }
 
-    void cleanWaitingFlag() {
-        waiting = false;
-    }
+    void cleanWaitingFlag() { waiting = false; }
 
     void notifyTaskDone() {
         HipeUniqGuard lock(cv_locker);
@@ -174,15 +137,13 @@ public:
     }
 };
 
-
 /**
  * @brief Basic class of thread pond that has defined all mechanism except async thread's loop.
  * @tparam The type of thread wrapper class that inherited from ThreadBase.
  */
 template <typename Ttype>
-class FixedThreadPond
-{
-protected:
+class FixedThreadPond {
+   protected:
     // stop the thread pend
     bool stop = {false};
 
@@ -213,7 +174,7 @@ protected:
     // task overflow call back
     HipeTask refuse_cb;
 
-protected:
+   protected:
     /**
      * @param thread_numb fixed thread number
      * @param task_capacity task capacity of the pond, default: unlimited
@@ -222,7 +183,6 @@ protected:
     explicit FixedThreadPond(
         int thread_numb = 0, int task_capacity = HipeUnlimited,
         typename std::enable_if<std::is_base_of<ThreadBase, Ttype>::value>::type* type_limit = nullptr) {
-
         assert(thread_numb >= 0);
         assert(task_capacity >= 0);
 
@@ -253,11 +213,10 @@ protected:
         }
     }
 
-public:
+   public:
     // ====================================================
     //                Universal interfaces
     // ====================================================
-
 
     /**
      * Wait until all threads finish their task
@@ -270,7 +229,6 @@ public:
             threads[i].cleanWaitingFlag();
         }
     }
-
 
     /**
      * @brief Close the pond.
@@ -295,13 +253,10 @@ public:
         return ret;
     }
 
-
     /**
      * get the number of threads
      */
-    int getThreadNumb() {
-        return thread_numb;
-    }
+    int getThreadNumb() { return thread_numb; }
 
     /**
      * @brief submit task
@@ -338,7 +293,6 @@ public:
         return fut;
     }
 
-
     /**
      * submit in a batch and the task container must override "[]"
      * @param cont tasks container
@@ -362,12 +316,10 @@ public:
         }
     }
 
-
-protected:
+   protected:
     // ====================================================
     //              load balancing mechanism
     // ====================================================
-
 
     /**
      * Move cursor to the least busy thread and then get
@@ -404,7 +356,7 @@ protected:
         return (tmp > 4) ? 4 : tmp;
     }
 
-public:
+   public:
     // enable task stealing between threads
     void enableStealTasks(int max_numb = 0) {
         assert(max_numb >= 0);
@@ -422,16 +374,12 @@ public:
     }
 
     // disable task stealing between each thread
-    void disableStealTasks() {
-        enable_steal_tasks = false;
-    }
+    void disableStealTasks() { enable_steal_tasks = false; }
 
-
-public:
+   public:
     // ====================================================
     //               task overflow mechanism
     // ====================================================
-
 
     /**
      * Set refuse call back.
@@ -440,7 +388,8 @@ public:
      */
     template <typename F, typename... Args>
     void setRefuseCallBack(F&& foo, Args&&... args) {
-        static_assert(util::is_runnable<F, Args...>::value, "[HipeError]: The refuse callback is a non-runnable object");
+        static_assert(util::is_runnable<F, Args...>::value,
+                      "[HipeError]: The refuse callback is a non-runnable object");
         if (!thread_cap) {
             throw std::logic_error(
                 "[HipeError]: The refuse callback will never be invoked because the capacity has been set unlimited");
@@ -458,11 +407,8 @@ public:
         return tmp;
     }
 
-protected:
-    Ttype* getThreadNow() {
-        return &threads[cursor];
-    }
-
+   protected:
+    Ttype* getThreadNow() { return &threads[cursor]; }
 
     /**
      * Judge whether there are enough capacity for tasks,
@@ -478,12 +424,10 @@ protected:
         auto spare = [this, tar_capacity](Ttype& t) { return (t.getTasksNumb() + tar_capacity) <= thread_cap; };
         while (!spare(threads[cursor])) {
             util::recyclePlus(cursor, 0, thread_numb);
-            if (cursor == prev)
-                return false;
+            if (cursor == prev) return false;
         }
         return true;
     }
-
 
     // task overflow callback for one task
     template <typename T>
@@ -497,7 +441,6 @@ protected:
             throw std::runtime_error("[HipeError]: Task overflow while submitting task");
         }
     }
-
 
     /**
      * task overflow callback for batch submit
@@ -519,4 +462,4 @@ protected:
     }
 };
 
-} // namespace hipe
+}  // namespace hipe

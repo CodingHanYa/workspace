@@ -8,13 +8,12 @@
 namespace hipe {
 
 // thread object that support double queue replacement algorithm
-class DqThread : public ThreadBase
-{
+class DqThread : public ThreadBase {
     std::queue<HipeTask> public_tq;
     std::queue<HipeTask> buffer_tq;
     util::spinlock tq_locker = {};
 
-public:
+   public:
     void runTasks() {
         while (!buffer_tq.empty()) {
             util::invoke(buffer_tq.front());
@@ -65,14 +64,12 @@ public:
     }
 };
 
-
 /**
  * @brief A steady thread pond.
  * Support task stealing and execute tasks in batches
  */
-class SteadyThreadPond : public FixedThreadPond<DqThread>
-{
-public:
+class SteadyThreadPond : public FixedThreadPond<DqThread> {
+   public:
     /**
      * @param thread_numb fixed thread number
      * @param task_capacity task capacity of the pond, default: unlimited
@@ -88,7 +85,7 @@ public:
 
     ~SteadyThreadPond() override = default;
 
-private:
+   private:
     void worker(int index) {
         auto& self = threads[index];
 
@@ -127,4 +124,4 @@ private:
     }
 };
 
-} // namespace hipe
+}  // namespace hipe

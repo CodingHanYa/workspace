@@ -1,7 +1,7 @@
-#include "../hipe.h"
-#include "./BS_thread_pool.hpp"
 #include <cmath>
 
+#include "../hipe.h"
+#include "./BS_thread_pool.hpp"
 
 double single_result = 0.0;
 int repeat_times = 5;
@@ -45,7 +45,6 @@ void test_single_thread() {
     single_result = single_per_task;
 }
 
-
 /**
  * BS_thread_pool is an open source project from github , which has gain 1k+ stars.
  * It use C++17 to construct a lightweight, fast thread pool.
@@ -65,7 +64,6 @@ void test_BS() {
         pool.wait_for_tasks();
     };
 
-
     for (int i = 0; i < 6; ++i, task_numb += 12) {
         double total = 0.0;
         for (int j = 0; j < repeat_times; ++j) {
@@ -78,7 +76,6 @@ void test_BS() {
                "compute mode", task_numb, multi_per_task);
     }
 }
-
 
 /**
  * use Steady thread pond provided by Hipe
@@ -99,7 +96,6 @@ void test_Hipe_steady() {
         pond.waitForTasks();
     };
 
-
     for (int i = 0; i < 6; ++i, task_numb += 12) {
         double total = 0.0;
         for (int j = 0; j < repeat_times; ++j) {
@@ -112,7 +108,6 @@ void test_Hipe_steady() {
                "compute mode", task_numb, multi_per_task);
     }
 }
-
 
 /**
  * use dynamic thread pond provided by Hipe
@@ -132,7 +127,6 @@ void test_Hipe_dynamic() {
         }
         pond.waitForTasks();
     };
-
 
     for (int i = 0; i < 6; ++i, task_numb += 12) {
         double total = 0.0;
@@ -179,10 +173,8 @@ void test_Hipe_balance() {
     }
 }
 
-
 // Notice that don't do two tests at once
 int main() {
-
     // test_single_thread();
     // test_BS();
     // test_Hipe_dynamic();

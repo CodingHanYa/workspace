@@ -12,7 +12,6 @@ int main() {
         hipe::SteadyThreadPond pond1(t);
         hipe::BalancedThreadPond pond2(t);
 
-
         double res1 = hipe::util::timewait([&] {
             for (int i = 0; i < task_numb; ++i) {
                 pond1.submit([] {});

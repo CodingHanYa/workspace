@@ -35,9 +35,7 @@ void test_Hipe_steady_batch_submit() {
     }
 }
 
-
 void test_Hipe_Balance_batch_submit() {
-
     hipe::util::print("\n", hipe::util::title("Test C++(11) Thread Pool Hipe-Balance-Batch-Submit(10)"));
 
     hipe::BalancedThreadPond pond(thread_numb, thread_numb * 1000);

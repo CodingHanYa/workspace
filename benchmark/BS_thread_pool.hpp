@@ -18,20 +18,20 @@
 
 #define BS_THREAD_POOL_VERSION "v3.3.0 (2022-08-03)"
 
-#include <atomic>             // std::atomic
-#include <chrono>             // std::chrono
-#include <condition_variable> // std::condition_variable
-#include <exception>          // std::current_exception
-#include <functional>         // std::bind, std::function, std::invoke
-#include <future>             // std::future, std::promise
-#include <iostream>           // std::cout, std::endl, std::flush, std::ostream
-#include <memory>             // std::make_shared, std::make_unique, std::shared_ptr, std::unique_ptr
-#include <mutex>              // std::mutex, std::scoped_lock, std::unique_lock
-#include <queue>              // std::queue
-#include <thread>             // std::thread
-#include <type_traits>        // std::common_type_t, std::conditional_t, std::decay_t, std::invoke_result_t, std::is_void_v
-#include <utility>            // std::forward, std::move, std::swap
-#include <vector>             // std::vector
+#include <atomic>              // std::atomic
+#include <chrono>              // std::chrono
+#include <condition_variable>  // std::condition_variable
+#include <exception>           // std::current_exception
+#include <functional>          // std::bind, std::function, std::invoke
+#include <future>              // std::future, std::promise
+#include <iostream>            // std::cout, std::endl, std::flush, std::ostream
+#include <memory>              // std::make_shared, std::make_unique, std::shared_ptr, std::unique_ptr
+#include <mutex>               // std::mutex, std::scoped_lock, std::unique_lock
+#include <queue>               // std::queue
+#include <thread>              // std::thread
+#include <type_traits>  // std::common_type_t, std::conditional_t, std::decay_t, std::invoke_result_t, std::is_void_v
+#include <utility>      // std::forward, std::move, std::swap
+#include <vector>       // std::vector
 
 namespace BS {
 /**
@@ -49,15 +49,14 @@ using concurrency_t = std::invoke_result_t<decltype(std::thread::hardware_concur
  */
 template <typename T>
 class [[nodiscard]] multi_future {
-public:
+   public:
     /**
      * @brief Construct a multi_future object with the given number of futures.
      *
      * @param num_futures_ The desired number of futures to store.
      */
     multi_future(const size_t num_futures_ = 0)
-      : futures(num_futures_) {
-    }
+      : futures(num_futures_) {}
 
     /**
      * @brief Get the results from all the futures stored in this multi_future object, rethrowing any stored exceptions.
@@ -67,13 +66,11 @@ public:
      */
     [[nodiscard]] std::conditional_t<std::is_void_v<T>, void, std::vector<T>> get() {
         if constexpr (std::is_void_v<T>) {
-            for (size_t i = 0; i < futures.size(); ++i)
-                futures[i].get();
+            for (size_t i = 0; i < futures.size(); ++i) futures[i].get();
             return;
         } else {
             std::vector<T> results(futures.size());
-            for (size_t i = 0; i < futures.size(); ++i)
-                results[i] = futures[i].get();
+            for (size_t i = 0; i < futures.size(); ++i) results[i] = futures[i].get();
             return results;
         }
     }
@@ -84,37 +81,30 @@ public:
      * @param i The index of the desired future.
      * @return The future.
      */
-    [[nodiscard]] std::future<T>& operator[](const size_t i) {
-        return futures[i];
-    }
+    [[nodiscard]] std::future<T>& operator[](const size_t i) { return futures[i]; }
 
     /**
      * @brief Append a future to this multi_future object.
      *
      * @param future The future to append.
      */
-    void push_back(std::future<T> future) {
-        futures.push_back(std::move(future));
-    }
+    void push_back(std::future<T> future) { futures.push_back(std::move(future)); }
 
     /**
      * @brief Get the number of futures stored in this multi_future object.
      *
      * @return The number of futures.
      */
-    [[nodiscard]] size_t size() const {
-        return futures.size();
-    }
+    [[nodiscard]] size_t size() const { return futures.size(); }
 
     /**
      * @brief Wait for all the futures stored in this multi_future object.
      */
     void wait() const {
-        for (size_t i = 0; i < futures.size(); ++i)
-            futures[i].wait();
+        for (size_t i = 0; i < futures.size(); ++i) futures[i].wait();
     }
 
-private:
+   private:
     /**
      * @brief A vector to store the futures.
      */
@@ -137,7 +127,7 @@ private:
  */
 template <typename T1, typename T2, typename T = std::common_type_t<T1, T2>>
 class [[nodiscard]] blocks {
-public:
+   public:
     /**
      * @brief Construct a blocks object with the given specifications.
      *
@@ -149,8 +139,7 @@ public:
       : first_index(static_cast<T>(first_index_))
       , index_after_last(static_cast<T>(index_after_last_))
       , num_blocks(num_blocks_) {
-        if (index_after_last < first_index)
-            std::swap(index_after_last, first_index);
+        if (index_after_last < first_index) std::swap(index_after_last, first_index);
         total_size = static_cast<size_t>(index_after_last - first_index);
         block_size = static_cast<size_t>(total_size / num_blocks);
         if (block_size == 0) {
@@ -165,9 +154,7 @@ public:
      * @param i The block number.
      * @return The first index.
      */
-    [[nodiscard]] T start(const size_t i) const {
-        return static_cast<T>(i * block_size) + first_index;
-    }
+    [[nodiscard]] T start(const size_t i) const { return static_cast<T>(i * block_size) + first_index; }
 
     /**
      * @brief Get the index after the last index of a block.
@@ -185,20 +172,16 @@ public:
      *
      * @return The number of blocks.
      */
-    [[nodiscard]] size_t get_num_blocks() const {
-        return num_blocks;
-    }
+    [[nodiscard]] size_t get_num_blocks() const { return num_blocks; }
 
     /**
      * @brief Get the total number of indices in the range.
      *
      * @return The total number of indices.
      */
-    [[nodiscard]] size_t get_total_size() const {
-        return total_size;
-    }
+    [[nodiscard]] size_t get_total_size() const { return total_size; }
 
-private:
+   private:
     /**
      * @brief The size of each block (except possibly the last block).
      */
@@ -234,9 +217,8 @@ private:
 /**
  * @brief A fast, lightweight, and easy-to-use C++17 thread pool class.
  */
-class [[nodiscard]] thread_pool
-{
-public:
+class [[nodiscard]] thread_pool {
+   public:
     // ============================
     // Constructors and destructors
     // ============================
@@ -293,27 +275,21 @@ public:
      *
      * @return The total number of tasks.
      */
-    [[nodiscard]] size_t get_tasks_total() const {
-        return tasks_total;
-    }
+    [[nodiscard]] size_t get_tasks_total() const { return tasks_total; }
 
     /**
      * @brief Get the number of threads in the pool.
      *
      * @return The number of threads.
      */
-    [[nodiscard]] concurrency_t get_thread_count() const {
-        return thread_count;
-    }
+    [[nodiscard]] concurrency_t get_thread_count() const { return thread_count; }
 
     /**
      * @brief Check whether the pool is currently paused.
      *
      * @return true if the pool is paused, false if it is not paused.
      */
-    [[nodiscard]] bool is_paused() const {
-        return paused;
-    }
+    [[nodiscard]] bool is_paused() const { return paused; }
 
     /**
      * @brief Parallelize a loop by automatically splitting it into blocks and submitting each block separately to the
@@ -380,9 +356,7 @@ public:
      * @brief Pause the pool. The workers will temporarily stop retrieving new tasks out of the queue, although any
      * tasks already executed will keep running until they are finished.
      */
-    void pause() {
-        paused = true;
-    }
+    void pause() { paused = true; }
 
     /**
      * @brief Parallelize a loop by automatically splitting it into blocks and submitting each block separately to the
@@ -507,7 +481,8 @@ public:
             } catch (...) {
                 try {
                     task_promise->set_exception(std::current_exception());
-                } catch (...) {}
+                } catch (...) {
+                }
             }
         });
         return task_promise->get_future();
@@ -516,9 +491,7 @@ public:
     /**
      * @brief Unpause the pool. The workers will resume retrieving new tasks out of the queue.
      */
-    void unpause() {
-        paused = false;
-    }
+    void unpause() { paused = false; }
 
     /**
      * @brief Wait for tasks to be completed. Normally, this function waits for all tasks, both those that are currently
@@ -533,7 +506,7 @@ public:
         waiting = false;
     }
 
-private:
+   private:
     // ========================
     // Private member functions
     // ========================
@@ -598,8 +571,7 @@ private:
                 task();
                 tasks_lock.lock();
                 --tasks_total;
-                if (waiting)
-                    task_done_cv.notify_one();
+                if (waiting) task_done_cv.notify_one();
             }
         }
     }
@@ -673,17 +645,15 @@ private:
 /**
  * @brief A helper class to synchronize printing to an output stream by different threads.
  */
-class [[nodiscard]] synced_stream
-{
-public:
+class [[nodiscard]] synced_stream {
+   public:
     /**
      * @brief Construct a new synced stream.
      *
      * @param out_stream_ The output stream to print to. The default value is std::cout.
      */
     synced_stream(std::ostream& out_stream_ = std::cout)
-      : out_stream(out_stream_) {
-    }
+      : out_stream(out_stream_) {}
 
     /**
      * @brief Print any number of items into the output stream. Ensures that no other threads print to this stream
@@ -724,7 +694,7 @@ public:
      */
     inline static std::ostream& (&flush)(std::ostream&) = static_cast<std::ostream& (&)(std::ostream&)>(std::flush);
 
-private:
+   private:
     /**
      * @brief The output stream to print to.
      */
@@ -745,22 +715,17 @@ private:
 /**
  * @brief A helper class to measure execution time for benchmarking purposes.
  */
-class [[nodiscard]] timer
-{
-public:
+class [[nodiscard]] timer {
+   public:
     /**
      * @brief Start (or restart) measuring time.
      */
-    void start() {
-        start_time = std::chrono::steady_clock::now();
-    }
+    void start() { start_time = std::chrono::steady_clock::now(); }
 
     /**
      * @brief Stop measuring time and store the elapsed time since start().
      */
-    void stop() {
-        elapsed_time = std::chrono::steady_clock::now() - start_time;
-    }
+    void stop() { elapsed_time = std::chrono::steady_clock::now() - start_time; }
 
     /**
      * @brief Get the number of milliseconds that have elapsed between start() and stop().
@@ -771,7 +736,7 @@ public:
         return (std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_time)).count();
     }
 
-private:
+   private:
     /**
      * @brief The time point when measuring started.
      */
@@ -786,4 +751,4 @@ private:
 //                                        End class timer                                        //
 // ============================================================================================= //
 
-} // namespace BS
+}  // namespace BS

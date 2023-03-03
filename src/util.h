@@ -1,5 +1,4 @@
 #pragma once
-#include "./compat.h"
 #include <atomic>
 #include <cstddef>
 #include <future>
@@ -11,8 +10,9 @@
 #include <type_traits>
 #include <vector>
 
-namespace hipe {
+#include "./compat.h"
 
+namespace hipe {
 
 // util for hipe
 namespace util {
@@ -21,27 +21,17 @@ namespace util {
 //       Easy sleep
 // ======================
 
-inline void sleep_for_seconds(int sec) {
-    std::this_thread::sleep_for(std::chrono::seconds(sec));
-}
+inline void sleep_for_seconds(int sec) { std::this_thread::sleep_for(std::chrono::seconds(sec)); }
 
-inline void sleep_for_milli(int milli) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(milli));
-}
+inline void sleep_for_milli(int milli) { std::this_thread::sleep_for(std::chrono::milliseconds(milli)); }
 
-inline void sleep_for_micro(int micro) {
-    std::this_thread::sleep_for(std::chrono::microseconds(micro));
-}
+inline void sleep_for_micro(int micro) { std::this_thread::sleep_for(std::chrono::microseconds(micro)); }
 
-inline void sleep_for_nano(int nano) {
-    std::this_thread::sleep_for(std::chrono::nanoseconds(nano));
-}
-
+inline void sleep_for_nano(int nano) { std::this_thread::sleep_for(std::chrono::nanoseconds(nano)); }
 
 // ======================
 //        Easy IO
 // ======================
-
 
 template <typename T>
 void print(T&& t) {
@@ -58,15 +48,13 @@ void print(T&& t, Args&&... argv) {
  * Thread sync output stream.
  * It can protect the output from multi thread competition.
  */
-class SyncStream
-{
+class SyncStream {
     std::ostream& out_stream;
     std::recursive_mutex io_locker;
 
-public:
+   public:
     explicit SyncStream(std::ostream& out_stream = std::cout)
-      : out_stream(out_stream) {
-    }
+      : out_stream(out_stream) {}
     template <typename T>
     void print(T&& items) {
         io_locker.lock();
@@ -86,7 +74,6 @@ public:
 //            TMP
 // ===========================
 
-
 // judge whether template param is a runnable object
 template <typename F, typename... Args>
 using is_runnable = std::is_constructible<std::function<void(Args...)>, typename std::remove_reference<F>::type>;
@@ -102,12 +89,9 @@ struct is_reference_wrapper {
     static constexpr bool check(T*) {
         return std::is_same<T, std::reference_wrapper<D>>::value;
     };
-    static constexpr bool check(...) {
-        return false;
-    };
+    static constexpr bool check(...) { return false; };
     static constexpr bool value = check(static_cast<DU*>(0));
 };
-
 
 // =================================
 //       Simple grammar sugar
@@ -146,7 +130,6 @@ void invoke(F&& call, Args&&... args) {
     call(std::forward<Args>(args)...);
 }
 
-
 template <typename Var>
 void recyclePlus(Var& var, Var left_border, Var right_border) {
     var = (++var == right_border) ? left_border : var;
@@ -178,11 +161,9 @@ double timewait(F&& foo, Args&&... argv) {
     return std::chrono::duration<double>(time_end - time_start).count();
 }
 
-
 // ======================================
 //            special format
 // ======================================
-
 
 /**
  * just like this:
@@ -230,28 +211,22 @@ inline std::string strong(const std::string& tar, int left_right_edge = 2) {
     return res;
 }
 
-inline std::string boundary(char element, int length = 10) {
-    return std::string(length, element);
-}
-
+inline std::string boundary(char element, int length = 10) { return std::string(length, element); }
 
 // ======================================
 //             Basic module
 // ======================================
 
-
 // future container
 template <typename T>
-class Futures
-{
+class Futures {
     std::vector<std::future<T>> futures;
     std::vector<T> results;
 
-public:
+   public:
     Futures()
       : futures(0)
-      , results(0) {
-    }
+      , results(0) {}
 
     // return results contained by the built-in vector
     std::vector<T>& get() {
@@ -262,17 +237,11 @@ public:
         return results;
     }
 
-    std::future<T>& operator[](size_t i) {
-        return futures[i];
-    }
+    std::future<T>& operator[](size_t i) { return futures[i]; }
 
-    void push_back(std::future<T>&& future) {
-        futures.push_back(std::move(future));
-    }
+    void push_back(std::future<T>&& future) { futures.push_back(std::move(future)); }
 
-    size_t size() {
-        return futures.size();
-    }
+    size_t size() { return futures.size(); }
 
     // wait for all futures
     void wait() {
@@ -282,50 +251,38 @@ public:
     }
 };
 
-
 // spin locker that use C++11 std::atomic_flag
-class spinlock
-{
+class spinlock {
     std::atomic_flag flag = ATOMIC_FLAG_INIT;
 
-public:
+   public:
     void lock() {
         while (flag.test_and_set(std::memory_order_acquire)) {
             HIPE_PAUSE();
         }
     }
-    void unlock() {
-        flag.clear(std::memory_order_release);
-    }
-    bool try_lock() {
-        return !flag.test_and_set();
-    }
+    void unlock() { flag.clear(std::memory_order_release); }
+    bool try_lock() { return !flag.test_and_set(); }
 };
 
-
 // locker guard for spinlock
-class spinlock_guard
-{
+class spinlock_guard {
     spinlock* lck = nullptr;
 
-public:
+   public:
     explicit spinlock_guard(spinlock& locker) {
         lck = &locker;
         lck->lock();
     }
-    ~spinlock_guard() {
-        lck->unlock();
-    }
+    ~spinlock_guard() { lck->unlock(); }
 };
-
 
 /**
  * It is a safe task type that support saving different kinds of runnable object.
- * It allows the user to construct it by reference (lvalue or rvalue) and 
+ * It allows the user to construct it by reference (lvalue or rvalue) and
  * internally construct a new runnable object by passing in a reference.
  */
-class SafeTask
-{
+class SafeTask {
     struct BaseExec {
         virtual void call() = 0;
         virtual ~BaseExec() = default;
@@ -336,15 +293,14 @@ class SafeTask
         T foo;
         GenericExec(F&& f)
           : foo(std::forward<F>(f)) {
-            static_assert(!is_reference_wrapper<F>::value, "[HipeError]: Use 'reference_wrapper' to save temporary variable is dangerous");
+            static_assert(!is_reference_wrapper<F>::value,
+                          "[HipeError]: Use 'reference_wrapper' to save temporary variable is dangerous");
         }
         ~GenericExec() override = default;
-        void call() override {
-            foo();
-        }
+        void call() override { foo(); }
     };
 
-public:
+   public:
     SafeTask() = default;
     SafeTask(SafeTask&& other) = default;
 
@@ -357,8 +313,7 @@ public:
     // construct a task
     template <typename F, typename = typename std::enable_if<is_runnable<F>::value>::type>
     SafeTask(F&& foo)
-      : exe(new GenericExec<F>(std::forward<F>(foo))) {
-    }
+      : exe(new GenericExec<F>(std::forward<F>(foo))) {}
 
     // reset the task
     template <typename F, typename = typename std::enable_if<is_runnable<F>::value>::type>
@@ -367,9 +322,7 @@ public:
     }
 
     // the task was set
-    bool is_set() {
-        return static_cast<bool>(exe);
-    }
+    bool is_set() { return static_cast<bool>(exe); }
 
     // override "="
     SafeTask& operator=(SafeTask&& tmp) {
@@ -378,21 +331,18 @@ public:
     }
 
     // runnable
-    void operator()() {
-        exe->call();
-    }
+    void operator()() { exe->call(); }
 
-private:
+   private:
     std::unique_ptr<BaseExec> exe = nullptr;
 };
 
 /**
  * It is a quick Task that support saving different kinds of runnable object.
- * It allows user to construct it by reference(lvalue or rvalue). It will not contruct a new object inside it, 
- * but extend the life of the runnable object through saving reference. 
+ * It allows user to construct it by reference(lvalue or rvalue). It will not contruct a new object inside it,
+ * but extend the life of the runnable object through saving reference.
  */
-class QuickTask
-{
+class QuickTask {
     struct BaseExec {
         virtual void call() = 0;
         virtual ~BaseExec() = default;
@@ -402,15 +352,12 @@ class QuickTask
     struct GenericExec : BaseExec {
         F foo;
         GenericExec(F&& f)
-          : foo(std::forward<F>(f)) {
-        }
+          : foo(std::forward<F>(f)) {}
         ~GenericExec() override = default;
-        void call() override {
-            foo();
-        }
+        void call() override { foo(); }
     };
 
-public:
+   public:
     QuickTask() = default;
     QuickTask(QuickTask&& other) = default;
 
@@ -423,8 +370,7 @@ public:
     // construct a task
     template <typename F, typename = typename std::enable_if<is_runnable<F>::value>::type>
     QuickTask(F&& foo)
-      : exe(new GenericExec<F>(std::forward<F>(foo))) {
-    }
+      : exe(new GenericExec<F>(std::forward<F>(foo))) {}
 
     // reset the task
     template <typename F, typename = typename std::enable_if<is_runnable<F>::value>::type>
@@ -433,9 +379,7 @@ public:
     }
 
     // the task was set
-    bool is_set() {
-        return static_cast<bool>(exe);
-    }
+    bool is_set() { return static_cast<bool>(exe); }
 
     // override "="
     QuickTask& operator=(QuickTask&& tmp) {
@@ -444,14 +388,11 @@ public:
     }
 
     // runnable
-    void operator()() {
-        exe->call();
-    }
+    void operator()() { exe->call(); }
 
-private:
+   private:
     std::unique_ptr<BaseExec> exe = nullptr;
 };
-
 
 /**
  * Block for adding tasks in batch
@@ -459,66 +400,46 @@ private:
  * Notice that the element must override " = "
  */
 template <typename T>
-class Block
-{
+class Block {
     size_t sz = 0;
     size_t end = 0;
     std::unique_ptr<T[]> blok = {nullptr};
 
-public:
+   public:
     Block() = default;
     virtual ~Block() = default;
-
 
     Block(Block&& other) noexcept
       : sz(other.sz)
       , end(other.end)
-      , blok(std::move(other.blok)) {
-    }
+      , blok(std::move(other.blok)) {}
 
     explicit Block(size_t size)
       : sz(size)
       , end(0)
-      , blok(new T[size]) {
-    }
+      , blok(new T[size]) {}
 
     Block(const Block& other) = delete;
 
-
-    T& operator[](size_t idx) {
-        return blok[idx];
-    }
+    T& operator[](size_t idx) { return blok[idx]; }
 
     // block's capacity
-    size_t capacity() {
-        return sz;
-    }
+    size_t capacity() { return sz; }
 
     // element number
-    size_t element_numb() {
-        return end;
-    }
+    size_t element_numb() { return end; }
 
     // whether have nums' space
-    bool is_spare_for(size_t nums) {
-        return (end + nums) <= sz;
-    }
+    bool is_spare_for(size_t nums) { return (end + nums) <= sz; }
 
     // whether the block is full
-    bool is_full() {
-        return end == sz;
-    }
+    bool is_full() { return end == sz; }
 
     // add an element
-    void add(T&& tar) {
-        blok[end++] = std::forward<T>(tar);
-    }
+    void add(T&& tar) { blok[end++] = std::forward<T>(tar); }
 
     // pop up the last element
-    void reduce() {
-        end--;
-    }
-
+    void reduce() { end--; }
 
     // fill element. Notice that the element must be copied !
     void fill(const T& tar) {
@@ -528,9 +449,7 @@ public:
     }
 
     // clean the block and delay free memory
-    void clean() {
-        end = 0;
-    }
+    void clean() { end = 0; }
 
     // renew space for the block
     void reset(size_t new_sz) {
@@ -547,9 +466,8 @@ public:
     }
 
     // just for inherit
-    virtual void sort() {
-    }
+    virtual void sort() {}
 };
-} // namespace util
+}  // namespace util
 
-} // namespace hipe
+}  // namespace hipe

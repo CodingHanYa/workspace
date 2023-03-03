@@ -3,13 +3,12 @@
 
 namespace hipe {
 
-class OqThread : public ThreadBase
-{
+class OqThread : public ThreadBase {
     HipeTask task;
     std::queue<HipeTask> tq;
     util::spinlock tq_locker = {};
 
-public:
+   public:
     /**
      * @brief try give one task to another thread
      * @param other another thread
@@ -72,10 +71,8 @@ public:
     }
 };
 
-
-class BalancedThreadPond : public FixedThreadPond<OqThread>
-{
-public:
+class BalancedThreadPond : public FixedThreadPond<OqThread> {
+   public:
     /**
      * @param thread_numb fixed thread number
      * @param task_capacity task capacity of the pond, default: unlimited
@@ -91,7 +88,7 @@ public:
     }
     ~BalancedThreadPond() override = default;
 
-private:
+   private:
     void worker(int index) {
         auto& self = threads[index];
 
@@ -130,4 +127,4 @@ private:
     }
 };
 
-} // namespace hipe
+}  // namespace hipe

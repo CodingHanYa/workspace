@@ -7,12 +7,12 @@ int main() {
     std::atomic_int var(0);
     int each_task_nums = 100;
 
-    pond.addThreads(4);    // 4 + 4 = 8
-    pond.waitForThreads(); // wait for thread adjust
+    pond.addThreads(4);     // 4 + 4 = 8
+    pond.waitForThreads();  // wait for thread adjust
 
     assert(8 == pond.getRunningThreadNumb());
 
-    pond.delThreads(5); // 8-5 = 3
+    pond.delThreads(5);  // 8-5 = 3
     pond.waitForThreads();
     pond.joinDeadThreads();
 
@@ -20,7 +20,7 @@ int main() {
     assert(3 == pond.getExpectThreadNumb());
 
     // adjust thread numb
-    pond.adjustThreads(1); // thread number = 1
+    pond.adjustThreads(1);  // thread number = 1
 
     // add tasks
     for (int i = 0; i < each_task_nums; ++i) {

@@ -1,16 +1,12 @@
 #pragma once
 #include "header.h"
 
-
 namespace hipe {
-
 
 /**
  * @brief A dynamic thread pond
  */
-class DynamicThreadPond
-{
-
+class DynamicThreadPond {
     // stop the pond
     bool stop = {false};
 
@@ -56,15 +52,12 @@ class DynamicThreadPond
     // number of the tasks loaded by thread
     std::atomic_int tasks_loaded = {0};
 
-
-public:
+   public:
     /**
      * @brief construct DynamicThreadPond
      * @param tnumb initial thread number
      */
-    explicit DynamicThreadPond(int tnumb = 0) {
-        addThreads(tnumb);
-    }
+    explicit DynamicThreadPond(int tnumb = 0) { addThreads(tnumb); }
 
     ~DynamicThreadPond() {
         if (!stop) {
@@ -72,7 +65,7 @@ public:
         }
     }
 
-public:
+   public:
     /**
      * @brief close the pond
      * Tasks blocking in the queue will be thrown.
@@ -99,12 +92,11 @@ public:
         }
     }
 
-
     /**
      * @brief delete some threads
      * @param tnumb thread number
      * If there are not enough threads, the program will be interrupted.
-     * The deletion will not happen immediately, but just notify that there are some threads 
+     * The deletion will not happen immediately, but just notify that there are some threads
      * need to be deleted, as a result, it is nonblocking.
      */
     void delThreads(int tnumb = 1) {
@@ -148,35 +140,23 @@ public:
         }
     }
 
-
     // get task number of the pond, tasks in progress are also counted.
-    int getTasksRemain() {
-        return total_tasks.load();
-    }
+    int getTasksRemain() { return total_tasks.load(); }
 
     // get number of the tasks loaded by thread
-    int getTasksLoaded() {
-        return tasks_loaded.load();
-    }
+    int getTasksLoaded() { return tasks_loaded.load(); }
 
     /**
      * reset the number of tasks loaded by thread and return the old value (atomic operation)
      * @return the old value
      */
-    int resetTasksLoaded() {
-        return tasks_loaded.exchange(0);
-    }
+    int resetTasksLoaded() { return tasks_loaded.exchange(0); }
 
     // get the number of running threads now
-    int getRunningThreadNumb() const {
-        return running_tnumb.load();
-    }
+    int getRunningThreadNumb() const { return running_tnumb.load(); }
 
     // get the number of expective running thread
-    int getExpectThreadNumb() const {
-        return expect_tnumb.load();
-    }
-
+    int getExpectThreadNumb() const { return expect_tnumb.load(); }
 
     // wait for threads adjust
     void waitForThreads() {
@@ -185,7 +165,6 @@ public:
         thread_cv.wait(locker, [this] { return expect_tnumb == running_tnumb; });
         is_waiting_for_thread = false;
     }
-
 
     // wait for tasks in the pond done
     void waitForTasks() {
@@ -245,8 +224,7 @@ public:
         awake_cv.notify_all();
     }
 
-
-private:
+   private:
     void notifyThreadAdjust() {
         HipeLockGuard lock(shared_locker);
         thread_cv.notify_one();
@@ -269,7 +247,7 @@ private:
             if (shrink_numb) {
                 shrink_numb--;
                 auto id = std::this_thread::get_id();
-                dead_threads.emplace(std::move(pond[id])); // save std::thread
+                dead_threads.emplace(std::move(pond[id]));  // save std::thread
                 pond.erase(id);
                 break;
             }
@@ -297,5 +275,4 @@ private:
     }
 };
 
-
-} // namespace hipe
+}  // namespace hipe

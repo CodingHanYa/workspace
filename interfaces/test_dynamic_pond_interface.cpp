@@ -5,9 +5,7 @@ using namespace hipe;
 util::SyncStream stream;
 int thread_numb = 16;
 
-void foo1() {
-    stream.print("call foo1");
-}
+void foo1() { stream.print("call foo1"); }
 
 void test_submit_tasks(DynamicThreadPond& pond) {
     stream.print("\n", util::boundary('=', 15), util::strong("submit"), util::boundary('=', 16));
@@ -49,7 +47,6 @@ void test_submit_in_batch(DynamicThreadPond& pond) {
         blok.add([i] { stream.print("block task ", i); });
     }
     pond.submitInBatch(blok, blok.element_numb());
-
 
     // use std::vector
     std::vector<HipeTask> vec(n);
@@ -93,13 +90,12 @@ void test_motify_thread_numb(DynamicThreadPond& pond) {
     stream.print("Get-Running-thread-numb-again = ", pond.getRunningThreadNumb());
     stream.print("Get-Expect-thread-numb-again = ", pond.getExpectThreadNumb());
 
-
     // tasks block in task queue
     pond.submit([] { stream.print("task 1 done"); });
     pond.submit([] { stream.print("task 2 done"); });
     pond.submit([] { stream.print("task 3 done"); });
 
-    stream.print("\nNow sleep for two seconds and then add one thread ..."); // 2s
+    stream.print("\nNow sleep for two seconds and then add one thread ...");  // 2s
     util::sleep_for_seconds(2);
 
     // tasks above start run
@@ -111,13 +107,11 @@ void test_motify_thread_numb(DynamicThreadPond& pond) {
     stream.print("We have deleted the only one thread and now there are no threads");
     stream.print("Now we adjust the thread number to target number");
 
-
     int target_thread_number = 3;
     pond.adjustThreads(target_thread_number);
     pond.waitForThreads();
-    stream.print("thread-numb now: ", pond.getRunningThreadNumb()); // 3
+    stream.print("thread-numb now: ", pond.getRunningThreadNumb());  // 3
 }
-
 
 int main() {
     stream.print(util::title("Test DynamicThreadPond", 10));

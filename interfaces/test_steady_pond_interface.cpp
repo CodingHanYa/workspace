@@ -4,34 +4,26 @@ using namespace hipe;
 // A synchronous IO stream
 util::SyncStream stream;
 
-void foo1() {
-    stream.print("call foo1");
-}
+void foo1() { stream.print("call foo1"); }
 
-void foo2(std::string name) {
-    stream.print(name, " call foo2");
-}
+void foo2(std::string name) { stream.print(name, " call foo2"); }
 
 struct Functor {
-    void operator()() {
-        stream.print("functor executed");
-    }
+    void operator()() { stream.print("functor executed"); }
 };
 
 void test_submit(SteadyThreadPond& pond) {
     stream.print("\n", util::boundary('=', 15), util::strong("submit"), util::boundary('=', 16));
 
-
     // no return
-    pond.submit(&foo1);                                         // function pointer
-    pond.submit([] { stream.print("HanYa say hello world"); }); // lambda
-    pond.submit(std::bind(foo2, "HanYa"));                      // std::function<void()>
-    pond.submit(Functor());                                     // functor
+    pond.submit(&foo1);                                          // function pointer
+    pond.submit([] { stream.print("HanYa say hello world"); });  // lambda
+    pond.submit(std::bind(foo2, "HanYa"));                       // std::function<void()>
+    pond.submit(Functor());                                      // functor
 
     // If you need return
     auto ret = pond.submitForReturn([] { return 2023; });
     stream.print("get return ", ret.get());
-
 
     // if you need many returns
     int n = 5;
@@ -63,7 +55,6 @@ void test_submit_in_batch(SteadyThreadPond& pond) {
     }
     pond.submitInBatch(blok, blok.element_numb());
 
-
     // use std::vector
     // the vector has overloaded []
     std::vector<HipeTask> vec;
@@ -72,7 +63,6 @@ void test_submit_in_batch(SteadyThreadPond& pond) {
         vec.emplace_back([i] { stream.print("vector task ", i); });
     }
     pond.submitInBatch(vec, vec.size());
-
 
     // you can even do it like this
     util::repeat([&] { pond.submit([] { stream.print("submit task"); }); }, 2);
@@ -89,7 +79,7 @@ void test_task_overflow() {
     pond.setRefuseCallBack([&] {
         stream.print("Task overflow !");
         auto blok = std::move(pond.pullOverFlowTasks());
-        stream.print("Losed ", blok.element_numb(), " tasks"); // 1
+        stream.print("Losed ", blok.element_numb(), " tasks");  // 1
     });
 
     util::Block<HipeTask> my_block(101);
@@ -113,7 +103,6 @@ void test_other_interface(SteadyThreadPond& pond, int thread_numb) {
     // than we just disable this function
     pond.disableStealTasks();
 }
-
 
 int main() {
     stream.print(util::title("Test SteadyThreadPond", 10));
