@@ -31,21 +31,17 @@ static const int HipeUnlimited = 0;
  * It is quite useful.
  */
 using HipeTask = util::SafeTask;
-
 using HipeLockGuard = std::lock_guard<std::mutex>;
-
 using HipeUniqGuard = std::unique_lock<std::mutex>;
-
-using HipeTimePoint = std::chrono::steady_clock::time_point;
 
 template <typename T>
 using HipeFutures = util::Futures<T>;
 
 class ThreadPoolError : public std::exception {
-   private:
+private:
     std::string message;
 
-   public:
+public:
     explicit ThreadPoolError(std::string msg)
       : message{std::move(msg)} {}
     const char* what() const noexcept override { return message.data(); }
@@ -53,84 +49,32 @@ class ThreadPoolError : public std::exception {
 
 class TaskOverflowError : public ThreadPoolError {};
 
-// A thread that can automatically joined.
-class AutoThread {
-    using id = std::thread::id;
-    using native_handle_type = std::thread::native_handle_type;
-
-   private:
-    std::thread thread_;
-
-   public:
-    AutoThread() noexcept = default;
-
-    template <typename Callable, typename... Args>
-    explicit AutoThread(Callable&& func, Args&&... args)
-      : thread_{std::forward<Callable>(func), std::forward<Args>(args)...} {}
-
-    AutoThread(const AutoThread&) = delete;
-    AutoThread& operator=(const AutoThread&) = delete;
-    AutoThread(AutoThread&&) noexcept = default;
-
-    AutoThread& operator=(AutoThread&& other) noexcept {
-        AutoThread(std::move(other)).swap(*this);
-        return *this;
-    }
-
-    ~AutoThread() {
-        if (joinable()) {
-            join();
-        }
-    }
-
-    void swap(AutoThread& other) noexcept { std::swap(thread_, other.thread_); }
-
-    friend void swap(AutoThread& lhs, AutoThread& rhs) noexcept { lhs.swap(rhs); }
-
-    bool joinable() const noexcept { return thread_.joinable(); }
-
-    void join() { thread_.join(); }
-
-    void detach() { thread_.detach(); }
-
-    id get_id() const noexcept { return thread_.get_id(); }
-
-    native_handle_type native_handle() { return thread_.native_handle(); }
-
-    static unsigned hardware_concurrency() noexcept { return std::thread::hardware_concurrency(); }
-};
 
 class ThreadBase {
-   protected:
+protected:
     bool waiting = false;
-    AutoThread handle;
+    std::thread handle;
 
     std::atomic_int task_numb = {0};
     std::condition_variable task_done_cv;
     std::mutex cv_locker;
 
-   public:
+public:
     ThreadBase() = default;
     virtual ~ThreadBase() = default;
 
+public:
     int getTasksNumb() { return task_numb.load(); }
-
     bool notask() { return !task_numb; }
-
     void join() { handle.join(); }
-
-    void bindHandle(AutoThread&& handle_) { this->handle = std::move(handle_); }
-
+    void bindHandle(std::thread&& handle_) { this->handle = std::move(handle_); }
     bool isWaiting() const { return waiting; }
-
     void waitTasksDone() {
         waiting = true;
         HipeUniqGuard lock(cv_locker);
         task_done_cv.wait(lock, [this] { return !task_numb; });
     }
-
     void cleanWaitingFlag() { waiting = false; }
-
     void notifyTaskDone() {
         HipeUniqGuard lock(cv_locker);
         task_done_cv.notify_one();
@@ -141,9 +85,9 @@ class ThreadBase {
  * @brief Basic class of thread pond that has defined all mechanism except async thread's loop.
  * @tparam The type of thread wrapper class that inherited from ThreadBase.
  */
-template <typename Ttype>
+template <typename Ttype, typename = typename std::enable_if<std::is_base_of<ThreadBase, Ttype>::value>::type>
 class FixedThreadPond {
-   protected:
+protected:
     // stop the thread pend
     bool stop = {false};
 
@@ -169,20 +113,18 @@ class FixedThreadPond {
     int thread_cap = 0;
 
     // tasks that failed to submit
-    util::Block<HipeTask> overflow_tasks{0};
+    std::vector<HipeTask> overflow_tasks{1};
 
     // task overflow call back
     HipeTask refuse_cb;
 
-   protected:
+protected:
     /**
      * @param thread_numb fixed thread number
      * @param task_capacity task capacity of the pond, default: unlimited
      * @param type_limit  Use SFINAE to restrict the type of template parameter only to be inherited from ThreadBase
      */
-    explicit FixedThreadPond(
-        int thread_numb = 0, int task_capacity = HipeUnlimited,
-        typename std::enable_if<std::is_base_of<ThreadBase, Ttype>::value>::type* type_limit = nullptr) {
+    explicit FixedThreadPond(int thread_numb = 0, int task_capacity = HipeUnlimited) {
         assert(thread_numb >= 0);
         assert(task_capacity >= 0);
 
@@ -213,7 +155,7 @@ class FixedThreadPond {
         }
     }
 
-   public:
+public:
     // ====================================================
     //                Universal interfaces
     // ====================================================
@@ -253,9 +195,7 @@ class FixedThreadPond {
         return ret;
     }
 
-    /**
-     * get the number of threads
-     */
+    // get the number of threads
     int getThreadNumb() { return thread_numb; }
 
     /**
@@ -316,7 +256,7 @@ class FixedThreadPond {
         }
     }
 
-   protected:
+protected:
     // ====================================================
     //              load balancing mechanism
     // ====================================================
@@ -356,7 +296,7 @@ class FixedThreadPond {
         return (tmp > 4) ? 4 : tmp;
     }
 
-   public:
+public:
     // enable task stealing between threads
     void enableStealTasks(int max_numb = 0) {
         assert(max_numb >= 0);
@@ -376,7 +316,7 @@ class FixedThreadPond {
     // disable task stealing between each thread
     void disableStealTasks() { enable_steal_tasks = false; }
 
-   public:
+public:
     // ====================================================
     //               task overflow mechanism
     // ====================================================
@@ -399,15 +339,12 @@ class FixedThreadPond {
     }
 
     /**
-     * Pull the overflow tasks managed by a block which will be kept until next task overflow.
+     * Pull the overflow tasks managed by a vector which will be kept until next task overflow.
      * Then the new tasks will replace the old.
      */
-    util::Block<HipeTask> pullOverFlowTasks() {
-        auto tmp = std::move(overflow_tasks);
-        return tmp;
-    }
+    std::vector<HipeTask>& pullOverFlowTasks() { return overflow_tasks; }
 
-   protected:
+protected:
     Ttype* getThreadNow() { return &threads[cursor]; }
 
     /**
@@ -432,8 +369,8 @@ class FixedThreadPond {
     // task overflow callback for one task
     template <typename T>
     void taskOverFlow(T&& task) {
-        overflow_tasks.reset(1);
-        overflow_tasks.add(std::forward<T>(task));
+        overflow_tasks.clear();
+        overflow_tasks.emplace_back(std::forward<T>(task));
 
         if (refuse_cb.is_set()) {
             util::invoke(refuse_cb);
@@ -449,10 +386,13 @@ class FixedThreadPond {
      */
     template <typename T>
     void taskOverFlow(T&& tasks, int left, int right) {
-        overflow_tasks.reset(right - left);
-
+        int nums = right - left;
+        overflow_tasks.clear();
+        if (static_cast<int>(overflow_tasks.capacity()) < nums) {
+            overflow_tasks.reserve(nums);
+        }
         for (int i = left; i < right; ++i) {
-            overflow_tasks.add(std::move(tasks[i]));
+            overflow_tasks.emplace_back(std::move(tasks[i]));
         }
         if (refuse_cb.is_set()) {
             util::invoke(refuse_cb);

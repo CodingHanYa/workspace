@@ -40,15 +40,8 @@ void test_submit_tasks(DynamicThreadPond& pond) {
 void test_submit_in_batch(DynamicThreadPond& pond) {
     stream.print("\n", util::boundary('=', 11), util::strong("submit by batch"), util::boundary('=', 11));
 
-    // use util::block
-    int n = 2;
-    util::Block<HipeTask> blok(n);
-    for (int i = 0; i < n; ++i) {
-        blok.add([i] { stream.print("block task ", i); });
-    }
-    pond.submitInBatch(blok, blok.element_numb());
-
     // use std::vector
+    int n = 2;
     std::vector<HipeTask> vec(n);
     for (int i = 0; i < n; ++i) {
         vec[i].reset([i] { stream.print("vector task ", i); });

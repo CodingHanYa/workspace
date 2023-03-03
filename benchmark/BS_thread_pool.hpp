@@ -49,7 +49,7 @@ using concurrency_t = std::invoke_result_t<decltype(std::thread::hardware_concur
  */
 template <typename T>
 class [[nodiscard]] multi_future {
-   public:
+public:
     /**
      * @brief Construct a multi_future object with the given number of futures.
      *
@@ -104,7 +104,7 @@ class [[nodiscard]] multi_future {
         for (size_t i = 0; i < futures.size(); ++i) futures[i].wait();
     }
 
-   private:
+private:
     /**
      * @brief A vector to store the futures.
      */
@@ -127,7 +127,7 @@ class [[nodiscard]] multi_future {
  */
 template <typename T1, typename T2, typename T = std::common_type_t<T1, T2>>
 class [[nodiscard]] blocks {
-   public:
+public:
     /**
      * @brief Construct a blocks object with the given specifications.
      *
@@ -181,7 +181,7 @@ class [[nodiscard]] blocks {
      */
     [[nodiscard]] size_t get_total_size() const { return total_size; }
 
-   private:
+private:
     /**
      * @brief The size of each block (except possibly the last block).
      */
@@ -218,7 +218,7 @@ class [[nodiscard]] blocks {
  * @brief A fast, lightweight, and easy-to-use C++17 thread pool class.
  */
 class [[nodiscard]] thread_pool {
-   public:
+public:
     // ============================
     // Constructors and destructors
     // ============================
@@ -506,7 +506,7 @@ class [[nodiscard]] thread_pool {
         waiting = false;
     }
 
-   private:
+private:
     // ========================
     // Private member functions
     // ========================
@@ -646,7 +646,7 @@ class [[nodiscard]] thread_pool {
  * @brief A helper class to synchronize printing to an output stream by different threads.
  */
 class [[nodiscard]] synced_stream {
-   public:
+public:
     /**
      * @brief Construct a new synced stream.
      *
@@ -694,7 +694,7 @@ class [[nodiscard]] synced_stream {
      */
     inline static std::ostream& (&flush)(std::ostream&) = static_cast<std::ostream& (&)(std::ostream&)>(std::flush);
 
-   private:
+private:
     /**
      * @brief The output stream to print to.
      */
@@ -716,7 +716,7 @@ class [[nodiscard]] synced_stream {
  * @brief A helper class to measure execution time for benchmarking purposes.
  */
 class [[nodiscard]] timer {
-   public:
+public:
     /**
      * @brief Start (or restart) measuring time.
      */
@@ -736,7 +736,7 @@ class [[nodiscard]] timer {
         return (std::chrono::duration_cast<std::chrono::milliseconds>(elapsed_time)).count();
     }
 
-   private:
+private:
     /**
      * @brief The time point when measuring started.
      */

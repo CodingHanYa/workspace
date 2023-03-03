@@ -45,15 +45,7 @@ void test_submit(SteadyThreadPond& pond) {
 void test_submit_in_batch(SteadyThreadPond& pond) {
     stream.print("\n", util::boundary('=', 11), util::strong("submit in batch"), util::boundary('=', 11));
 
-    // pond: std::queue<HipeTask>;
-    // hipe::HipeTask = hipe::util::Task;
     int n = 2;
-    util::Block<HipeTask> blok(n);
-
-    for (int i = 0; i < n; ++i) {
-        blok.add([i] { stream.print("block task ", i); });
-    }
-    pond.submitInBatch(blok, blok.element_numb());
 
     // use std::vector
     // the vector has overloaded []
@@ -79,13 +71,13 @@ void test_task_overflow() {
     pond.setRefuseCallBack([&] {
         stream.print("Task overflow !");
         auto blok = std::move(pond.pullOverFlowTasks());
-        stream.print("Losed ", blok.element_numb(), " tasks");  // 1
+        stream.print("Losed ", blok.size(), " tasks");  // 1
     });
 
-    util::Block<HipeTask> my_block(101);
+    std::vector<HipeTask> my_block;
 
     for (int i = 0; i < 101; ++i) {
-        my_block.add([] { util::sleep_for_milli(10); });
+        my_block.emplace_back([] { util::sleep_for_milli(10); });
     }
 
     pond.submitInBatch(my_block, 101);

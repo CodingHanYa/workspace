@@ -6,9 +6,10 @@ namespace hipe {
 class OqThread : public ThreadBase {
     HipeTask task;
     std::queue<HipeTask> tq;
-    util::spinlock tq_locker = {};
+    // util::spinlock tq_locker = {};
+    std::mutex tq_locker;
 
-   public:
+public:
     /**
      * @brief try give one task to another thread
      * @param other another thread
@@ -23,7 +24,6 @@ class OqThread : public ThreadBase {
                 this->task_numb--;
                 another.task_numb++;
                 return true;
-
             } else {
                 tq_locker.unlock();
                 return false;
@@ -35,19 +35,21 @@ class OqThread : public ThreadBase {
     // push task to the task queue
     template <typename T>
     void enqueue(T&& tar) {
-        util::spinlock_guard lock(tq_locker);
+        tq_locker.lock();
         tq.emplace(std::forward<T>(tar));
         task_numb++;
+        tq_locker.unlock();
     }
 
     // push tasks to the task queue
     template <typename Container_>
     void enqueue(Container_& cont, size_t size) {
-        util::spinlock_guard lock(tq_locker);
+        tq_locker.lock();
         for (size_t i = 0; i < size; ++i) {
             tq.emplace(std::move(cont[i]));
             task_numb++;
         }
+        tq_locker.unlock();
     }
 
     // run the task
@@ -72,7 +74,7 @@ class OqThread : public ThreadBase {
 };
 
 class BalancedThreadPond : public FixedThreadPond<OqThread> {
-   public:
+public:
     /**
      * @param thread_numb fixed thread number
      * @param task_capacity task capacity of the pond, default: unlimited
@@ -83,12 +85,12 @@ class BalancedThreadPond : public FixedThreadPond<OqThread> {
         threads.reset(new OqThread[this->thread_numb]);
 
         for (int i = 0; i < this->thread_numb; ++i) {
-            threads[i].bindHandle(AutoThread(&BalancedThreadPond::worker, this, i));
+            threads[i].bindHandle(std::thread(&BalancedThreadPond::worker, this, i));
         }
     }
     ~BalancedThreadPond() override = default;
 
-   private:
+private:
     void worker(int index) {
         auto& self = threads[index];
 

@@ -52,7 +52,7 @@ class SyncStream {
     std::ostream& out_stream;
     std::recursive_mutex io_locker;
 
-   public:
+public:
     explicit SyncStream(std::ostream& out_stream = std::cout)
       : out_stream(out_stream) {}
     template <typename T>
@@ -105,24 +105,6 @@ void repeat(F&& foo, int times = 1) {
     }
 }
 
-// spin and wait for short
-template <typename F, typename = typename std::enable_if<is_return<F, bool>::value>::type>
-void waitForShort(F&& foo) {
-    int count = 0;
-    bool yield = (std::thread::hardware_concurrency() == 1);
-    while (!foo()) {
-        if (yield)
-            std::this_thread::yield();
-        else {
-            if (count++ > 16) {
-                std::this_thread::yield();
-                count = 0;
-            } else {
-                HIPE_PAUSE();
-            }
-        }
-    }
-}
 
 template <typename F, typename... Args>
 void invoke(F&& call, Args&&... args) {
@@ -223,7 +205,7 @@ class Futures {
     std::vector<std::future<T>> futures;
     std::vector<T> results;
 
-   public:
+public:
     Futures()
       : futures(0)
       , results(0) {}
@@ -255,10 +237,10 @@ class Futures {
 class spinlock {
     std::atomic_flag flag = ATOMIC_FLAG_INIT;
 
-   public:
+public:
     void lock() {
         while (flag.test_and_set(std::memory_order_acquire)) {
-            HIPE_PAUSE();
+            // HIPE_PAUSE();
         }
     }
     void unlock() { flag.clear(std::memory_order_release); }
@@ -269,7 +251,7 @@ class spinlock {
 class spinlock_guard {
     spinlock* lck = nullptr;
 
-   public:
+public:
     explicit spinlock_guard(spinlock& locker) {
         lck = &locker;
         lck->lock();
@@ -300,7 +282,7 @@ class SafeTask {
         void call() override { foo(); }
     };
 
-   public:
+public:
     SafeTask() = default;
     SafeTask(SafeTask&& other) = default;
 
@@ -333,7 +315,7 @@ class SafeTask {
     // runnable
     void operator()() { exe->call(); }
 
-   private:
+private:
     std::unique_ptr<BaseExec> exe = nullptr;
 };
 
@@ -357,7 +339,7 @@ class QuickTask {
         void call() override { foo(); }
     };
 
-   public:
+public:
     QuickTask() = default;
     QuickTask(QuickTask&& other) = default;
 
@@ -390,84 +372,10 @@ class QuickTask {
     // runnable
     void operator()() { exe->call(); }
 
-   private:
+private:
     std::unique_ptr<BaseExec> exe = nullptr;
 };
 
-/**
- * Block for adding tasks in batch
- * You can regard it as a more convenient C arrays
- * Notice that the element must override " = "
- */
-template <typename T>
-class Block {
-    size_t sz = 0;
-    size_t end = 0;
-    std::unique_ptr<T[]> blok = {nullptr};
-
-   public:
-    Block() = default;
-    virtual ~Block() = default;
-
-    Block(Block&& other) noexcept
-      : sz(other.sz)
-      , end(other.end)
-      , blok(std::move(other.blok)) {}
-
-    explicit Block(size_t size)
-      : sz(size)
-      , end(0)
-      , blok(new T[size]) {}
-
-    Block(const Block& other) = delete;
-
-    T& operator[](size_t idx) { return blok[idx]; }
-
-    // block's capacity
-    size_t capacity() { return sz; }
-
-    // element number
-    size_t element_numb() { return end; }
-
-    // whether have nums' space
-    bool is_spare_for(size_t nums) { return (end + nums) <= sz; }
-
-    // whether the block is full
-    bool is_full() { return end == sz; }
-
-    // add an element
-    void add(T&& tar) { blok[end++] = std::forward<T>(tar); }
-
-    // pop up the last element
-    void reduce() { end--; }
-
-    // fill element. Notice that the element must be copied !
-    void fill(const T& tar) {
-        while (end != sz) {
-            blok[end++] = tar;
-        }
-    }
-
-    // clean the block and delay free memory
-    void clean() { end = 0; }
-
-    // renew space for the block
-    void reset(size_t new_sz) {
-        blok.reset(new T[new_sz]);
-        sz = new_sz;
-        end = 0;
-    }
-
-    // release the heap space
-    void release() {
-        blok.release();
-        sz = 0;
-        end = 0;
-    }
-
-    // just for inherit
-    virtual void sort() {}
-};
 }  // namespace util
 
 }  // namespace hipe

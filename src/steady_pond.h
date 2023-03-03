@@ -1,10 +1,6 @@
 #pragma once
 #include "header.h"
 
-// In benchmark/compare_batch_submit.cpp , we use 'count' to know which thread is faster ?  main thread or worker thread
-// ?
-// static int count = 0;
-
 namespace hipe {
 
 // thread object that support double queue replacement algorithm
@@ -13,7 +9,7 @@ class DqThread : public ThreadBase {
     std::queue<HipeTask> buffer_tq;
     util::spinlock tq_locker = {};
 
-   public:
+public:
     void runTasks() {
         while (!buffer_tq.empty()) {
             util::invoke(buffer_tq.front());
@@ -69,7 +65,7 @@ class DqThread : public ThreadBase {
  * Support task stealing and execute tasks in batches
  */
 class SteadyThreadPond : public FixedThreadPond<DqThread> {
-   public:
+public:
     /**
      * @param thread_numb fixed thread number
      * @param task_capacity task capacity of the pond, default: unlimited
@@ -79,13 +75,13 @@ class SteadyThreadPond : public FixedThreadPond<DqThread> {
         // create threads
         threads.reset(new DqThread[this->thread_numb]);
         for (int i = 0; i < this->thread_numb; ++i) {
-            threads[i].bindHandle(AutoThread(&SteadyThreadPond::worker, this, i));
+            threads[i].bindHandle(std::thread(&SteadyThreadPond::worker, this, i));
         }
     }
 
     ~SteadyThreadPond() override = default;
 
-   private:
+private:
     void worker(int index) {
         auto& self = threads[index];
 

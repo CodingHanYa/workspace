@@ -13,9 +13,9 @@ int main() {
 
     // pass the task to cach pond
     core_pond.setRefuseCallBack([&] {
-        auto task_block = core_pond.pullOverFlowTasks();
-        cach_pond.submitInBatch(task_block, task_block.element_numb());
-        hipe::util::print("Overflow task number = ", task_block.element_numb());
+        auto tasks = std::move(core_pond.pullOverFlowTasks());  // you can move or just copy
+        cach_pond.submitInBatch(tasks, tasks.size());
+        hipe::util::print("Overflow task number = ", tasks.size());
     });
 
     // overflow one task

@@ -52,7 +52,7 @@ class DynamicThreadPond {
     // number of the tasks loaded by thread
     std::atomic_int tasks_loaded = {0};
 
-   public:
+public:
     /**
      * @brief construct DynamicThreadPond
      * @param tnumb initial thread number
@@ -65,7 +65,7 @@ class DynamicThreadPond {
         }
     }
 
-   public:
+public:
     /**
      * @brief close the pond
      * Tasks blocking in the queue will be thrown.
@@ -224,7 +224,7 @@ class DynamicThreadPond {
         awake_cv.notify_all();
     }
 
-   private:
+private:
     void notifyThreadAdjust() {
         HipeLockGuard lock(shared_locker);
         thread_cv.notify_one();

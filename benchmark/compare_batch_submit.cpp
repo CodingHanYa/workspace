@@ -13,19 +13,20 @@ int max_task_numb = 100000000;
 void test_Hipe_steady_batch_submit() {
     hipe::util::print("\n", hipe::util::title("Test C++(11) Thread Pool Hipe-Steady-Batch-Submit(10)"));
 
-    hipe::SteadyThreadPond pond(thread_numb, thread_numb * 1000);
-    hipe::util::Block<hipe::HipeTask> task_block(batch_size);
+    // hipe::SteadyThreadPond pond(thread_numb, thread_numb * 1000);
+    hipe::SteadyThreadPond pond(thread_numb);
+    std::vector<hipe::HipeTask> tasks;
+    tasks.reserve(batch_size);
 
     auto foo = [&](int task_numb) {
         for (int i = 0; i < task_numb;) {
             for (int j = 0; j < batch_size; ++j, ++i) {
-                task_block.add([] {});
+                tasks.emplace_back([] {});
             }
-            pond.submitInBatch(task_block, batch_size);
-            task_block.clean();
+            pond.submitInBatch(tasks, batch_size);
+            tasks.clear();
         }
         pond.waitForTasks();
-        // util::print("steady-count = ", count);
     };
 
     for (int nums = min_task_numb; nums <= max_task_numb; nums *= 10) {
@@ -38,16 +39,18 @@ void test_Hipe_steady_batch_submit() {
 void test_Hipe_Balance_batch_submit() {
     hipe::util::print("\n", hipe::util::title("Test C++(11) Thread Pool Hipe-Balance-Batch-Submit(10)"));
 
-    hipe::BalancedThreadPond pond(thread_numb, thread_numb * 1000);
-    hipe::util::Block<hipe::HipeTask> task_block(batch_size);
+    // hipe::BalancedThreadPond pond(thread_numb, thread_numb * 1000);
+    hipe::BalancedThreadPond pond(thread_numb);
+    std::vector<hipe::HipeTask> tasks;
+    tasks.reserve(batch_size);
 
     auto foo = [&](int task_numb) {
         for (int i = 0; i < task_numb;) {
             for (int j = 0; j < batch_size; ++j, ++i) {
-                task_block.add([] {});
+                tasks.emplace_back([] {});
             }
-            pond.submitInBatch(task_block, batch_size);
-            task_block.clean();
+            pond.submitInBatch(tasks, batch_size);
+            tasks.clear();
         }
         pond.waitForTasks();
     };
