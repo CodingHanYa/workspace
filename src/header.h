@@ -164,6 +164,10 @@ public:
      * Wait until all threads finish their task
      */
     void waitForTasks() {
+        // Check twice to avoid some extreme cases
+        for (int i = 0; i < thread_numb; ++i) {
+            threads[i].waitTasksDone();
+        }
         for (int i = 0; i < thread_numb; ++i) {
             threads[i].waitTasksDone();
         }

@@ -16,7 +16,7 @@ int main() {
     }
 
     int block_size = 100;
-    std::vector<std::function<void()>> block(block_size);
+    std::vector<std::function<void()>> block;
     block.reserve(block_size);
 
     for (int i = 0; i < each_task_nums / block_size; ++i) {

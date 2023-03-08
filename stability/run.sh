@@ -31,11 +31,11 @@ run_test_file() {
     while [ $tmp1 -gt 0 ]
     do
         ./${test_file_name}
-        let tmp1--
         if [ $? -eq 0 ]
         then    
             let success++
         fi
+        let tmp1--
 
         if [[ $success -ge $tmp2 ]] 
         then 
