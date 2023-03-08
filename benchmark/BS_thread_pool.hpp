@@ -56,7 +56,8 @@ public:
      * @param num_futures_ The desired number of futures to store.
      */
     multi_future(const size_t num_futures_ = 0)
-      : futures(num_futures_) {}
+      : futures(num_futures_) {
+    }
 
     /**
      * @brief Get the results from all the futures stored in this multi_future object, rethrowing any stored exceptions.
@@ -81,21 +82,27 @@ public:
      * @param i The index of the desired future.
      * @return The future.
      */
-    [[nodiscard]] std::future<T>& operator[](const size_t i) { return futures[i]; }
+    [[nodiscard]] std::future<T>& operator[](const size_t i) {
+        return futures[i];
+    }
 
     /**
      * @brief Append a future to this multi_future object.
      *
      * @param future The future to append.
      */
-    void push_back(std::future<T> future) { futures.push_back(std::move(future)); }
+    void push_back(std::future<T> future) {
+        futures.push_back(std::move(future));
+    }
 
     /**
      * @brief Get the number of futures stored in this multi_future object.
      *
      * @return The number of futures.
      */
-    [[nodiscard]] size_t size() const { return futures.size(); }
+    [[nodiscard]] size_t size() const {
+        return futures.size();
+    }
 
     /**
      * @brief Wait for all the futures stored in this multi_future object.
@@ -154,7 +161,9 @@ public:
      * @param i The block number.
      * @return The first index.
      */
-    [[nodiscard]] T start(const size_t i) const { return static_cast<T>(i * block_size) + first_index; }
+    [[nodiscard]] T start(const size_t i) const {
+        return static_cast<T>(i * block_size) + first_index;
+    }
 
     /**
      * @brief Get the index after the last index of a block.
@@ -172,14 +181,18 @@ public:
      *
      * @return The number of blocks.
      */
-    [[nodiscard]] size_t get_num_blocks() const { return num_blocks; }
+    [[nodiscard]] size_t get_num_blocks() const {
+        return num_blocks;
+    }
 
     /**
      * @brief Get the total number of indices in the range.
      *
      * @return The total number of indices.
      */
-    [[nodiscard]] size_t get_total_size() const { return total_size; }
+    [[nodiscard]] size_t get_total_size() const {
+        return total_size;
+    }
 
 private:
     /**
@@ -275,21 +288,27 @@ public:
      *
      * @return The total number of tasks.
      */
-    [[nodiscard]] size_t get_tasks_total() const { return tasks_total; }
+    [[nodiscard]] size_t get_tasks_total() const {
+        return tasks_total;
+    }
 
     /**
      * @brief Get the number of threads in the pool.
      *
      * @return The number of threads.
      */
-    [[nodiscard]] concurrency_t get_thread_count() const { return thread_count; }
+    [[nodiscard]] concurrency_t get_thread_count() const {
+        return thread_count;
+    }
 
     /**
      * @brief Check whether the pool is currently paused.
      *
      * @return true if the pool is paused, false if it is not paused.
      */
-    [[nodiscard]] bool is_paused() const { return paused; }
+    [[nodiscard]] bool is_paused() const {
+        return paused;
+    }
 
     /**
      * @brief Parallelize a loop by automatically splitting it into blocks and submitting each block separately to the
@@ -356,7 +375,9 @@ public:
      * @brief Pause the pool. The workers will temporarily stop retrieving new tasks out of the queue, although any
      * tasks already executed will keep running until they are finished.
      */
-    void pause() { paused = true; }
+    void pause() {
+        paused = true;
+    }
 
     /**
      * @brief Parallelize a loop by automatically splitting it into blocks and submitting each block separately to the
@@ -491,7 +512,9 @@ public:
     /**
      * @brief Unpause the pool. The workers will resume retrieving new tasks out of the queue.
      */
-    void unpause() { paused = false; }
+    void unpause() {
+        paused = false;
+    }
 
     /**
      * @brief Wait for tasks to be completed. Normally, this function waits for all tasks, both those that are currently
@@ -653,7 +676,8 @@ public:
      * @param out_stream_ The output stream to print to. The default value is std::cout.
      */
     synced_stream(std::ostream& out_stream_ = std::cout)
-      : out_stream(out_stream_) {}
+      : out_stream(out_stream_) {
+    }
 
     /**
      * @brief Print any number of items into the output stream. Ensures that no other threads print to this stream
@@ -720,12 +744,16 @@ public:
     /**
      * @brief Start (or restart) measuring time.
      */
-    void start() { start_time = std::chrono::steady_clock::now(); }
+    void start() {
+        start_time = std::chrono::steady_clock::now();
+    }
 
     /**
      * @brief Stop measuring time and store the elapsed time since start().
      */
-    void stop() { elapsed_time = std::chrono::steady_clock::now() - start_time; }
+    void stop() {
+        elapsed_time = std::chrono::steady_clock::now() - start_time;
+    }
 
     /**
      * @brief Get the number of milliseconds that have elapsed between start() and stop().

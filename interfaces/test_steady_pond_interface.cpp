@@ -4,12 +4,18 @@ using namespace hipe;
 // A synchronous IO stream
 util::SyncStream stream;
 
-void foo1() { stream.print("call foo1"); }
+void foo1() {
+    stream.print("call foo1");
+}
 
-void foo2(std::string name) { stream.print(name, " call foo2"); }
+void foo2(std::string name) {
+    stream.print(name, " call foo2");
+}
 
 struct Functor {
-    void operator()() { stream.print("functor executed"); }
+    void operator()() {
+        stream.print("functor executed");
+    }
 };
 
 void test_submit(SteadyThreadPond& pond) {

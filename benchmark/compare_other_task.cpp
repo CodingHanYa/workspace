@@ -11,7 +11,9 @@ int thread_numb = 4;
 int task_numb = 1000000;
 int test_times = 20;
 
-void task(int sz) { std::vector<int> vec(sz); }
+void task(int sz) {
+    std::vector<int> vec(sz);
+}
 
 void test_Hipe_steady() {
     SteadyThreadPond pond(thread_numb);

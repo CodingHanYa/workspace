@@ -21,13 +21,21 @@ namespace util {
 //       Easy sleep
 // ======================
 
-inline void sleep_for_seconds(int sec) { std::this_thread::sleep_for(std::chrono::seconds(sec)); }
+inline void sleep_for_seconds(int sec) {
+    std::this_thread::sleep_for(std::chrono::seconds(sec));
+}
 
-inline void sleep_for_milli(int milli) { std::this_thread::sleep_for(std::chrono::milliseconds(milli)); }
+inline void sleep_for_milli(int milli) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(milli));
+}
 
-inline void sleep_for_micro(int micro) { std::this_thread::sleep_for(std::chrono::microseconds(micro)); }
+inline void sleep_for_micro(int micro) {
+    std::this_thread::sleep_for(std::chrono::microseconds(micro));
+}
 
-inline void sleep_for_nano(int nano) { std::this_thread::sleep_for(std::chrono::nanoseconds(nano)); }
+inline void sleep_for_nano(int nano) {
+    std::this_thread::sleep_for(std::chrono::nanoseconds(nano));
+}
 
 // ======================
 //        Easy IO
@@ -54,7 +62,8 @@ class SyncStream {
 
 public:
     explicit SyncStream(std::ostream& out_stream = std::cout)
-      : out_stream(out_stream) {}
+      : out_stream(out_stream) {
+    }
     template <typename T>
     void print(T&& items) {
         io_locker.lock();
@@ -89,7 +98,9 @@ struct is_reference_wrapper {
     static constexpr bool check(T*) {
         return std::is_same<T, std::reference_wrapper<D>>::value;
     };
-    static constexpr bool check(...) { return false; };
+    static constexpr bool check(...) {
+        return false;
+    };
     static constexpr bool value = check(static_cast<DU*>(0));
 };
 
@@ -193,7 +204,9 @@ inline std::string strong(const std::string& tar, int left_right_edge = 2) {
     return res;
 }
 
-inline std::string boundary(char element, int length = 10) { return std::string(length, element); }
+inline std::string boundary(char element, int length = 10) {
+    return std::string(length, element);
+}
 
 // ======================================
 //             Basic module
@@ -208,7 +221,8 @@ class Futures {
 public:
     Futures()
       : futures(0)
-      , results(0) {}
+      , results(0) {
+    }
 
     // return results contained by the built-in vector
     std::vector<T>& get() {
@@ -219,11 +233,17 @@ public:
         return results;
     }
 
-    std::future<T>& operator[](size_t i) { return futures[i]; }
+    std::future<T>& operator[](size_t i) {
+        return futures[i];
+    }
 
-    void push_back(std::future<T>&& future) { futures.push_back(std::move(future)); }
+    void push_back(std::future<T>&& future) {
+        futures.push_back(std::move(future));
+    }
 
-    size_t size() { return futures.size(); }
+    size_t size() {
+        return futures.size();
+    }
 
     // wait for all futures
     void wait() {
@@ -243,8 +263,12 @@ public:
             // HIPE_PAUSE();
         }
     }
-    void unlock() { flag.clear(std::memory_order_release); }
-    bool try_lock() { return !flag.test_and_set(); }
+    void unlock() {
+        flag.clear(std::memory_order_release);
+    }
+    bool try_lock() {
+        return !flag.test_and_set();
+    }
 };
 
 // locker guard for spinlock
@@ -256,7 +280,9 @@ public:
         lck = &locker;
         lck->lock();
     }
-    ~spinlock_guard() { lck->unlock(); }
+    ~spinlock_guard() {
+        lck->unlock();
+    }
 };
 
 /**
@@ -279,7 +305,9 @@ class SafeTask {
                           "[HipeError]: Use 'reference_wrapper' to save temporary variable is dangerous");
         }
         ~GenericExec() override = default;
-        void call() override { foo(); }
+        void call() override {
+            foo();
+        }
     };
 
 public:
@@ -295,7 +323,8 @@ public:
     // construct a task
     template <typename F, typename = typename std::enable_if<is_runnable<F>::value>::type>
     SafeTask(F&& foo)
-      : exe(new GenericExec<F>(std::forward<F>(foo))) {}
+      : exe(new GenericExec<F>(std::forward<F>(foo))) {
+    }
 
     // reset the task
     template <typename F, typename = typename std::enable_if<is_runnable<F>::value>::type>
@@ -304,7 +333,9 @@ public:
     }
 
     // the task was set
-    bool is_set() { return static_cast<bool>(exe); }
+    bool is_set() {
+        return static_cast<bool>(exe);
+    }
 
     // override "="
     SafeTask& operator=(SafeTask&& tmp) {
@@ -313,7 +344,9 @@ public:
     }
 
     // runnable
-    void operator()() { exe->call(); }
+    void operator()() {
+        exe->call();
+    }
 
 private:
     std::unique_ptr<BaseExec> exe = nullptr;
@@ -334,9 +367,12 @@ class QuickTask {
     struct GenericExec : BaseExec {
         F foo;
         GenericExec(F&& f)
-          : foo(std::forward<F>(f)) {}
+          : foo(std::forward<F>(f)) {
+        }
         ~GenericExec() override = default;
-        void call() override { foo(); }
+        void call() override {
+            foo();
+        }
     };
 
 public:
@@ -352,7 +388,8 @@ public:
     // construct a task
     template <typename F, typename = typename std::enable_if<is_runnable<F>::value>::type>
     QuickTask(F&& foo)
-      : exe(new GenericExec<F>(std::forward<F>(foo))) {}
+      : exe(new GenericExec<F>(std::forward<F>(foo))) {
+    }
 
     // reset the task
     template <typename F, typename = typename std::enable_if<is_runnable<F>::value>::type>
@@ -361,7 +398,9 @@ public:
     }
 
     // the task was set
-    bool is_set() { return static_cast<bool>(exe); }
+    bool is_set() {
+        return static_cast<bool>(exe);
+    }
 
     // override "="
     QuickTask& operator=(QuickTask&& tmp) {
@@ -370,7 +409,9 @@ public:
     }
 
     // runnable
-    void operator()() { exe->call(); }
+    void operator()() {
+        exe->call();
+    }
 
 private:
     std::unique_ptr<BaseExec> exe = nullptr;

@@ -57,7 +57,9 @@ public:
      * @brief construct DynamicThreadPond
      * @param tnumb initial thread number
      */
-    explicit DynamicThreadPond(int tnumb = 0) { addThreads(tnumb); }
+    explicit DynamicThreadPond(int tnumb = 0) {
+        addThreads(tnumb);
+    }
 
     ~DynamicThreadPond() {
         if (!stop) {
@@ -141,22 +143,32 @@ public:
     }
 
     // get task number of the pond, tasks in progress are also counted.
-    int getTasksRemain() { return total_tasks.load(); }
+    int getTasksRemain() {
+        return total_tasks.load();
+    }
 
     // get number of the tasks loaded by thread
-    int getTasksLoaded() { return tasks_loaded.load(); }
+    int getTasksLoaded() {
+        return tasks_loaded.load();
+    }
 
     /**
      * reset the number of tasks loaded by thread and return the old value (atomic operation)
      * @return the old value
      */
-    int resetTasksLoaded() { return tasks_loaded.exchange(0); }
+    int resetTasksLoaded() {
+        return tasks_loaded.exchange(0);
+    }
 
     // get the number of running threads now
-    int getRunningThreadNumb() const { return running_tnumb.load(); }
+    int getRunningThreadNumb() const {
+        return running_tnumb.load();
+    }
 
     // get the number of expective running thread
-    int getExpectThreadNumb() const { return expect_tnumb.load(); }
+    int getExpectThreadNumb() const {
+        return expect_tnumb.load();
+    }
 
     // wait for threads adjust
     void waitForThreads() {

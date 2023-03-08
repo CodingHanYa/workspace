@@ -43,8 +43,11 @@ private:
 
 public:
     explicit ThreadPoolError(std::string msg)
-      : message{std::move(msg)} {}
-    const char* what() const noexcept override { return message.data(); }
+      : message{std::move(msg)} {
+    }
+    const char* what() const noexcept override {
+        return message.data();
+    }
 };
 
 class TaskOverflowError : public ThreadPoolError {};
@@ -64,17 +67,29 @@ public:
     virtual ~ThreadBase() = default;
 
 public:
-    int getTasksNumb() { return task_numb.load(); }
-    bool notask() { return !task_numb; }
-    void join() { handle.join(); }
-    void bindHandle(std::thread&& handle_) { this->handle = std::move(handle_); }
-    bool isWaiting() const { return waiting; }
+    int getTasksNumb() {
+        return task_numb.load();
+    }
+    bool notask() {
+        return !task_numb;
+    }
+    void join() {
+        handle.join();
+    }
+    void bindHandle(std::thread&& handle_) {
+        this->handle = std::move(handle_);
+    }
+    bool isWaiting() const {
+        return waiting;
+    }
     void waitTasksDone() {
         waiting = true;
         HipeUniqGuard lock(cv_locker);
         task_done_cv.wait(lock, [this] { return !task_numb; });
     }
-    void cleanWaitingFlag() { waiting = false; }
+    void cleanWaitingFlag() {
+        waiting = false;
+    }
     void notifyTaskDone() {
         HipeUniqGuard lock(cv_locker);
         task_done_cv.notify_one();
@@ -200,7 +215,9 @@ public:
     }
 
     // get the number of threads
-    int getThreadNumb() { return thread_numb; }
+    int getThreadNumb() {
+        return thread_numb;
+    }
 
     /**
      * @brief submit task
@@ -318,7 +335,9 @@ public:
     }
 
     // disable task stealing between each thread
-    void disableStealTasks() { enable_steal_tasks = false; }
+    void disableStealTasks() {
+        enable_steal_tasks = false;
+    }
 
 public:
     // ====================================================
@@ -346,10 +365,14 @@ public:
      * Pull the overflow tasks managed by a vector which will be kept until next task overflow.
      * Then the new tasks will replace the old.
      */
-    std::vector<HipeTask>& pullOverFlowTasks() { return overflow_tasks; }
+    std::vector<HipeTask>& pullOverFlowTasks() {
+        return overflow_tasks;
+    }
 
 protected:
-    Ttype* getThreadNow() { return &threads[cursor]; }
+    Ttype* getThreadNow() {
+        return &threads[cursor];
+    }
 
     /**
      * Judge whether there are enough capacity for tasks,

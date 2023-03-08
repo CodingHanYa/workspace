@@ -5,7 +5,9 @@ using namespace hipe;
 util::SyncStream stream;
 int thread_numb = 16;
 
-void foo1() { stream.print("call foo1"); }
+void foo1() {
+    stream.print("call foo1");
+}
 
 void test_submit_tasks(DynamicThreadPond& pond) {
     stream.print("\n", util::boundary('=', 15), util::strong("submit"), util::boundary('=', 16));
