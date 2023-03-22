@@ -1,6 +1,6 @@
 #include <cmath>
 
-#include "../hipe.h"
+#include "hipe/hipe.h"
 #include "./BS_thread_pool.hpp"
 
 double single_result = 0.0;

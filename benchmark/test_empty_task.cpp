@@ -1,4 +1,4 @@
-#include "../hipe.h"
+#include "hipe/hipe.h"
 #include "./BS_thread_pool.hpp"
 
 int min_task_numb = 100;

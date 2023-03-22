@@ -6,12 +6,12 @@
 - 跨平台：Hipe采用纯C++11编写，由C++的语言特性支持跨平台。部分编译优化也已做好兼容。
 - 高性能：高效的任务同步模型以及线程间的负载均衡机制使得Hipe面对高速任务流时表现良好。
 - 灵活性：提供多种类型的线程池，使得Hipe能够应对不同的任务场景，提供高性能服务。
-- 易用性：Hipe统一了三个线程池的大部分接口，降低了学习成本，同时在工具包中提供了简单高效的工具。
+- 易用性：Header only，且Hipe统一了三个线程池的大部分接口，降低了学习成本，同时在工具包中提供了简单高效的工具。
 - 安全性：Hipe的接口大都采用编译期检查类型（TMP技术）来提高接口的安全性，同时为一些错误使用提供文档说明。
 - 稳定性：Hipe在每一次提交修改前都会进行稳定性测试，在测试中针对不同线程池制定不同的测试策略。（详见Hipe/stability）
-- 发展性：目前Hipe还在不断更新迭代，不断完善功能，也有不少伙伴加入到项目开发中。
 
 不足：
+- 不适用于需要设定任务流的场景（如果有需要：推荐使用CGraph）
 - 不适用于高性能计算领域
 - 文档内容还需继续完善
 
@@ -447,26 +447,20 @@ threads: 16 | task-type: empty task | task-numb: 100000000 | time-cost: 16.73147
 
 ## 关于使用
 
-**使用hipe:**
+```shell
 
-假设Hipe源文件文件夹和你的工程在同一个文件夹中，我们只需要导入头文件（`./Hipe/hipe.h`）并在编译末尾加上`-lpthread`即可。如：
-`g++ ./yourfile.cpp -o yourfile -lpthread && ./yourfile`。
+# 简单使用
+g++ -I Hipe/include xxx.cc && ./a.out
 
-**运行测试文件或者Demo:**
+# 运行已有实例（以demo为例）
+cmake -B build 
+cd build
+make 
+./demo1
 
-如果你想运行我们编写好的测试文件或者是Demo，你可以采用编写好的`CMakeLists.txt`针对不同平台生成构建。具体步骤如下（我们以`Hipe/benchmark/`的编译为例）：
 ```
-cd ./benchmark                      # 切换到CMakeLists.txt所在文件夹
-cmake -B build                      # 创建build文件夹，生成构建
-cd build                            # 切换到build文件夹中
-cmake --build .                     # 在build文件夹中进行编译，生成可执行文件
-./(filename).(可能有后缀)            # 执行
-```
-以上步骤也适用于`Hipe/interfaces/`和`Hipe/benchmark/`
 
-注意！`Hipe/stability/`中没有CMakeLists.txt，对单个文件你只能单独编译。
-
-**一些错误使用方法:**
+## 一些错误使用方法
 
 1. 将`waitForTasks()`接口作为**同一个线程池**的任务来执行，会导致执行该任务的线程永远阻塞。例如：
 

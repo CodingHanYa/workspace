@@ -10,8 +10,6 @@
 #include <type_traits>
 #include <vector>
 
-#include "./compat.h"
-
 namespace hipe {
 
 // util for hipe

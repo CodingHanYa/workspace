@@ -1,7 +1,7 @@
 /**
  * How to use Hipe-Dynamic as a buffer pool
  */
-#include "../hipe.h"
+#include "hipe/hipe.h"
 
 int main() {
     // thread number = core number - 1

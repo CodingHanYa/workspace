@@ -57,9 +57,9 @@ run_test_file() {
 # clean the old result
 printf "" > $log_file
 
-g++ -Wall test_balance.cpp -o test_balance -lpthread
-g++ -Wall test_dynamic.cpp -o test_dynamic -lpthread
-g++ -Wall test_steady.cpp -o test_steady -lpthread
+g++ -O2 -g -Wall -Werror -I ../include test_balance.cpp -o test_balance -lpthread
+g++ -O2 -g -Wall -Werror -I ../include test_dynamic.cpp -o test_dynamic -lpthread
+g++ -O2 -g -Wall -Werror -I ../include test_steady.cpp -o test_steady -lpthread
 
 daildate=`date`
 time=`echo $daildate | cut -f4 -d' '`

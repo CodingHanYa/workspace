@@ -2,7 +2,7 @@
  * How to adjust the dynamic thread pool.
  * This is just a reference.
  */
-#include "../hipe.h"
+#include "hipe/hipe.h"
 
 bool closed = false;
 int g_tnumb = 8;
