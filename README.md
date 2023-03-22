@@ -11,7 +11,7 @@
 - 稳定性：Hipe在每一次提交修改前都会进行稳定性测试，在测试中针对不同线程池制定不同的测试策略。（详见Hipe/stability）
 
 不足：
-- 不适用于任务流场景（如果有需要：推荐使用[CGraph](https://github.com/ChunelFeng/CGraph)
+- 不适用于任务流场景（如果有需要：推荐使用[CGraph](https://github.com/ChunelFeng/CGraph))
 - 不适用于高性能计算领域
 - 文档内容还需继续完善
 
