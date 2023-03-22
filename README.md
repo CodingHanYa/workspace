@@ -44,7 +44,7 @@
 ## 我们从简单地提交一点任务开始
 ```C++
 
-#include "./Hipe/hipe.h" 
+#include "Hipe/hipe.h" 
 using namespace hipe;
 
 // SteadyThreadPond是Hipe的核心线程池类 
@@ -70,7 +70,7 @@ pond.close();
 
 ```C++
 
-#include "./Hipe/hipe.h" 
+#include "Hipe/hipe.h" 
 using namespace hipe;
 
 int main() 
@@ -101,7 +101,7 @@ int main()
 
 ```C++
 
-#include "./Hipe/hipe.h" 
+#include "Hipe/hipe.h" 
 #include <vector>
 using namespace hipe;
 
@@ -128,7 +128,7 @@ int main()
 ## 动态线程池调整线程数
 
 ```C++
-#include "./Hipe/hipe.h" 
+#include "Hipe/hipe.h" 
 using namespace hipe;
 
 int main() {
