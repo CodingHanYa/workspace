@@ -11,7 +11,7 @@
 - 稳定性：Hipe在每一次提交修改前都会进行稳定性测试，在测试中针对不同线程池制定不同的测试策略。（详见Hipe/stability）
 
 不足：
-- 不适用于任务流场景（如果有需要：推荐使用[CGraph](https://github.com/ChunelFeng/CGraph))
+- 不适用于任务流控制场景（如果有需要：推荐使用[CGraph](https://github.com/ChunelFeng/CGraph))
 - 不适用于高性能计算领域
 - 文档内容还需继续完善
 
@@ -44,25 +44,28 @@
 ## 我们从简单地提交一点任务开始
 ```C++
 
-#include "Hipe/hipe.h" 
+#include "hipe/hipe.h" 
 using namespace hipe;
 
-// SteadyThreadPond是Hipe的核心线程池类 
-SteadyThreadPond pond(8);
+int main() {
+    // SteadyThreadPond是Hipe的核心线程池类 
+    SteadyThreadPond pond(8);
 
-// 提交任务，没有返回值。传入lambda表达式或者其它可调用类型
-// util::print()是Hipe提供的标准输出接口，让调用者可以像写python一样简单
-pond.submit([]{ util::print("HanYa said ", "hello world\n"); });
+    // 提交任务，没有返回值。传入lambda表达式或者其它可调用类型
+    // util::print()是Hipe提供的标准输出接口，让调用者可以像写python一样简单
+    pond.submit([]{ util::print("HanYa said ", "hello world\n"); });
 
-// 带返回值的提交
-auto ret = pond.submitForReturn([]{ return 2023; });
-util::print("task return ", ret.get());
+    // 带返回值的提交
+    auto ret = pond.submitForReturn([]{ return 2023; });
+    util::print("task return ", ret.get());
 
-// 主线程等待所有任务被执行
-pond.waitForTasks();
+    // 主线程等待所有任务被执行
+    pond.waitForTasks();
 
-// 主动关闭线程池，否则当线程池类被析构时由线程池自动调用
-pond.close();
+    // 主动关闭线程池，否则当线程池类被析构时由线程池自动调用
+    pond.close();
+}
+
 
 ```
 
@@ -70,7 +73,7 @@ pond.close();
 
 ```C++
 
-#include "Hipe/hipe.h" 
+#include "hipe/hipe.h" 
 using namespace hipe;
 
 int main() 
@@ -101,7 +104,7 @@ int main()
 
 ```C++
 
-#include "Hipe/hipe.h" 
+#include "hipe/hipe.h" 
 #include <vector>
 using namespace hipe;
 
@@ -128,7 +131,7 @@ int main()
 ## 动态线程池调整线程数
 
 ```C++
-#include "Hipe/hipe.h" 
+#include "hipe/hipe.h" 
 using namespace hipe;
 
 int main() {
