@@ -1,4 +1,4 @@
-#include "hipe/hipe.h"
+#include <hipe/hipe.h>
 
 // =========================================================================================================
 //       compare the performance of the interface "submit" between Hipe-Steady and Hipe-Balance

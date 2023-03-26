@@ -1,4 +1,4 @@
-#include "hipe/hipe.h"
+#include <hipe/hipe.h>
 using namespace hipe;
 
 // A synchronous IO stream

@@ -1,11 +1,6 @@
 cmake_minimum_required(VERSION 3.5.1)
 
-set(CMAKE_CXX_STANDARD 11)
 project(test_interface LANGUAGES CXX)
-
-IF(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release)
-ENDIF()
 
 find_package(Threads REQUIRED) 
 include_directories(../include)
