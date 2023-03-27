@@ -3,26 +3,23 @@
 **Hipe**是基于C++11编写的跨平台的、高性能的、简单易用且功能强大的并发库。其内置了三个职责分明的独立线程池：稳定线程池、动态线程池和均衡线程池，并提供了诸如任务包装器、计时器、支持重定向的同步输出流、C++11自旋锁等实用的工具。以下三种线程池分别称为Hipe-Steady、Hipe-Balance和Hipe-Dynamic。
 
 优势: 
-- 跨平台：Hipe采用纯C++11编写，由C++的语言特性支持跨平台。部分编译优化也已做好兼容。
+- 跨平台：Hipe采用纯C++11编写，由C++的语言特性支持跨平台，构建工具采用跨平台的cmake。
 - 高性能：高效的任务同步模型以及线程间的负载均衡机制使得Hipe面对高速任务流时表现良好。
 - 灵活性：提供多种类型的线程池，使得Hipe能够应对不同的任务场景，提供高性能服务。
 - 易用性：Header only，且Hipe统一了三个线程池的大部分接口，降低了学习成本，同时在工具包中提供了简单高效的工具。
 - 安全性：Hipe的接口大都采用编译期检查类型（TMP技术）来提高接口的安全性，同时为一些错误使用提供文档说明。
-- 稳定性：Hipe在每一次提交修改前都会进行稳定性测试，在测试中针对不同线程池制定不同的测试策略。（详见Hipe/stability）
+- 稳定性：Hipe在每一次改动后都会进行稳定性测试，在测试中针对不同线程池制定不同的测试策略。（详见Hipe/stability）
 
 不足：
 - 不适用于任务流控制场景（如果有需要：推荐使用[CGraph](https://github.com/ChunelFeng/CGraph))
-- 不适用于高性能计算领域
-- 文档内容还需继续完善
-
-
+- 不适用于高性能计算领域（推荐使用tbb等）
 
 
 ## 目录
 - [我们从简单地提交一点任务开始](#我们从简单地提交一点任务开始)
 - [批量获取返回值](#批量获取返回值)
-- [当我们想要批量提交任务](#当我们想要批量提交任务)
-- [动态线程池调整线程数](#动态线程池调整线程数)
+- [批量提交任务](#批量提交任务)
+- [动态调整线程数](#动态调整线程数)
 - [三种线程池的底层机制](#三种线程池的底层机制)
     - [Hipe-SteadyThreadPond](#hipe-steadythreadpond)
     - [Hipe-BalancedThreadPond](#hipe-balancedthreadpond)
@@ -35,8 +32,7 @@
 - [关于使用](#关于使用)
 - [关于稳定性](#关于稳定性)
 - [关于改进方向](#关于hipe接下来改进方向的提议)
-- [关于PR](#关于如何为hipe提交pr)
-- [文件树](#文件树)
+- [关于错误使用案例](#关于错误使用案例)
 - [鸣谢](#鸣谢)
 - [联系我](#联系我)
 
@@ -100,7 +96,7 @@ int main()
 
 ```
 
-## 当我们想要批量提交任务
+## 批量提交任务
 
 ```C++
 
@@ -128,7 +124,7 @@ int main()
 }
 
 ```
-## 动态线程池调整线程数
+## 动态调整线程数
 
 ```C++
 #include "hipe/hipe.h" 
@@ -457,13 +453,15 @@ g++ -I Hipe/include xxx.cc && ./a.out
 
 # 运行已有实例（以demo为例）
 cmake -B build 
-cd build
-make 
+cd build/demo
+make demo1
 ./demo1
 
+# 在我们的cmake中，所有可执行文件的名字都与文件名(除后缀)相同。当然，嵌套的可执行文件还要加上相对路径如:
+# xxx/file.cpp，此时CMakeLists.txt与xxx同级，那么生成的可执行文件为: xxx_file(.exe)
 ```
 
-## 一些错误使用方法
+## 关于错误使用案例
 
 1. 将`waitForTasks()`接口作为**同一个线程池**的任务来执行，会导致执行该任务的线程永远阻塞。例如：
 
@@ -488,59 +486,7 @@ pond.submut([&]{pond.waitForTasks();});
 
 最后，本人学识有限，目前也是在不断地学习中。如果您发现了Hipe的不足之处，请在issue中提出或者提PR，我非常欢迎并在此提前感谢各位。世事无常，也许有一天Hipe能在C++并发领域成长为真正的佼佼者，解决众多开发者的并发难题！对此我十分期待。
 
-## 关于如何为Hipe提交PR
 
-有几点小小的规范，请诸君谅解并遵守: 
-- 通过**稳定性测试** 
-- 通过`Hipe/.clang-format`进行统一的格式化（可以直接运行脚本`bash format.sh`，记得先下载clang-format）
-- 尽量在每次改动（可能有几个改动）的附近附上**改动理由**（形式不限）
-- 除非有合理的理由，否则不要随意修改变量名
-
-> 稳定性测试: 运行`Hipe/stability/run.sh`脚本进行测试，测试结果会被保存到了`Hipe/stability/result.txt`。这个步骤应该放到提交完所有的改动之后。
-> 最后一次`commit`应该是用于合并稳定性测试的结果。注意! 尽量不要为了加快运行时间而调低脚本参数，当然调高参数以提高测试强度是可以被接受的。在我的机器上每一次测试持续大约1~2分钟。）
-
-## 文件树
-
-```
-.
-├── LICENSE.txt
-├── README.md
-├── benchmark
-│   ├── BS_thread_pool.hpp        BS源码
-│   ├── CMakeLists.txt          
-│   ├── build                     用于存放可执行文件的空文件夹
-│   ├── compare_batch_submit.cpp  对比Hipe-Steady和Hipe-Balance的批量提交接口
-│   ├── compare_other_task.cpp    对比Hipe-Steady和Hipe-Balance执行其它任务的性能（内存密集型任务）
-│   ├── compare_submit.cpp        对比Hipe-Steady和Hipe-Balance执行空任务的性能
-│   ├── test_empty_task.cpp       对比几种线程池执行空任务的性能
-│   └── test_speedup.cpp          对比几种线程池的加速比
-├── demo
-│   ├── CMakeLists.txt
-│   ├── build
-│   ├── demo1.cpp                 将动态线程池用作缓冲池
-│   └── demo2.cpp                 动态调整动态线程池的案例
-├── format.sh                     格式化所有.cc/.cpp/.h文件的脚本
-├── hipe.h                        头文件
-├── interfaces               
-│   ├── CMakeLists.txt
-│   ├── build
-│   ├── test_dynamic_pond_interface.cpp     动态线程池的接口
-│   └── test_steady_pond_interface.cpp      稳定线程池的接口
-├── src
-│   ├── balanced_pond.h           均衡线程池
-│   ├── compat.h                  对编译优化做的一点兼容
-│   ├── dynamic_pond.h            动态线程池
-│   ├── header.h                  C++头文件
-│   ├── steady_pond.h             稳定线程池
-│   └── util.h                    工具包
-└── stability                   
-    ├── clean.sh                 
-    ├── result.txt                 
-    ├── run.sh                    运行该脚本即可完成稳定性测试  
-    ├── test_balance.cpp
-    ├── test_dynamic.cpp
-    └── test_steady.cpp
-```
 
 ## 鸣谢
 
