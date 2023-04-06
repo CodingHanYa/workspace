@@ -33,6 +33,7 @@
 - [关于稳定性](#关于稳定性)
 - [关于改进方向](#关于hipe接下来改进方向的提议)
 - [关于错误使用案例](#关于错误使用案例)
+- [PR版本信息](#PR版本信息)
 - [鸣谢](#鸣谢)
 - [联系我](#联系我)
 
@@ -487,7 +488,24 @@ pond.submut([&]{pond.waitForTasks();});
 
 最后，本人学识有限，目前也是在不断地学习中。如果您发现了Hipe的不足之处，请在issue中提出或者提PR，我非常欢迎并在此提前感谢各位。世事无常，也许有一天Hipe能在C++并发领域成长为真正的佼佼者，解决众多开发者的并发难题！对此我十分期待。
 
+## PR版本信息
 
+以下版本的代码已经被提交至项目的PR中，但并未合并到主分支（如main或master）。你可以通过下面的链接查看该版本的详细内容和修改，并在PR页面中进行讨论和评论。如果有需要的自取哦。
+
+<details>   <summary><b>新功能: 定时器调度器</b> </summary> 
+  <ul>
+    <li>贡献者： <a href="https://github.com/firma2021"> firma2021</a></li>
+    <li>提交时间： 2023/4/5</li>
+    <li>版本链接： <a href="https://github.com/firma2021/Hipe-Threadpool-Framework">https://github.com/firma2021/Hipe-Threadpool-Framework</a> </li> 
+    <li>版本描述：<br>
+        <p><b>新增功能：</b><br> 定时器调度器。定时器调度器引用了一个线程池，定时向它引用的线程池中添加任务。线程池必须实现submit函数。</p>
+        <p><b>接口简介：</b><br>
+            submit(callable, seconds{1}, seconds{2}); 启动调度器1秒后向线程池添加任务，此后每2秒提交一次任务；该返回定时器的序号。<br>
+            cancel(timer_id); 取消重复触发的定时器。详细接口在interfaces/test_timer_scheduler_interface.cpp文件中展示。</p>
+        <b>实现：</b><br>定时器调度器单独使用一个线程，用堆或红黑树将用户添加的定时器按触发时间升序排序，通过条件变量的wait_for()函数睡眠触发时间最短的定时器的触发时间，苏醒后将定时器中的回调函数添加到线程池中。如果调度器没有引用线程池，将在调度器线程中执行该回调函数。 
+    </li>
+  </ul>
+</details>
 
 ## 鸣谢
 
