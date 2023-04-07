@@ -208,6 +208,23 @@ public:
     }
 
     /**
+    * @brief submit task and get return
+    * @param func a function @param Args Unquantified parameters to be passed to the func function
+    * @return a future
+    */
+    template <typename F,typename... Args>
+    auto submitForReturn(F &&func,Args... args) -> std::future<typename std::result_of<F(Args...)>::type>
+    {
+        {
+            HipeLockGuard lock(shared_locker);
+            shared_tq.emplace(std::move(std::bind(func,args...)));// add task
+            ++total_tasks;
+        }
+        awake_cv.notify_one();
+        return std::async(func,args...);
+    }
+
+    /**
      * submit in a batch and the task container must override "[]"
      * @param cont task container
      * @param size the size of the container
