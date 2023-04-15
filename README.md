@@ -14,6 +14,9 @@
 - 不适用于任务流控制场景（推荐使用[CGraph](https://github.com/ChunelFeng/CGraph))
 - 不适用于高性能计算领域（推荐使用tbb等）
 
+重构升级版：
+- 详见`workspace/README.md`
+- 建议目前动态线程池部分采用workspace::workbranch，性能有较大的提升。
 
 ## 目录
 - [我们从简单地提交一点任务开始](#我们从简单地提交一点任务开始)
