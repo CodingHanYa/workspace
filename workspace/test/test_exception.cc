@@ -20,8 +20,8 @@ int main()
     wbr.submit([]{ throw std::runtime_error("A runtime error"); }); // log error
     wbr.submit([]{ throw excep("XXXX");});       // log error
 
-    auto future1 =  wbr.submit([]{ throw std::bad_alloc(); return 1; });  // catch error
-    auto future2 =  wbr.submit([]{ throw excep("YYYY"); return 2; });  // catch error
+    auto future1 =  wbr.submit([]{ throw std::bad_alloc(); return 1; }); // catch error
+    auto future2 =  wbr.submit([]{ throw excep("YYYY"); return 2; });    // catch error
 
     try {
         future1.get();

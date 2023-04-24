@@ -1,11 +1,11 @@
 # workspace
 
-**workspace**是基于C++11的轻量级异步框架，支持：通用任务异步执行、优先级任务调度、自适应动态线程池、高效静态线程池、异常处理机制等。
+**workspace**是基于C++11的轻量级异步执行框架，支持：通用任务异步执行、优先级任务调度、自适应动态线程池、高效静态线程池、异常处理机制等。
 
 ## 目录
 
 - [特点](#特点)
-- [模块](#模块)
+- [主要模块](#主要模块)
 	- [workbranch](#workbranch)
 	- [supervisor](#supervisor)
 	- [workspace](#workspace)
@@ -21,7 +21,7 @@
 - 稳定的：利用`std::function`的小任务优化减少内存碎片、拥有良好的异步线程异常处理机制。
 - 跨平台：纯C++11实现。
 
-## 模块
+## 主要模块
 
 ### workbranch
 
@@ -50,7 +50,7 @@ int main() {
 }
 ```
 
-由于返回一个std::future会带来一定的开销，如果你不需要返回值并且希望程序跑得更快，那么你的任务应该是`void()`型的。
+由于返回一个std::future会带来一定的开销，如果你不需要返回值并且希望程序跑得更快，那么你的任务应该是`void()`类型的。
 
 <br>
 
@@ -82,9 +82,7 @@ task A done
 task B done
 ```
 
-但其实我们不能保证`task A`一定被先执行，因为当我们提交`task A`的时候，`task B` 可能已经在执行中了。但如果此时任务队列中阻塞了不少任务，那么`task A`
-
-会被安插到队列的头部。以便尽快地被执行。
+但其实我们不能保证`task A`一定被先执行，因为当我们提交`task A`的时候，`task B` 可能已经在执行中了。但如果此时任务队列中阻塞了不少任务，那么`task A`会被安插到队列的头部。以便尽快地被执行。
 
 <br>
 
@@ -105,8 +103,58 @@ int main() {
     br.wait_tasks();
 }
 ```
-
 任务序列会被打包成一个较大的任务，以此来减轻框架同步任务的负担，提高整体的并发性能。
+<br>
+
+当任务中抛出了一个异常，workbranch有两种处理方式：1.将其捕获并输出到终端 2.将其捕获并通过std::future传递到主线程。<br>
+第二种就需要你提交一个带返回值的任务。
+```C++
+#include <workspace/workspace.h>
+
+// self-defined
+class excep: public std::exception {
+    const char* err;
+public:
+    excep(const char* err): err(err) {}
+    const char* what() const noexcept override {
+        return err;
+    }
+}; 
+
+int main() {
+    wsp::workbranch wbr;
+
+    wbr.submit([]{ throw std::logic_error("A logic error"); });     // log error
+    wbr.submit([]{ throw std::runtime_error("A runtime error"); }); // log error
+    wbr.submit([]{ throw excep("XXXX");});                          // log error
+
+    auto future1 =  wbr.submit([]{ throw std::bad_alloc(); return 1; }); // catch error
+    auto future2 =  wbr.submit([]{ throw excep("YYYY"); return 2; });    // catch error
+    try {
+        future1.get();
+    } catch (std::exception& e) {
+        std::cerr<<"Caught error: "<<e.what()<<std::endl;
+    }
+    try {
+        future2.get();
+    } catch (std::exception& e) {
+        std::cerr<<"Caught error: "<<e.what()<<std::endl;
+    }
+}
+```
+在我的机器上：
+```
+jack@xxx:~/workspace/test/build$ ./test_exception 
+workspace: worker[140509071521536] caught exception:
+  what(): A logic error
+workspace: worker[140509071521536] caught exception:
+  what(): A runtime error
+workspace: worker[140509071521536] caught exception:
+  what(): XXXX
+Caught error: std::bad_alloc
+Caught error: YYYY
+```
+
 
 ---
 
@@ -177,7 +225,7 @@ jack@xxx:~/workspace/example/build$ ./e4
 
 - `blocking-task`：代表了当前任务队列中阻塞的任务数。
 
-我们在每一次检查的间隔插入了一个日志任务，用于补充supervisor的日志信息，将当前的系统时间安插到默认日志之前。
+见码知意，我们在每一次检查的间隔插入了一个日志任务，用于补充supervisor的日志信息 —— 将当前的系统时间安插到默认日志之前。
 
 <br>
 
@@ -223,12 +271,10 @@ int main() {
 
 workspace是一个**托管器**和**任务分发器**，你可以将workbranch和supervisor托管给它，并用workspace分配的**组件专属ID**来访问它们。将组件托管至workspace至少有以下几点好处：
 
-- **堆内存正确释放**：workspace在内部用unique指针来管理组件，确保没有内存泄漏
-- **分支间任务负载均衡**：workspace支持任务分发，在workbranch之间实现了简单高效的**负载均衡**。
-- **避免空悬指针问题**：在上面的例子中，我们曾一起使用workbranch和supervisor，这其实是一种**危险**的行为！尽管workbranch和supervisor可以正确地在析构时回收自身资源，但是当workbranch先于supervisor被析构时，supervisor可能会面临空悬指针或者空悬引用的问题（二者本质相同）。而workspace会在析构时率先清除supervisor来避免这个问题。
-
+- 堆内存正确释放：workspace在内部用unique指针来管理组件，确保没有内存泄漏
+- 分支间任务负载均衡：workspace支持任务分发，在workbranch之间实现了简单高效的**负载均衡**。
+- 避免空悬指针问题：在上面的例子中，我们曾一起使用workbranch和supervisor，这其实是一种**危险**的行为！尽管workbranch和supervisor可以正确地在析构时回收自身资源，但是当workbranch先于supervisor被析构时，supervisor可能会面临空悬指针或者空悬引用的问题（二者本质相同）。而workspace会在析构时率先清除supervisor来避免这个问题。
 <br>
-
 我们可以通过workspace自带的任务分发机制（调用`submit`），或者调用`for_each`来进行任务分发。前者显然是更好的方式。
 
 ```C++
@@ -263,11 +309,13 @@ int main() {
 
 （更多详细接口见`workspace/test/`）
 
+
 ## BenchMark
 
 ### 空跑测试
 
-**测试内容**：通过快速提交大量的空任务考察框架同步任务的开销。
+**测试原理**：通过快速提交大量的空任务考察框架同步任务的开销。<br>
+**测试环境**：Ubuntu20.04 : 16核 : AMD Ryzen 7 5800H with Radeon Graphics 3.20 GHz
 
 <br>
 
