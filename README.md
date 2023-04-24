@@ -514,8 +514,6 @@ pond.submut([&]{pond.waitForTasks();});
 
 Hipe参与贡献者
 
-一直支持我的女朋友小江和我的父母、姐姐。
-
 《C++并发编程实战》
 
 《Java并发编程的艺术》

@@ -7,8 +7,11 @@
 
 namespace wsp::details {
 
-struct normal {};
-struct urgent {};
+using sz_t = size_t;
+
+struct normal {};  // normal task
+struct urgent {};  // urgent task
+struct sequence {}; // sequence tasks
 
 /**
  * @brief set of std::future
@@ -19,30 +22,32 @@ class futures {
     std::deque<std::future<T>> futs;
 public:
     using iterator = typename std::deque<std::future<T>>::iterator;
-
-    // wait for all futures
     void wait() {
         for (auto& each: futs) {
             each.wait();
         }
     }
-    // get results
+    sz_t size() {
+        return futs.size();
+    }
     auto get() -> std::vector<T> {
         std::vector<T> res;
-        wait();
         for (auto& each: futs) {
             res.emplace_back(each.get());
         }
         return res;
     }
-    size_t size() {
-        return futs.size();
+    auto end() -> iterator& {
+        return futs.end();
     }
-    iterator& begin() {
+    auto begin()->iterator& {
         return futs.begin();
     }
-    iterator& end() {
-        return futs.end();
+    void add_back(std::future<T>&& fut) {
+        futs.emplace_back(std::move(fut));
+    }
+    void add_front(std::future<T>&& fut) {
+        futs.emplace_front(std::move(fut));
     }
     void for_each(std::function<void(std::future<T>&)> deal) {
         for (auto& each: futs) {
@@ -59,13 +64,9 @@ public:
             deal(*it);
         }
     }
-    void add_back(std::future<T>&& fut) {
-        futs.emplace_back(std::move(fut));
-    }
-    void add_front(std::future<T>&& fut) {
-        futs.emplace_front(std::move(fut));
+    auto operator [] (sz_t idx) -> std::future<T>& {
+        return futs[idx];
     }
 };
-
 
 } // wsp::details
