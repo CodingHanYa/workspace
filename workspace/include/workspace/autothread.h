@@ -4,14 +4,15 @@
 namespace wsp {
 namespace details {
 
-using AUTO_JOIN = int;
-using AUTO_DETACH = unsigned;
+struct join {};   // for type inference
+struct detach {}; // for type inference
 
+// thread wrapper
 template <typename T>
 class autothread {};
 
 template <>
-class autothread<AUTO_JOIN> {
+class autothread<join> {
     std::thread thrd;
 public:
     autothread(std::thread&& t): thrd(std::move(t)) {}
@@ -24,7 +25,7 @@ public:
 };
 
 template <>
-class autothread<AUTO_DETACH> {
+class autothread<detach> {
     std::thread thrd;
 public:
     autothread(std::thread&& t): thrd(std::move(t)) {}
@@ -35,8 +36,6 @@ public:
     using id = std::thread::id;
     id get_id() { return thrd.get_id(); }
 };
-
-
 
 } // details
 } // wsp

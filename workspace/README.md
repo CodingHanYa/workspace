@@ -1,29 +1,334 @@
-### 代码重构版  workspace
+# workspace
 
-- 综述
-  - 整合了动态线程池和静态线程池，提供了统一的抽象。更加关注使用体验和安全性，更加关注长期运行的稳定性。
-  - 性能方面，动态线程池workbranch提升了5~10倍，固定线程池workspace性能与Hipe-Balanced接近，但支持动态线程调整（基于workbranch）
- 
-- 新增
-  * 动态线程池[workbranch]自带调节机制和日志输出功能。
-  * 支持轻度的任务调度：urgent紧急任务和wait_tasks(原有)等，且可以控制等待时间
-  * 接口大统一！通过SFINAE机制实现一个接口的不同重载且没有性能损失，如`submit`可以返回值或不返回值等，非常方便。
-  * 更完善的异常处理机制，可以捕获异步线程的异常并在主线程获取处理。
-  * 内存友好，采用std:function来包装任务，可将部分小任务转换成栈内存
-  * 异步线程的代码更加优雅，更少的同步变量带来更好的性能
+**workspace**是基于C++11的轻量级异步框架，支持：通用任务异步执行、优先级任务调度、自适应动态线程池、高效静态线程池、异常处理机制等。
 
-- 舍弃
-  * 任务窃取（增加了代码耦合）
-  * 自旋锁（统一使用std::mutex，以支持多生产者多消费者的情况）和一些额外的工具。
-  * 任务交换队列（原SteadyPond的优化策略，对性能的增幅太小，且只适用于高速任务流的情况）
+## 目录
 
-- TODO
-  * 任务溢出机制
-  * 单元测试
-  * benchmark
-  * B站为爱发电
+- [特点](#特点)
+- [模块](#模块)
+	- [workbranch](#workbranch)
+	- [supervisor](#supervisor)
+	- [workspace](#workspace)
+- [BenchMark](#BenchMark)
+- [使用说明](#使用说明)
+- [参考书目](#参考书目)
 
-- Future
-  - 更新可能会很慢，且PR可能暂时不会再审了，简单点的issue倒是有可能抽空回答。
-  - 其实是目前找不到工作要去考研了Fuck!
+## 特点
+
+- 轻量的：Header-Only + 代码量 <= 1000行 + 接口简单。
+- 高效的：超轻量级任务支持异步顺序执行，提高了框架的并发性能。
+- 灵活的：支持多种任务类型、动态线程调整、通过workspace构建不同并发模型
+- 稳定的：利用`std::function`的小任务优化减少内存碎片、拥有良好的异步线程异常处理机制。
+- 跨平台：纯C++11实现。
+
+## 模块
+
+### workbranch
+
+**workbranch**（工作分支）是动态线程池的抽象，内置了一条线程安全的**任务队列**用于同步任务。其管理的每一条异步工作线程被称为**worker**，负责从任务队列不断获取任务并执行。（以下示例位于`workspace/example/`）
+
+<br>
+
+让我们先简单地提交一点任务，当你的任务带有返回值时，workbranch会返回一个std::future，否则返回void。
+
+```c++
+#include <workspace/workspace.h>
+
+int main() {
+    // 2 threads
+    wsp::workbranch br("My First BR", 2);
+
+    // return void
+    br.submit([]{ std::cout<<"hello world"<<std::endl; });  
+
+    // return std::future<int>
+    auto result = br.submit([]{ return 2023; });  
+    std::cout<<"Got "<<result.get()<<std::endl;   
+
+    // wait for tasks done (timeout: 1000 milliseconds)
+    br.wait_tasks(1000); 
+}
+```
+
+由于返回一个std::future会带来一定的开销，如果你不需要返回值并且希望程序跑得更快，那么你的任务应该是`void()`型的。
+
+<br>
+
+当你有一个任务并且你希望它能尽快被执行时，你可以指定该任务的类型为**urgent**，如下：
+
+```C++
+#include <workspace/workspace.h>
+
+int main() {
+    // 1 threads
+    wsp::workbranch br("My Second BR");
+
+    // normal task 
+    br.submit<wsp::task::nor>([]{ std::cout<<"task B done\n";});
+    
+    // urgent task
+    br.submit<wsp::task::urg>([]{ std::cout<<"task A done\n";});
+
+    // wait for tasks done (timeout: no limit)
+    br.wait_tasks();
+}
+```
+
+在我的机器上的执行结果：
+
+```shell
+jack@xxx:~/workspace/example/build$ ./e2
+task A done
+task B done
+```
+
+但其实我们不能保证`task A`一定被先执行，因为当我们提交`task A`的时候，`task B` 可能已经在执行中了。但如果此时任务队列中阻塞了不少任务，那么`task A`
+
+会被安插到队列的头部。以便尽快地被执行。
+
+<br>
+
+假设你有几个轻量的异步任务，执行他们只需要非常短暂的时间。同时，按照顺序执行它们对你来说没有影响，甚至正中你下怀。那么你可以把任务类型指定为**sequence**，以便提交一个**任务序列**，如下：
+
+```c++
+#include <workspace/workspace.h>
+
+int main() {
+    wsp::workbranch br("My Third BR");
+    // sequence tasks
+    br.submit<wsp::task::seq>([]{std::cout<<"task 1 done\n";},
+                              []{std::cout<<"task 2 done\n";},
+                              []{std::cout<<"task 3 done\n";},
+                              []{std::cout<<"task 4 done\n";});
+
+    // wait for tasks done (timeout: no limit)
+    br.wait_tasks();
+}
+```
+
+任务序列会被打包成一个较大的任务，以此来减轻框架同步任务的负担，提高整体的并发性能。
+
+---
+
+### supervisor
+
+supervisor是异步管理者线程的抽象，负责监控workbranch的负载情况并进行动态调整。它自带简单的日志系统，并允许你在每一次检查workbranch的时候插入一个小任务，比如：定制你的专属日志（如加入时间）、简单地统计任务负载等。
+
+<br>
+
+每一个supervisor可以管理多个workbranch。此时workbranch之间共享supervisor的所有设定。
+
+```c++
+#include <workspace/workspace.h>
+
+int main() {
+    wsp::workbranch br1("BR-1", 2);
+    wsp::workbranch br2("BR-2", 2);
+
+    // 2 <= thread number <= 4 
+    // time interval: 1000 ms 
+    wsp::supervisor sp(2, 4, 1000);
+
+    sp.enable_log(std::cout);
+    sp.set_tick_cb([]{
+        static char buffer[40];
+        auto now = std::chrono::system_clock::now();
+        std::time_t timestamp = std::chrono::system_clock::to_time_t(now);
+        std::tm local_time = *std::localtime(&timestamp);
+        std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &local_time);
+        std::cout<<"["<<buffer<<"] ";
+    });
+
+    sp.supervise(br1);  // start supervising
+    sp.supervise(br2);  // start supervising
+
+    for (int i = 0; i < 1000; ++i) {
+        br1.submit([]{std::this_thread::sleep_for(std::chrono::milliseconds(10));});
+        br2.submit([]{std::this_thread::sleep_for(std::chrono::milliseconds(20));});
+    }
+
+    br1.wait_tasks();
+    br2.wait_tasks();
+```
+
+在我的机器上，输出样式如下：
+
+```
+jack@xxx:~/workspace/example/build$ ./e4
+[2023-04-24 16:37:15] workspace: BR-2 workers: 2 [min] | blocking-task: 0
+[2023-04-24 16:37:15] workspace: BR-1 workers: 2 [min] | blocking-task: 0
+[2023-04-24 16:37:16] workspace: BR-2 workers: 2 [min] | blocking-task: 900
+[2023-04-24 16:37:16] workspace: BR-1 workers: 2 [min] | blocking-task: 802
+[2023-04-24 16:37:17] workspace: BR-2 workers: 4 [max] | blocking-task: 700
+[2023-04-24 16:37:17] workspace: BR-1 workers: 4 [max] | blocking-task: 406
+[2023-04-24 16:37:18] workspace: BR-2 workers: 4 [max] | blocking-task: 500
+[2023-04-24 16:37:18] workspace: BR-1 workers: 4 [max] | blocking-task: 10
+[2023-04-24 16:37:19] workspace: BR-2 workers: 4 [max] | blocking-task: 302
+[2023-04-24 16:37:19] workspace: BR-1 workers: 4 [max] | blocking-task: 0
+[2023-04-24 16:37:20] workspace: BR-2 workers: 4 [max] | blocking-task: 104
+[2023-04-24 16:37:20] workspace: BR-1 workers: 3 [mid] | blocking-task: 0
+```
+
+其中：
+
+- `workers`：代表线程数
+
+- `[min]|[mid]|[max]`： 代表了<最小|中等|最大>的线程数。
+
+- `blocking-task`：代表了当前任务队列中阻塞的任务数。
+
+我们在每一次检查的间隔插入了一个日志任务，用于补充supervisor的日志信息，将当前的系统时间安插到默认日志之前。
+
+<br>
+
+我们也可以让每一个supervisor单独管理一个workbranch，如下：
+
+```c++
+#include <workspace/workspace.h>
+#define TASKS 1000
+#define SLEEP_FOR(ms) std::this_thread::sleep_for(std::chrono::milliseconds(ms))
+
+int main() {
+    wsp::workbranch main_br("Main  ");
+    wsp::workbranch help_br("Helper");
+
+    wsp::supervisor main_br_sp(2, 4);  // interval 500(ms)
+    wsp::supervisor help_br_sp(0, 2);  // interval 500(ms)
+    main_br_sp.enable_log();  
+    help_br_sp.enable_log();
+
+    main_br_sp.supervise(main_br);
+    help_br_sp.supervise(help_br);
+
+    for (int i = 0; i < TASKS; ++i) {
+        if (main_br.num_tasks() > 200) {
+            if (help_br.num_tasks() > 200)
+                SLEEP_FOR(20);
+            else 
+                help_br.submit([]{SLEEP_FOR(10);});
+        } else {
+            main_br.submit([]{SLEEP_FOR(10);});
+        }
+    }
+    main_br.wait_tasks();
+    help_br.wait_tasks();
+}
+```
+
+在这个例子中我们申请了两个工作分支，并将其中一个作为**主要分支**，另一个作为**辅助分支**。值得注意的是：各个supervisor之间的输出**线程安全**的。
+
+---
+
+### workspace
+
+workspace是一个**托管器**和**任务分发器**，你可以将workbranch和supervisor托管给它，并用workspace分配的**组件专属ID**来访问它们。将组件托管至workspace至少有以下几点好处：
+
+- **堆内存正确释放**：workspace在内部用unique指针来管理组件，确保没有内存泄漏
+- **分支间任务负载均衡**：workspace支持任务分发，在workbranch之间实现了简单高效的**负载均衡**。
+- **避免空悬指针问题**：在上面的例子中，我们曾一起使用workbranch和supervisor，这其实是一种**危险**的行为！尽管workbranch和supervisor可以正确地在析构时回收自身资源，但是当workbranch先于supervisor被析构时，supervisor可能会面临空悬指针或者空悬引用的问题（二者本质相同）。而workspace会在析构时率先清除supervisor来避免这个问题。
+
+<br>
+
+我们可以通过workspace自带的任务分发机制（调用`submit`），或者调用`for_each`来进行任务分发。前者显然是更好的方式。
+
+```C++
+#include <workspace/workspace.h>
+
+int main() {
+    wsp::workspace spc;
+
+    auto bid1 = spc.attach(new wsp::workbranch("BR1"));
+    auto bid2 = spc.attach(new wsp::workbranch("BR2"));
+    auto sid1 = spc.attach(new wsp::supervisor(2, 4));
+    auto sid2 = spc.attach(new wsp::supervisor(2, 4));
+
+    spc[sid1].supervise(spc[bid1]);  // start supervising
+    spc[sid2].supervise(spc[bid2]);  // start supervising
+
+    // Manual assignment
+    spc.for_each([](wsp::workbranch& each){
+        each.submit([]{std::cout<<std::this_thread::get_id()<<" executed task"<<std::endl;});
+        each.wait_tasks();
+    });
+
+    // Automatic assignment
+    spc.submit([]{std::cout<<std::this_thread::get_id()<<" executed task"<<std::endl;});
+    spc.submit([]{std::cout<<std::this_thread::get_id()<<" executed task"<<std::endl;});
+
+    spc.for_each([](wsp::workbranch& each){each.wait_tasks();});
+}
+```
+
+当我们需要等待任务执行完毕的时候，我们可以调用`for_each`+`wait_tasks`，并为每一个workbranch指定等待时间，单位是毫秒。
+
+（更多详细接口见`workspace/test/`）
+
+## BenchMark
+
+### 空跑测试
+
+**测试内容**：通过快速提交大量的空任务考察框架同步任务的开销。
+
+<br>
+
+**测试1**: 在测试1中我们调用了`submit<wsp::task::seq>`，每次打包10个空任务并提交到**workbranch**中执行。结果如下：（代码见`workspace/benchmark/bench1.cc`）
+
+```
+threads: 1 tasks: 100000000 | time-cost: 2.68801 (s)
+threads: 2 tasks: 100000000 | time-cost: 3.53964 (s)
+threads: 3 tasks: 100000000 | time-cost: 3.99903 (s)
+threads: 4 tasks: 100000000 | time-cost: 5.26045 (s)
+threads: 5 tasks: 100000000 | time-cost: 6.65157 (s)
+threads: 6 tasks: 100000000 | time-cost: 8.40907 (s)
+threads: 7 tasks: 100000000 | time-cost: 10.5967 (s)
+threads: 8 tasks: 100000000 | time-cost: 13.2523 (s)
+```
+
+<br>
+
+**测试2**：在测试2中我们同样将10个任务打成一包，但是是将任务提交到**workspace**中，利用workspace进行任务分发，且在workspace托管的workbranch只拥有**1条**线程。结果如下：（代码见`workspace/benchmark/bench2.cc`）
+
+```
+threads: 1 tasks: 100000000 | time-cost: 4.38221 (s)
+threads: 2 tasks: 100000000 | time-cost: 4.01103 (s)
+threads: 3 tasks: 100000000 | time-cost: 3.6797 (s)
+threads: 4 tasks: 100000000 | time-cost: 3.39314 (s)
+threads: 5 tasks: 100000000 | time-cost: 3.03324 (s)
+threads: 6 tasks: 100000000 | time-cost: 3.16079 (s)
+threads: 7 tasks: 100000000 | time-cost: 3.04612 (s)
+threads: 8 tasks: 100000000 | time-cost: 3.11893 (s)
+```
+
+<br>
+
+**测试3**：在测试3中我们同样将10个任务打成一包，并且将任务提交到**workspace**中，但是每个workbranch中拥有**2条**线程。结果如下：（代码见`workspace/benchmark/bench3.cc`）
+
+```
+threads: 2  tasks: 100000000 | time-cost: 4.53911 (s)
+threads: 4  tasks: 100000000 | time-cost: 7.0178 (s)
+threads: 6  tasks: 100000000 | time-cost: 6.00101 (s)
+threads: 8  tasks: 100000000 | time-cost: 5.97501 (s)
+threads: 10 tasks: 100000000 | time-cost: 5.63834 (s)
+threads: 12 tasks: 100000000 | time-cost: 5.17316 (s)
+```
+
+总结：利用workspace进行任务分发，且**workbranch**线程数为1的情况下，整个任务同步框架是静态的，任务同步开销最小。当**workbranch**内的线程数越多，面对大量空任务时对任务队列的竞争越激烈，框架开销越大。
+
+
+
+## 使用说明
+
+```
+# 简单使用（代码与项目workspace同级）
+g++ -I workspace/include xxx.cc && ./a.out
+
+# 运行已有实例（以example为例）
+# 在`workspace/example`目录下: 
+cmake -B build 
+make
+```
+
+## 参考书目
+
+《C++并发编程》
 

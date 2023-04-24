@@ -7,27 +7,31 @@
 #include <mutex>
 #include <condition_variable>
 #include <workspace/workbranch.h>
+#include <workspace/utility.h>
 
 namespace wsp::details {
 
+static std::mutex spv_lok;
+
+// workbranch supervisor
 class supervisor {
-    using worker = autothread<AUTO_JOIN>;
+    using worker = autothread<join>;
+    using callback_t = std::function<void()>;
 private:
     bool stop = false;
     bool log = false;
 
-    int wide = 1;
-    size_t wmin = 0;
-    size_t wmax = 0;
+    int  wide = 1;
+    sz_t wmin = 0;
+    sz_t wmax = 0;
     unsigned tout = 0;
     const unsigned tval = 0;
 
+    callback_t tick_cb = {};
     std::ostream* output = nullptr;
 
-    std::mutex superv_lok;
-    std::mutex output_lok;
     std::vector<worker> thrds;
-    std::condition_variable thread_cv;
+    std::condition_variable thrd_cv;
 public:
     /**
      * @brief construct a supervisor
@@ -48,9 +52,9 @@ public:
     supervisor(supervisor&&) = delete;
     ~supervisor() { 
         {
-            std::lock_guard<std::mutex> lock(superv_lok);
+            std::lock_guard<std::mutex> lock(spv_lok);
             stop = true;
-            thread_cv.notify_all();
+            thrd_cv.notify_all();
         }
     }
     
@@ -60,7 +64,7 @@ public:
      * @param wbr reference of workbranch 
      */
     void supervise(workbranch& wbr) {
-        std::lock_guard<std::mutex> lock(superv_lok);
+        std::lock_guard<std::mutex> lock(spv_lok);
         thrds.emplace_back(std::thread(&supervisor::mission, this, &wbr));
     }
     
@@ -69,19 +73,17 @@ public:
      * @param timeout the longest waiting time
      */
     void suspend(unsigned timeout = -1) { 
-        std::lock_guard<std::mutex> lock(superv_lok);
+        std::lock_guard<std::mutex> lock(spv_lok);
         tout = timeout;
     }
     
-    /**
-     * @brief keep on supervising
-     */
+    // go on supervising
     void proceed() {
         {
-            std::lock_guard<std::mutex> lock(superv_lok);
+            std::lock_guard<std::mutex> lock(spv_lok);
             tout = tval;
         }
-        thread_cv.notify_one();
+        thrd_cv.notify_all();
     }
     
     /**
@@ -89,66 +91,65 @@ public:
      * @param output output file or std::cout
      */
     void enable_log(std::ostream& output = std::cout) {
-        std::lock_guard<std::mutex> lock(output_lok);
+        std::lock_guard<std::mutex> lock(spv_lok);
         this->output = &output;
     }
 
-    using callback_t = std::function<void(const std::string&, size_t, size_t)>;
-    
     /**
-     * @brief enable log system
-     * @param cb call cb(...) before each relax
-     * @note callback_t: (const string& workbranch_name, size_t nums_of_workers, size_t nums_of_tasks)
+     * @brief Always execute callback before taking a rest
+     * @param cb callback function
      */
-    void enable_log(callback_t cb) {
-        std::lock_guard<std::mutex> lock(output_lok);
-        this->cb = cb;
+    void set_tick_cb(std::function<void()> cb) {
+        std::lock_guard<std::mutex> lock(spv_lok);
+        tick_cb = cb;
     }
-
+    
     /**
      * @brief disable log system
      * @note the output port will be wiped
      */
     void disable_log() {
-        std::lock_guard<std::mutex> lock(output_lok);
+        std::lock_guard<std::mutex> lock(spv_lok);
         this->output = nullptr;
     }
 
 private:
 
     void mission(workbranch* br) {
+        std::function<void()> tmp_cb;
         while (!stop) {
-            auto tknums = br->count_tasks();
-            auto wnums = br->count_workers();
+            // get info
+            auto tknums = br->num_tasks();
+            auto wknums = br->num_workers();
+            // adjust
             if (tknums) {
-                int nums = (int)std::min(wmax-wnums, tknums-wnums);
-                for (int i = 0; i < nums; ++i) { 
-                    br->add_worker();
+                sz_t nums = std::min(wmax-wknums, tknums-wknums);
+                for (sz_t i = 0; i < nums; ++i) { 
+                    br->add_worker(); // quick add
                 }
-            } else if (wnums > wmin) {
-                br->del_worker();
+            } else if (wknums > wmin) {
+                br->del_worker();     // slow dec
             }
-            log_info(wnums, tknums, br);
-            std::unique_lock<std::mutex> lock(superv_lok);
-            if (!stop) thread_cv.wait_for(lock, std::chrono::milliseconds(tout));
-        }
-    }
-    
-    callback_t cb = {};
-
-    void log_info(size_t wnums, size_t tknums, workbranch* br) {
-        std::lock_guard<std::mutex> lock(output_lok);
-        if (cb) {
-            cb(br->get_name(), wnums, tknums);
-            return; 
-        }
-        if (output) {
-            if (wnums == wmax) {
-                (*output)<<"[workspace: "<<br->get_name()<<"] workers: "<<std::left<<std::setw(wide)<<wnums<<" [max] | blocking-task: "<<tknums<<"\n";
-            } else if (wnums <= wmin) {
-                (*output)<<"[workspace: "<<br->get_name()<<"] workers: "<<std::left<<std::setw(wide)<<wnums<<" [min] | blocking-task: "<<tknums<<"\n";
-            } else {
-                (*output)<<"[workspace: "<<br->get_name()<<"] workers: "<<std::left<<std::setw(wide)<<wnums<<" [mid] | blocking-task: "<<tknums<<"\n";
+            // log
+            std::unique_lock<std::mutex> lock(spv_lok);
+            if (tick_cb) {
+                tick_cb();
+            }
+            if (output) {
+                if (wknums == wmax) {
+                    (*output)<<"workspace: "<<br->get_name()<<" workers: "
+                    <<std::left<<std::setw(wide)<<wknums<<" [max] | blocking-task: "<<tknums<<"\n";
+                } else if (wknums <= wmin) {
+                    (*output)<<"workspace: "<<br->get_name()<<" workers: "
+                    <<std::left<<std::setw(wide)<<wknums<<" [min] | blocking-task: "<<tknums<<"\n";
+                } else {
+                    (*output)<<"workspace: "<<br->get_name()<<" workers: "
+                    <<std::left<<std::setw(wide)<<wknums<<" [mid] | blocking-task: "<<tknums<<"\n";
+                }
+            }
+            // task a rest
+            if (!stop) {
+                thrd_cv.wait_for(lock, std::chrono::milliseconds(tout));
             }
         }
     }

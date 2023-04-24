@@ -9,7 +9,7 @@ namespace details {
 /**
  * @brief A thread-safe task queue
  * @tparam T runnable object
- * @note While pushing a sequence, the begin of the sequence will always be firstly got by worker.
+ * @note The performance of pushing back is better
  */
 template <typename T>
 class taskqueue {
@@ -19,7 +19,6 @@ public:
     using sz_t = size_t;
     taskqueue() = default;
     taskqueue(taskqueue&&) = default;
-
     void push_back(T& v) {
         std::lock_guard<std::mutex> lock(tq_lok);
         q.emplace_back(v);
