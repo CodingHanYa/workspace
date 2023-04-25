@@ -406,4 +406,9 @@ C. 不要让workbranch先于supervisor析构。
 
 《C++并发编程》
 
+## 旧版信息
 
+见[https://github.com/firma2021/Hipe-Threadpool-Framework](https://github.com/firma2021/Hipe-Threadpool-Framework) 
+
+## 联系我
+邮箱: 1848395727@qq.com
