@@ -65,6 +65,7 @@ int main() {
     wsp::workbranch br("My Second BR");
     // normal task 
     br.submit<wsp::task::nor>([]{ std::cout<<"task B done\n";});
+
     // urgent task
     br.submit<wsp::task::urg>([]{ std::cout<<"task A done\n";});
     // wait for tasks done (timeout: no limit)
@@ -187,6 +188,7 @@ int main() {
 
     br1.wait_tasks();
     br2.wait_tasks();
+}
 ```
 
 在我的机器上，输出样式如下：
@@ -301,7 +303,7 @@ int main() {
 
 ## 辅助模块
 ### futures 
-futures是一个用于缓存std::future的收集器(collector)，可以缓存同类型的std::future，并进行批量操作。一个简单的操作如下:
+wsp::futures是一个用于std::future的收集器(collector)，可以缓存同类型的std::future，并进行批量操作。一个简单的操作如下:
 ```C++
 #include <workspace/workspace.h>
 
