@@ -394,8 +394,6 @@ make
 1. 不要在任务中操纵组件，如`submit([&br]{br.wait_tasks();});`  <br>
 2. 不要在回调中操纵组件，如`set_tick_cb([&sp]{sp.suspend();});` <br>
 3. 不要让workbranch先于supervisor析构(空悬指针问题)。
-
-<br>
 接口安全性：
 
 |组件接口|是否线程安全|
@@ -405,8 +403,8 @@ make
 |supervisor|是|
 |futures|否|
 
-<br>
-时间单位：workspace有关时间的接口单位都是 -> 毫秒|ms
+时间单位：
+workspace有关时间的接口单位都是 -> 毫秒|ms
 
 ## 参考书目
 
