@@ -330,7 +330,7 @@ int main() {
 
 ### 空跑测试
 
-测试原理：通过快速提交大量的空任务考察框架同步任务的开销。<br>
+测试原理：通过快速提交大量的空任务以考察框架同步任务的开销。<br>
 测试环境：Ubuntu20.04 : 16核 : AMD Ryzen 7 5800H with Radeon Graphics 3.20 GHz
 
 <**测试1**><br> 在测试1中我们调用了`submit<wsp::task::seq>`，每次打包10个空任务并提交到**workbranch**中执行。结果如下：（代码见`workspace/benchmark/bench1.cc`）
@@ -346,7 +346,7 @@ threads: 7 tasks: 100000000 | time-cost: 10.5967 (s)
 threads: 8 tasks: 100000000 | time-cost: 13.2523 (s)
 ```
 
-<**测试2**><br> 在测试2中我们同样将10个任务打成一包，但是是将任务提交到**workspace**中，利用workspace进行任务分发，且在workspace托管的workbranch只拥有**1条**线程。结果如下：（代码见`workspace/benchmark/bench2.cc`）
+<**测试2**><br> 在测试2中我们同样将10个任务打成一包，但是是将任务提交到**workspace**中，利用workspace进行任务分发，且在workspace托管的workbranch只拥有 **1条** 线程。结果如下：（代码见`workspace/benchmark/bench2.cc`）
 
 ```
 threads: 1 tasks: 100000000 | time-cost: 4.38221 (s)
@@ -359,7 +359,7 @@ threads: 7 tasks: 100000000 | time-cost: 3.04612 (s)
 threads: 8 tasks: 100000000 | time-cost: 3.11893 (s)
 ```
 
-<**测试3**><br> 在测试3中我们同样将10个任务打成一包，并且将任务提交到**workspace**中，但是workspace管理的每个**workbranch**中都拥有**2条**线程。结果如下：（代码见`workspace/benchmark/bench3.cc`）
+<**测试3**><br> 在测试3中我们同样将10个任务打成一包，并且将任务提交到**workspace**中，但是workspace管理的每个**workbranch**中都拥有 **2条** 线程。结果如下：（代码见`workspace/benchmark/bench3.cc`）
 
 ```
 threads: 2  tasks: 100000000 | time-cost: 4.53911 (s)
