@@ -11,7 +11,7 @@
 	- [workspace](#workspace)
 - [辅助模块](#辅助模块)
     - [futures](#futures)   
-- [BenchMark](#BenchMark)
+- [benchmark](#benchmark)
 - [如何编译](#如何编译)
 - [注意事项](#注意事项)
 - [参考书目](#参考书目)
@@ -20,7 +20,7 @@
 
 - 轻量的：Header-Only + 代码量 <= 1000行 + 接口简单。
 - 高效的：超轻量级任务支持异步顺序执行，提高了框架的并发性能。
-- 灵活的：支持多种任务类型、动态线程调整、通过workspace构建不同的池模型。
+- 灵活的：支持多种任务类型、动态线程调整、可通过workspace构建不同的池模型。
 - 稳定的：利用`std::function`的小任务优化减少内存碎片、拥有良好的异步线程异常处理机制。
 - 兼容性：纯C++11实现，可跨平台，且兼容C++11以上版本。
 
@@ -55,7 +55,7 @@ int main() {
 由于返回一个std::future会带来一定的开销，如果你不需要返回值并且希望程序跑得更快，那么你的任务应该是`void()`类型的。
 <br>
 
-当你有一个任务并且你希望它能尽快被执行时，你可以指定该任务的类型为**urgent**，如下：
+当你有一个任务并且你希望它能尽快被执行时，你可以指定该任务的类型为`urgent`，如下：
 
 ```C++
 #include <workspace/workspace.h>
@@ -63,13 +63,10 @@ int main() {
 int main() {
     // 1 threads
     wsp::workbranch br("My Second BR");
-
     // normal task 
     br.submit<wsp::task::nor>([]{ std::cout<<"task B done\n";});
-    
     // urgent task
     br.submit<wsp::task::urg>([]{ std::cout<<"task A done\n";});
-
     // wait for tasks done (timeout: no limit)
     br.wait_tasks();
 }
@@ -81,10 +78,10 @@ jack@xxx:~/workspace/example/build$ ./e2
 task A done
 task B done
 ```
-但其实我们不能保证`task A`一定被先执行，因为当我们提交`task A`的时候，`task B` 可能已经在执行中了。但如果此时任务队列中已经阻塞了不少任务，那么`task A`会被安插到队列的头部。以便尽快地被执行。
+在这里我们不能保证`task A`一定会被先执行，因为当我们提交`task A`的时候，`task B`可能已经在执行中了。`urgent`标签可以让任务被插入到队列头部，但无法改变已经在执行的任务。
 <br>
 
-假设你有几个轻量的异步任务，执行他们只需要非常短暂的时间。同时，按照顺序执行它们对你来说没有影响，甚至正中你下怀。那么你可以把任务类型指定为**sequence**，以便提交一个**任务序列**，如下：
+假设你有几个轻量异步任务，执行他们只需要**非常短暂**的时间。同时，按照顺序执行它们对你来说没有影响，甚至正中你下怀。那么你可以把任务类型指定为`sequence`，以便提交一个**任务序列**。这个任务序列会被单个线程顺序执行：
 
 ```c++
 #include <workspace/workspace.h>
@@ -266,6 +263,7 @@ workspace是一个**托管器**/**任务分发器**，你可以将workbranch和s
 - 堆内存正确释放：workspace在内部用unique指针来管理组件，确保没有内存泄漏
 - 分支间任务负载均衡：workspace支持任务分发，在workbranch之间实现了简单高效的**负载均衡**。
 - 避免空悬指针问题：当workbranch先于supervisor析构会造成**空悬指针**的问题，使用workspace可以避免这种情况
+- 更低的框架开销：workspace的任务分发机制能减少与工作线程的竞争，提高性能（见下Benchmark）。
 
 我们可以通过workspace自带的任务分发机制(调用`submit`)，或者调用`for_each`来进行任务分发。前者显然是更好的方式。
 
@@ -325,7 +323,7 @@ int main() {
 这里`futures.get()`返回的是一个`std::vector<int>`，里面保存了所有任务的返回值。
 
 
-## BenchMark
+## benchmark
 
 ### 空跑测试
 
@@ -389,11 +387,12 @@ make
 
 ## 注意事项
 
-A. 不要在任务中操纵组件，如`submit([&br]{br.wait_tasks();});`  <br>
-B. 不要在回调中操纵组件，如`set_tick_cb([&sp]{sp.suspend();});` <br>
-C. 不要让workbranch先于supervisor析构。
-<br>
+雷区：
+A. **不要**在任务中操纵组件，如`submit([&br]{br.wait_tasks();});`  <br>
+B. **不要**在回调中操纵组件，如`set_tick_cb([&sp]{sp.suspend();});` <br>
+C. **不要**让workbranch先于supervisor析构(空悬指针问题)。
 
+<br>
 接口安全性：
 |组件接口|是否线程安全|
 | :-- | :--: |
@@ -401,6 +400,9 @@ C. 不要让workbranch先于supervisor析构。
 |workbranch|是|
 |supervisor|是|
 |futures|否|
+
+<br>
+时间单位：workspace有关时间的接口单位都是: 毫秒|ms
 
 ## 参考书目
 
