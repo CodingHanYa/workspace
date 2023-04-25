@@ -1,4 +1,6 @@
 #pragma once
+#include <cassert>
+
 #include <map>
 #include <memory>
 #include <vector>
@@ -26,7 +28,7 @@ using workbranch = details::workbranch;
 // workbranch supervisor
 using supervisor = details::supervisor;              
 
-
+// Component manager
 class workspace {
 public:
     class bid {
@@ -66,6 +68,7 @@ public:
      * @note O(1)
      */
     bid attach(workbranch* br) {
+        assert(br != nullptr);
         branchs.emplace_back(br);
         cur = branchs.begin();   // reset cursor
         return bid(br);
@@ -77,6 +80,7 @@ public:
      * @note O(1)
      */
     sid attach(supervisor* sp) {
+        assert(sp != nullptr);
         supervs.emplace(sp, sp);
         return sid(sp);
     }
@@ -90,7 +94,7 @@ public:
     auto detach(bid id) -> std::unique_ptr<workbranch> {
         for (auto it = branchs.begin(); it != branchs.end(); it++) {
             if (it->get() == id.base) {
-                if (cur == it) { forward(cur); }
+                if (cur == it) forward(cur);
                 auto ptr = it->release();
                 branchs.erase(it);
                 return std::unique_ptr<workbranch>(ptr);
@@ -106,9 +110,13 @@ public:
      */
     auto detach(sid id) -> std::unique_ptr<supervisor>{
         auto it = supervs.find(id.base);
-        auto ptr = it->second.release();
-        supervs.erase(it);
-        return std::unique_ptr<supervisor>(ptr);
+        if (it == supervs.end()) {
+            return nullptr;
+        } else {
+            auto ptr = it->second.release();
+            supervs.erase(it);
+            return std::unique_ptr<supervisor>(ptr);
+        }
     }
     
     /**
@@ -177,6 +185,7 @@ public:
         typename R = details::result_of_t<F>, 
         typename DR = typename std::enable_if<std::is_void<R>::value>::type>
     void submit(F&& task) {
+        assert(branchs.size() > 0);
         auto this_br = cur->get();
         auto next_br = forward(cur)->get();
         if (next_br->num_tasks() < this_br->num_tasks()) {
@@ -196,6 +205,7 @@ public:
         typename R = details::result_of_t<F>, 
         typename DR = typename std::enable_if<!std::is_void<R>::value, R>::type>
     auto submit(F&& task) -> std::future<R>{
+        assert(branchs.size() > 0);
         auto this_br = cur->get();
         auto next_br = forward(cur)->get();
         if (next_br->num_tasks() < this_br->num_tasks()) {
@@ -211,6 +221,7 @@ public:
      */
     template <typename T, typename F, typename... Fs>
     auto submit(F&& task, Fs&&... tasks) -> typename std::enable_if<std::is_same<T, task::seq>::value>::type {
+        assert(branchs.size() > 0);
         auto this_br = cur->get();
         auto next_br = forward(cur)->get();
         if (next_br->num_tasks() < this_br->num_tasks()) {

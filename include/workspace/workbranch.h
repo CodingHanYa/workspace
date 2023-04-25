@@ -20,8 +20,8 @@ class workbranch {
 
     sz_t decline = 0;
     sz_t task_done_workers = 0;
-    bool destructing = false;
     bool is_waiting = false;
+    bool destructing = false;
     std::string name = {"default"};
 
     worker_map workers = {};
@@ -32,9 +32,7 @@ class workbranch {
     std::condition_variable task_done_cv = {};
 
 public:
-    explicit workbranch(const char* name = "default", int wks = 1) 
-        : name(name) 
-    {
+    explicit workbranch(const char* name = "default", int wks = 1): name(name) {
         for (int i = 0; i < std::max(wks, 1); ++i) {
             add_worker(); // worker 
         }

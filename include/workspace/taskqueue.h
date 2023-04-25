@@ -15,7 +15,7 @@ class taskqueue {
     std::mutex tq_lok;
     std::deque<T> q;
 public:
-    using size_type = std::deque<T>::size_type;
+    using size_type = typename std::deque<T>::size_type;
     taskqueue() = default;
     taskqueue(const taskqueue&) = delete;
     taskqueue(taskqueue&&) = default;

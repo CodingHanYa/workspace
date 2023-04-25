@@ -7,6 +7,9 @@
 
 namespace wsp::details {
 
+// size type
+using sz_t = size_t;
+
 // type trait
 #if __cplusplus >= 201703L 
 template <typename F, typename... Args>
@@ -16,13 +19,10 @@ template <typename F, typename... Args>
 using result_of_t = typename std::result_of<F(Args...)>::type; 
 #endif
 
-// size type
-using sz_t = size_t;
-
 // type trait
-struct normal   {};  // normal task
-struct urgent   {};  // urgent task
-struct sequence {};  // sequence tasks
+struct normal   {};  // normal task (for type inference)
+struct urgent   {};  // urgent task (for type inference)
+struct sequence {};  // sequence tasks (for type inference)
 
 /**
  * @brief std::future collector

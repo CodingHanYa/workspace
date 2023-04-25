@@ -113,7 +113,6 @@ public:
         std::lock_guard<std::mutex> lock(spv_lok);
         this->output = nullptr;
     }
-
 private:
 
     void mission(workbranch* br) {
