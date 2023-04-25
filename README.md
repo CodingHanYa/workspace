@@ -26,7 +26,7 @@
 
 ## 主要模块
 
-### workbranch
+### **workbranch**
 
 **workbranch**（工作分支）是动态线程池的抽象，内置了一条线程安全的**任务队列**用于同步任务。其管理的每一条异步工作线程被称为**worker**，负责从任务队列不断获取任务并执行。（以下示例位于`workspace/example/`）
 <br>
@@ -151,7 +151,7 @@ Caught error: YYYY
 
 ---
 
-### supervisor
+### **supervisor**
 
 supervisor是异步管理者线程的抽象，负责监控workbranch的负载情况并进行动态调整。它自带简单的日志系统，并允许你在每一次检查workbranch的时候插入一个小任务，比如：定制你的专属日志（如加入时间）、简单地统计任务负载等。
 <br>
@@ -259,7 +259,7 @@ int main() {
 
 ---
 
-### workspace
+### **workspace**
 
 workspace是一个**托管器**/**任务分发器**，你可以将workbranch和supervisor托管给它，并用workspace分配的**组件专属ID**来访问它们。将组件托管至workspace至少有以下几点好处：
 
