@@ -2,12 +2,12 @@
 #include <future>
 #include <functional>
 #include <deque>
-#include <chrono>
 #include <cstdlib>
 #include <type_traits>
 
 namespace wsp::details {
 
+// type trait
 #if __cplusplus >= 201703L 
 template <typename F, typename... Args>
 using result_of_t = std::invoke_result_t<F, Args...>; 
@@ -16,14 +16,16 @@ template <typename F, typename... Args>
 using result_of_t = typename std::result_of<F(Args...)>::type; 
 #endif
 
+// size type
 using sz_t = size_t;
 
+// type trait
 struct normal   {};  // normal task
 struct urgent   {};  // urgent task
 struct sequence {};  // sequence tasks
 
 /**
- * @brief set of std::future
+ * @brief std::future collector
  * @tparam T return type
  */
 template <typename T>
@@ -31,6 +33,8 @@ class futures {
     std::deque<std::future<T>> futs;
 public:
     using iterator = typename std::deque<std::future<T>>::iterator;
+    
+    // wait for all futures
     void wait() {
         for (auto& each: futs) {
             each.wait();
@@ -39,6 +43,10 @@ public:
     sz_t size() {
         return futs.size();
     }
+    /**
+     * @brief get set of result
+     * @return std::vector<T>
+     */
     auto get() -> std::vector<T> {
         std::vector<T> res;
         for (auto& each: futs) {

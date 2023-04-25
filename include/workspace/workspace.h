@@ -18,10 +18,10 @@ namespace task {
     using seq = details::sequence;  
 } // task type
 
-// future collector
+// std::future collector
 template <typename RT>
 using futures = details::futures<RT>;                
-// a async working node
+// An async working node
 using workbranch = details::workbranch;              
 // workbranch supervisor
 using supervisor = details::supervisor;              

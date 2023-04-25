@@ -11,6 +11,7 @@
 
 namespace wsp::details {
 
+// shared by all supervisors
 static std::mutex spv_lok;
 
 // workbranch supervisor
@@ -45,7 +46,7 @@ public:
         , tout(time_interval)
         , tval(time_interval) 
     {
-        assert(min_wokrs >= 0 && max_wokrs > 0);
+        assert(min_wokrs >= 0 && max_wokrs > 0 && max_wokrs > min_wokrs);
         while ((max_wokrs /= 10)) { wide++; }
     }
     supervisor(const supervisor&) = delete;
@@ -116,7 +117,6 @@ public:
 private:
 
     void mission(workbranch* br) {
-        std::function<void()> tmp_cb;
         while (!stop) {
             // get info
             auto tknums = br->num_tasks();

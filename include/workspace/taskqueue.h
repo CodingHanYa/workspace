@@ -1,7 +1,6 @@
 #pragma once
 #include <deque>
 #include <mutex>
-#include <cstdlib>
 
 namespace wsp {
 namespace details {
@@ -16,9 +15,11 @@ class taskqueue {
     std::mutex tq_lok;
     std::deque<T> q;
 public:
-    using sz_t = size_t;
+    using size_type = std::deque<T>::size_type;
     taskqueue() = default;
+    taskqueue(const taskqueue&) = delete;
     taskqueue(taskqueue&&) = default;
+public:
     void push_back(T& v) {
         std::lock_guard<std::mutex> lock(tq_lok);
         q.emplace_back(v);
@@ -44,7 +45,7 @@ public:
         }
         return false;
     }
-    sz_t length() {
+    size_type length() {
         std::lock_guard<std::mutex> lock(tq_lok);
         return q.size();
     }
