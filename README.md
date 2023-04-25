@@ -73,7 +73,7 @@ int main() {
 }
 ```
 在这里我们通过指定任务类型为`wsp::task::urg`，来提高任务的优先级。最终
-我的机器上的执行结果：
+在我的机器上：
 
 ```shell
 jack@xxx:~/workspace/example/build$ ./e2
@@ -83,7 +83,7 @@ task B done
 在这里我们不能保证`task A`一定会被先执行，因为当我们提交`task A`的时候，`task B`可能已经在执行中了。`urgent`标签可以让任务被插入到队列头部，但无法改变已经在执行的任务。
 <br>
 
-假设你有几个轻量异步任务，执行他们只需要**非常短暂**的时间。同时，按照顺序执行它们对你来说没有影响，甚至正中你下怀。那么你可以把任务类型指定为`sequence`，以便提交一个**任务序列**。这个任务序列会被单个线程顺序执行：
+假如你有几个轻量异步任务，执行他们只需要**非常短暂**的时间。同时，按照**顺序执行**它们对你来说没有影响，甚至正中你下怀。那么你可以把任务类型指定为`sequence`，以便提交一个**任务序列**。这个任务序列会被单个线程顺序执行：
 
 ```c++
 #include <workspace/workspace.h>
@@ -304,7 +304,7 @@ int main() {
 
 ## 辅助模块
 ### futures 
-wsp::futures是一个用于std::future的收集器(collector)，可以缓存同类型的std::future，并进行批量操作。一个简单的操作如下:
+wsp::futures是一个std::future收集器(collector)，可以缓存同类型的std::future，并进行批量操作。一个简单的操作如下:
 ```C++
 #include <workspace/workspace.h>
 
@@ -382,15 +382,16 @@ g++ -I workspace/include xxx.cc && ./a.out
 # 运行已有实例（以example为例）
 # 在`workspace/example`目录下: 
 cmake -B build 
+cd build
 make
 ```
 
 ## 注意事项
 
 雷区：<br>
-1. **不要**在任务中操纵组件，如`submit([&br]{br.wait_tasks();});`  <br>
-2. **不要**在回调中操纵组件，如`set_tick_cb([&sp]{sp.suspend();});` <br>
-3. **不要**让workbranch先于supervisor析构(空悬指针问题)。
+1. 不要在任务中操纵组件，如`submit([&br]{br.wait_tasks();});`  <br>
+2. 不要在回调中操纵组件，如`set_tick_cb([&sp]{sp.suspend();});` <br>
+3. 不要让workbranch先于supervisor析构(空悬指针问题)。
 
 <br>
 接口安全性：
@@ -411,7 +412,7 @@ make
 
 ## 旧版信息
 
-见[https://github.com/firma2021/Hipe-Threadpool-Framework](https://github.com/firma2021/Hipe-Threadpool-Framework) 
+见 [https://github.com/firma2021/Hipe-Threadpool-Framework](https://github.com/firma2021/Hipe-Threadpool-Framework) 
 
 ## 联系我
 邮箱: 1848395727@qq.com
