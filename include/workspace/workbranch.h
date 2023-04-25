@@ -24,12 +24,12 @@ class workbranch {
     bool is_waiting = false;
     std::string name = {"default"};
 
-    taskqueue<std::function<void()>> tq = {};
     worker_map workers = {};
-    std::mutex branch_lok = {};
+    taskqueue<std::function<void()>> tq = {};
 
-    std::condition_variable task_done_cv;
-    std::condition_variable thread_cv;
+    std::mutex lok = {};
+    std::condition_variable thread_cv = {};
+    std::condition_variable task_done_cv = {};
 
 public:
     explicit workbranch(const char* name = "default", int wks = 1) 
@@ -42,7 +42,7 @@ public:
     workbranch(const workbranch&) = delete;
     workbranch(workbranch&&) = delete;
     ~workbranch() { 
-        std::unique_lock<std::mutex> lock(branch_lok);
+        std::unique_lock<std::mutex> lock(lok);
         decline = workers.size();
         destructing = true;
         thread_cv.wait(lock, [this]{ return !decline; });
@@ -53,7 +53,7 @@ public:
      * @brief add one worker
      */
     void add_worker() {
-        std::lock_guard<std::mutex> lock(branch_lok);
+        std::lock_guard<std::mutex> lock(lok);
         std::thread t(&workbranch::mission, this);
         workers.emplace(t.get_id(), std::move(t));
     }
@@ -62,7 +62,7 @@ public:
      * @brief delete one worker
      */
     void del_worker() {
-        std::lock_guard<std::mutex> lock(branch_lok);
+        std::lock_guard<std::mutex> lock(lok);
         if (workers.empty()) {
             throw std::runtime_error("workspace: Try to delete too many branchs");
         } else {
@@ -79,7 +79,7 @@ public:
     bool wait_tasks(unsigned timeout = -1) {
         bool res;
         {
-            std::unique_lock<std::mutex> locker(branch_lok);
+            std::unique_lock<std::mutex> locker(lok);
             is_waiting = true;
             res = task_done_cv.wait_for(locker, std::chrono::milliseconds(timeout), [this]{
                 return task_done_workers >= workers.size();  // use ">=" to avoid supervisor delete workers
@@ -97,7 +97,7 @@ public:
      * @return number 
      */
     sz_t num_workers() {
-        std::lock_guard<std::mutex> lock(branch_lok);
+        std::lock_guard<std::mutex> lock(lok);
         return workers.size();
     }
     /**
@@ -122,16 +122,16 @@ public:
      * @return void
      */
     template <typename T = normal, typename F, 
-        typename R = result_of_t<F>, 
+        typename R = details::result_of_t<F>, 
         typename DR = typename std::enable_if<std::is_void<R>::value>::type>
     auto submit(F&& task) -> typename std::enable_if<std::is_same<T, normal>::value>::type {
         tq.push_back([task]{
             try {
                 task();
             } catch (const std::exception& ex) {
-                std::cerr <<"workspace: worker["<< std::this_thread::get_id()<<"] caught exception:\n  what(): " << ex.what() << std::endl;
+                std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught exception:\n  what(): "<<ex.what()<<std::endl;
             } catch (...) {
-                std::cerr <<"workspace: worker["<< std::this_thread::get_id()<<"] caught unknown exception:\n  what(): " << std::endl;
+                std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught unknown exception:\n  what(): "<<std::endl;
             }
         });
     }
@@ -142,16 +142,16 @@ public:
      * @return void
      */
     template <typename T, typename F,  
-        typename R = result_of_t<F>, 
+        typename R = details::result_of_t<F>, 
         typename DR = typename std::enable_if<std::is_void<R>::value>::type>
     auto submit(F&& task) -> typename std::enable_if<std::is_same<T, urgent>::value>::type {
         tq.push_front([task]{
             try {
                 task();
             } catch (const std::exception& ex) {
-                std::cerr <<"workspace: worker["<< std::this_thread::get_id()<<"] caught exception:\n  what(): " << ex.what() << std::endl;
+                std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught exception:\n  what(): "<<ex.what()<<std::endl;
             } catch (...) {
-                std::cerr <<"workspace: worker["<< std::this_thread::get_id()<<"] caught unknown exception:\n  what(): " << std::endl;
+                std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught unknown exception:\n  what(): "<<std::endl;
             }
         });
     }
@@ -165,11 +165,11 @@ public:
     auto submit(F&& task, Fs&&... tasks) -> typename std::enable_if<std::is_same<T, sequence>::value>::type {
         tq.push_back([=]{
             try {
-                recur_exec(task, tasks...);
+                execute(task, tasks...);
             } catch (const std::exception& ex) {
-                std::cerr <<"workspace: worker["<< std::this_thread::get_id()<<"] caught exception:\n  what(): " << ex.what() << std::endl;
+                std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught exception:\n  what(): " << ex.what()<<std::endl;
             } catch (...) {
-                std::cerr <<"workspace: worker["<< std::this_thread::get_id()<<"] caught unknown exception:\n  what(): " << std::endl;
+                std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught unknown exception:\n  what(): "<<std::endl;
             }
         });
     }
@@ -181,7 +181,7 @@ public:
      * @return std::future<R>
      */
     template <typename T = normal, typename F, 
-        typename R = result_of_t<F>, 
+        typename R = details::result_of_t<F>, 
         typename DR = typename std::enable_if<!std::is_void<R>::value, R>::type>
     auto submit(F&& task, typename std::enable_if<std::is_same<T, normal>::value, normal>::type = {}) -> std::future<R> {
         std::function<R()> exec(std::forward<F>(task));
@@ -193,9 +193,9 @@ public:
                 try {
                     task_promise->set_exception(std::current_exception());
                 } catch (const std::exception& ex) {
-                    std::cerr <<"workspace: worker["<< std::this_thread::get_id()<<"] caught exception:\n  what(): " << ex.what() << std::endl;
+                    std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught exception:\n  what(): "<<ex.what()<<std::endl;
                 } catch (...) {
-                    std::cerr <<"workspace: worker["<< std::this_thread::get_id()<<"] caught unknown exception:\n  what(): " << std::endl;
+                    std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught unknown exception:\n  what(): "<<std::endl;
                 }
             }
         });
@@ -209,7 +209,7 @@ public:
      * @return std::future<R>
      */
     template <typename T,  typename F,  
-        typename R = result_of_t<F>, 
+        typename R = details::result_of_t<F>, 
         typename DR = typename std::enable_if<!std::is_void<R>::value, R>::type>
     auto submit(F&& task, typename std::enable_if<std::is_same<T, urgent>::value, urgent>::type = {}) -> std::future<R> {
         std::function<R()> exec(std::forward<F>(task));
@@ -221,9 +221,9 @@ public:
                 try {
                     task_promise->set_exception(std::current_exception());
                 } catch (const std::exception& ex) {
-                    std::cerr <<"workspace: worker["<<std::this_thread::get_id()<<"] caught exception:\n  what(): " << ex.what() << std::endl;
+                    std::cerr<<"workspace: worker["<<std::this_thread::get_id()<<"] caught exception:\n  what(): "<<ex.what()<<std::endl;
                 } catch (...) {
-                    std::cerr <<"workspace: worker["<<std::this_thread::get_id()<<"] caught unknown exception:\n  what(): " << std::endl;
+                    std::cerr<<"workspace: worker["<<std::this_thread::get_id()<<"] caught unknown exception:\n  what(): "<<std::endl;
                 }
             }
         });
@@ -231,14 +231,14 @@ public:
     }
 
 private:
-
+    // loop
     void mission() {
         std::function<void()> task;
         while (true) {
             if (decline <= 0 && tq.try_pop(task)) {
                 task(); 
             } else if (decline > 0) {
-                std::lock_guard<std::mutex> lock(branch_lok);
+                std::lock_guard<std::mutex> lock(lok);
                 if (decline > 0 && decline--) {
                     workers.erase(std::this_thread::get_id());
                     if (is_waiting)  
@@ -249,7 +249,7 @@ private:
                 }
             } else {
                 if (is_waiting) { 
-                    std::unique_lock<std::mutex> locker(branch_lok);
+                    std::unique_lock<std::mutex> locker(lok);
                     task_done_workers++;
                     task_done_cv.notify_one();
                     thread_cv.wait(locker);
@@ -260,24 +260,17 @@ private:
         }
     }
 
-    template <typename F>
-    void add_worker(F&& job) {
-        std::lock_guard<std::mutex> lock(branch_lok);
-        std::thread t(std::forward<F>(job));
-        workers.emplace(t.get_id(), std::move(t));
-    }
-
     // recursive execute 
     template <typename F>
-    void recur_exec(F&& func) {
+    void execute(F&& func) {
         func();
     }
     
     // recursive execute 
     template <typename F, typename... Fs>
-    void recur_exec(F&& func, Fs&&... funcs) {
+    void execute(F&& func, Fs&&... funcs) {
         func();
-        recur_exec(std::forward<Fs>(funcs)...);
+        execute(std::forward<Fs>(funcs)...);
     }
 };
 
