@@ -332,8 +332,8 @@ int main() {
 
 ### 空跑测试
 
-**测试原理**：通过快速提交大量的空任务考察框架同步任务的开销。<br>
-**测试环境**：Ubuntu20.04 : 16核 : AMD Ryzen 7 5800H with Radeon Graphics 3.20 GHz
+测试原理：通过快速提交大量的空任务考察框架同步任务的开销。<br>
+测试环境：Ubuntu20.04 : 16核 : AMD Ryzen 7 5800H with Radeon Graphics 3.20 GHz
 
 <**测试1**><br> 在测试1中我们调用了`submit<wsp::task::seq>`，每次打包10个空任务并提交到**workbranch**中执行。结果如下：（代码见`workspace/benchmark/bench1.cc`）
 
