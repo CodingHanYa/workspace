@@ -4,14 +4,23 @@
 #include <deque>
 #include <chrono>
 #include <cstdlib>
+#include <type_traits>
 
 namespace wsp::details {
 
+#if __cplusplus >= 201703L 
+template <typename F, typename... Args>
+using result_of_t = std::invoke_result_t<F, Args...>; 
+#else
+template <typename F, typename... Args>
+using result_of_t = typename std::result_of<F(Args...)>::type; 
+#endif
+
 using sz_t = size_t;
 
-struct normal {};  // normal task
-struct urgent {};  // urgent task
-struct sequence {}; // sequence tasks
+struct normal   {};  // normal task
+struct urgent   {};  // urgent task
+struct sequence {};  // sequence tasks
 
 /**
  * @brief set of std::future

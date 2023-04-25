@@ -12,22 +12,17 @@ namespace wsp {
 namespace task {
     // Possess higher priority then "task::nor"
     using urg = details::urgent;
-
     // Possess lower  priority then "task::urg"
     using nor = details::normal;  
-
     // Can be executed by a thread at a time
     using seq = details::sequence;  
-
 } // task type
 
 // future collector
 template <typename RT>
 using futures = details::futures<RT>;                
-
 // a async working node
 using workbranch = details::workbranch;              
-
 // workbranch supervisor
 using supervisor = details::supervisor;              
 
@@ -172,19 +167,14 @@ public:
     auto get_ref(sid id) -> supervisor& {
         return *id.base;
     }
-    /**
-     * @brief get reference of worker
-     * @param id worker's id
-     * @return reference
-     * @note O(1)
-     */
     
     /**
      * @brief async execute a task
      * @tparam T task type 
      * @param task runnable object
      */
-    template <typename T = task::nor, typename F, typename R = typename std::result_of<F()>::type, 
+    template <typename T = task::nor, typename F, 
+        typename R = details::result_of_t<F>, 
         typename DR = typename std::enable_if<std::is_void<R>::value>::type>
     void submit(F&& task) {
         auto this_br = cur->get();
@@ -202,7 +192,8 @@ public:
      * @param task runnable object
      * @return std::future<R> 
      */
-    template <typename T = task::nor, typename F, typename R = typename std::result_of<F()>::type, 
+    template <typename T = task::nor, typename F, 
+        typename R = details::result_of_t<F>, 
         typename DR = typename std::enable_if<!std::is_void<R>::value, R>::type>
     auto submit(F&& task) -> std::future<R>{
         auto this_br = cur->get();

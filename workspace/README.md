@@ -9,6 +9,8 @@
 	- [workbranch](#workbranch)
 	- [supervisor](#supervisor)
 	- [workspace](#workspace)
+- [辅助模块](#辅助模块)
+    - [futures](#futures)   
 - [BenchMark](#BenchMark)
 - [如何编译](#如何编译)
 - [注意事项](#注意事项)
@@ -18,9 +20,9 @@
 
 - 轻量的：Header-Only + 代码量 <= 1000行 + 接口简单。
 - 高效的：超轻量级任务支持异步顺序执行，提高了框架的并发性能。
-- 灵活的：支持多种任务类型、动态线程调整、通过workspace构建不同并发模型
+- 灵活的：支持多种任务类型、动态线程调整、通过workspace构建不同的池模型。
 - 稳定的：利用`std::function`的小任务优化减少内存碎片、拥有良好的异步线程异常处理机制。
-- 跨平台：纯C++11实现。
+- 兼容性：纯C++11实现，可跨平台，且兼容C++11以上版本。
 
 ## 主要模块
 
@@ -79,7 +81,7 @@ jack@xxx:~/workspace/example/build$ ./e2
 task A done
 task B done
 ```
-但其实我们不能保证`task A`一定被先执行，因为当我们提交`task A`的时候，`task B` 可能已经在执行中了。但如果此时任务队列中阻塞了不少任务，那么`task A`会被安插到队列的头部。以便尽快地被执行。
+但其实我们不能保证`task A`一定被先执行，因为当我们提交`task A`的时候，`task B` 可能已经在执行中了。但如果此时任务队列中已经阻塞了不少任务，那么`task A`会被安插到队列的头部。以便尽快地被执行。
 <br>
 
 假设你有几个轻量的异步任务，执行他们只需要非常短暂的时间。同时，按照顺序执行它们对你来说没有影响，甚至正中你下怀。那么你可以把任务类型指定为**sequence**，以便提交一个**任务序列**，如下：
@@ -102,11 +104,9 @@ int main() {
 任务序列会被打包成一个较大的任务，以此来减轻框架同步任务的负担，提高整体的并发性能。
 <br>
 
-当任务中抛出了一个异常，workbranch有两种处理方式：1 将其捕获并输出到终端 2 将其捕获并通过std::future传递到主线程。<br>
-第二种就需要你提交一个带返回值的任务。
+当任务中抛出了一个异常，workbranch有两种处理方式：A-将其捕获并输出到终端 B-将其捕获并通过std::future传递到主线程。第二种需要你提交一个**带返回值**的任务。
 ```C++
 #include <workspace/workspace.h>
-
 // self-defined
 class excep: public std::exception {
     const char* err;
@@ -116,10 +116,8 @@ public:
         return err;
     }
 }; 
-
 int main() {
     wsp::workbranch wbr;
-
     wbr.submit([]{ throw std::logic_error("A logic error"); });     // log error
     wbr.submit([]{ throw std::runtime_error("A runtime error"); }); // log error
     wbr.submit([]{ throw excep("XXXX");});                          // log error
@@ -220,7 +218,7 @@ jack@xxx:~/workspace/example/build$ ./e4
 
 - `blocking-task`：代表了当前任务队列中阻塞的任务数。
 
-见码知意，我们在每一次检查的间隔插入了一个日志任务，用于补充supervisor的日志信息 —— 将当前的系统时间安插到默认日志之前。
+从代码中可以看到，我们在每一次检查的间隔插入了一个日志任务，用于补充supervisor的日志信息 —— 将当前的系统时间安插到默认日志之前。
 <br>
 
 我们也可以让每一个supervisor单独管理一个workbranch，如下：
@@ -267,8 +265,7 @@ workspace是一个**托管器**/**任务分发器**，你可以将workbranch和s
 
 - 堆内存正确释放：workspace在内部用unique指针来管理组件，确保没有内存泄漏
 - 分支间任务负载均衡：workspace支持任务分发，在workbranch之间实现了简单高效的**负载均衡**。
-- 避免空悬指针问题：在上面的例子中，我们曾一起使用workbranch和supervisor，这其实是一种**危险**的行为！尽管workbranch和supervisor可以正确地在析构时回收自身资源，但是当workbranch先于supervisor被析构时，supervisor可能会面临空悬指针或者空悬引用的问题（二者本质相同）。而workspace会在析构时率先清除supervisor来避免这个问题。
-<br>
+- 避免空悬指针问题：当workbranch先于supervisor析构会造成**空悬指针**的问题，使用workspace可以避免这种情况
 
 我们可以通过workspace自带的任务分发机制(调用`submit`)，或者调用`for_each`来进行任务分发。前者显然是更好的方式。
 
@@ -303,6 +300,29 @@ int main() {
 当我们需要等待任务执行完毕的时候，我们可以调用`for_each`+`wait_tasks`，并为每一个workbranch指定等待时间，单位是毫秒。
 
 （更多详细接口见`workspace/test/`）
+
+## 辅助模块
+### futures 
+futures是一个用于缓存std::future的收集器(collector)，可以缓存同类型的std::future，并进行批量操作。一个简单的操作如下:
+```C++
+#include <workspace/workspace.h>
+
+int main() {
+    wsp::futures<int> futures;
+    wsp::workspace spc;
+    spc.attach(new wsp::workbranch("br", 2));
+    
+    futures.add_back(spc.submit([]{return 1;}));
+    futures.add_back(spc.submit([]{return 2;}));
+
+    futures.wait();
+    auto res = futures.get();
+    for (auto& each: res) {
+        std::cout<<"got "<<each<<std::endl;
+    }
+}
+```
+这里`futures.get()`返回的是一个`std::vector<int>`，里面保存了所有任务的返回值。
 
 
 ## BenchMark
@@ -341,7 +361,7 @@ threads: 8 tasks: 100000000 | time-cost: 3.11893 (s)
 ```
 <br>
 
-**测试3**：在测试3中我们同样将10个任务打成一包，并且将任务提交到**workspace**中，但是每个workbranch中拥有**2条**线程。结果如下：（代码见`workspace/benchmark/bench3.cc`）
+**测试3**：在测试3中我们同样将10个任务打成一包，并且将任务提交到**workspace**中，但是workspace管理的每个**workbranch**中都拥有**2条**线程。结果如下：（代码见`workspace/benchmark/bench3.cc`）
 
 ```
 threads: 2  tasks: 100000000 | time-cost: 4.53911 (s)
@@ -352,7 +372,7 @@ threads: 10 tasks: 100000000 | time-cost: 5.63834 (s)
 threads: 12 tasks: 100000000 | time-cost: 5.17316 (s)
 ```
 
-总结：利用workspace进行任务分发，且**workbranch**线程数为1的情况下，整个任务同步框架是静态的，任务同步开销最小。当**workbranch**内的线程数越多，面对大量空任务时对任务队列的竞争越激烈，框架开销越大。
+**总结**：利用workspace进行任务分发，且**workbranch**线程数为1的情况下，整个任务同步框架是静态的，任务同步开销最小。当**workbranch**内的线程数越多，面对大量空任务时对任务队列的竞争越激烈，框架开销越大。
 
 
 ## 如何编译
@@ -371,15 +391,19 @@ make
 
 A. 不要在任务中操纵组件，如`submit([&br]{br.wait_tasks();});`  <br>
 B. 不要在回调中操纵组件，如`set_tick_cb([&sp]{sp.suspend();});` <br>
-C. 不要让workbranch先于supervisor析构
+C. 不要让workbranch先于supervisor析构。
+<br>
 
-|组件|是否线程安全|
+接口安全性：
+|组件接口|是否线程安全|
 | :-- | :--: |
 |workspace|否|
 |workbranch|是|
 |supervisor|是|
+|futures|否|
 
 ## 参考书目
 
 《C++并发编程》
+
 

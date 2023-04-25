@@ -122,7 +122,7 @@ public:
      * @return void
      */
     template <typename T = normal, typename F, 
-        typename R = typename std::result_of<F()>::type, 
+        typename R = result_of_t<F>, 
         typename DR = typename std::enable_if<std::is_void<R>::value>::type>
     auto submit(F&& task) -> typename std::enable_if<std::is_same<T, normal>::value>::type {
         tq.push_back([task]{
@@ -142,7 +142,7 @@ public:
      * @return void
      */
     template <typename T, typename F,  
-        typename R = typename std::result_of<F()>::type, 
+        typename R = result_of_t<F>, 
         typename DR = typename std::enable_if<std::is_void<R>::value>::type>
     auto submit(F&& task) -> typename std::enable_if<std::is_same<T, urgent>::value>::type {
         tq.push_front([task]{
@@ -181,7 +181,7 @@ public:
      * @return std::future<R>
      */
     template <typename T = normal, typename F, 
-        typename R = typename std::result_of<F()>::type, 
+        typename R = result_of_t<F>, 
         typename DR = typename std::enable_if<!std::is_void<R>::value, R>::type>
     auto submit(F&& task, typename std::enable_if<std::is_same<T, normal>::value, normal>::type = {}) -> std::future<R> {
         std::function<R()> exec(std::forward<F>(task));
@@ -209,7 +209,7 @@ public:
      * @return std::future<R>
      */
     template <typename T,  typename F,  
-        typename R = typename std::result_of<F()>::type, 
+        typename R = result_of_t<F>, 
         typename DR = typename std::enable_if<!std::is_void<R>::value, R>::type>
     auto submit(F&& task, typename std::enable_if<std::is_same<T, urgent>::value, urgent>::type = {}) -> std::future<R> {
         std::function<R()> exec(std::forward<F>(task));
