@@ -390,10 +390,10 @@ make
 
 ## 注意事项
 
-雷区：
-A. **不要**在任务中操纵组件，如`submit([&br]{br.wait_tasks();});`  <br>
-B. **不要**在回调中操纵组件，如`set_tick_cb([&sp]{sp.suspend();});` <br>
-C. **不要**让workbranch先于supervisor析构(空悬指针问题)。
+雷区：<br>
+1. **不要**在任务中操纵组件，如`submit([&br]{br.wait_tasks();});`  <br>
+2. **不要**在回调中操纵组件，如`set_tick_cb([&sp]{sp.suspend();});` <br>
+3. **不要**让workbranch先于supervisor析构(空悬指针问题)。
 
 <br>
 接口安全性：
@@ -406,7 +406,7 @@ C. **不要**让workbranch先于supervisor析构(空悬指针问题)。
 |futures|否|
 
 <br>
-时间单位：workspace有关时间的接口单位都是: 毫秒|ms
+时间单位：workspace有关时间的接口单位都是 -> 毫秒|ms
 
 ## 参考书目
 
