@@ -5,7 +5,7 @@
 ## 目录
 
 - [特点](#特点)
-- [主要模块](#主要模块)
+- [模块简介](#主要模块)
 	- [workbranch](#workbranch)
 	- [supervisor](#supervisor)
 	- [workspace](#workspace)
@@ -72,7 +72,8 @@ int main() {
     br.wait_tasks();
 }
 ```
-在我的机器上的执行结果：
+在这里我们通过指定任务类型为`wsp::task::urg`，来提高任务的优先级。最终
+我的机器上的执行结果：
 
 ```shell
 jack@xxx:~/workspace/example/build$ ./e2
@@ -396,6 +397,7 @@ C. **不要**让workbranch先于supervisor析构(空悬指针问题)。
 
 <br>
 接口安全性：
+
 |组件接口|是否线程安全|
 | :-- | :--: |
 |workspace|否|
