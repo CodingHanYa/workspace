@@ -12,7 +12,7 @@
 - [辅助模块](#辅助模块)
     - [futures](#futures)   
 - [benchmark](#benchmark)
-- [如何编译](#如何编译)
+- [如何使用](#如何使用)
 - [注意事项](#注意事项)
 - [其它](#其它)
 
@@ -22,7 +22,7 @@
 - 高效的：超轻量级任务支持异步顺序执行，提高了框架的并发性能。
 - 灵活的：支持多种任务类型、动态线程调整、可通过workspace构建不同的池模型。
 - 稳定的：利用`std::function`的小任务优化减少内存碎片、拥有良好的异步线程异常处理机制。
-- 兼容性：纯C++11实现，可跨平台，且兼容C++11以上版本。
+- 兼容性：纯C++11实现，跨平台，且兼容C++11以上版本。
 
 ## 主要模块
 
@@ -39,14 +39,11 @@
 int main() {
     // 2 threads
     wsp::workbranch br("My First BR", 2);
-
     // return void
     br.submit([]{ std::cout<<"hello world"<<std::endl; });  
-
     // return std::future<int>
     auto result = br.submit([]{ return 2023; });  
     std::cout<<"Got "<<result.get()<<std::endl;   
-
     // wait for tasks done (timeout: 1000 milliseconds)
     br.wait_tasks(1000); 
 }
@@ -63,13 +60,9 @@ int main() {
 int main() {
     // 1 threads
     wsp::workbranch br("My Second BR");
-    // normal task 
-    br.submit<wsp::task::nor>([]{ std::cout<<"task B done\n";});
-
-    // urgent task
-    br.submit<wsp::task::urg>([]{ std::cout<<"task A done\n";});
-    // wait for tasks done (timeout: no limit)
-    br.wait_tasks();
+    br.submit<wsp::task::nor>([]{ std::cout<<"task B done\n";}); // normal task 
+    br.submit<wsp::task::urg>([]{ std::cout<<"task A done\n";}); // urgent task
+    br.wait_tasks(); // wait for tasks done (timeout: no limit)
 }
 ```
 在这里我们通过指定任务类型为`wsp::task::urg`，来提高任务的优先级。最终
@@ -95,7 +88,6 @@ int main() {
                               []{std::cout<<"task 2 done\n";},
                               []{std::cout<<"task 3 done\n";},
                               []{std::cout<<"task 4 done\n";});
-
     // wait for tasks done (timeout: no limit)
     br.wait_tasks();
 }
@@ -178,7 +170,6 @@ int main() {
         std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &local_time);
         std::cout<<"["<<buffer<<"] ";
     });
-
     sp.supervise(br1);  // start supervising
     sp.supervise(br2);  // start supervising
 
@@ -186,7 +177,6 @@ int main() {
         br1.submit([]{std::this_thread::sleep_for(std::chrono::milliseconds(10));});
         br2.submit([]{std::this_thread::sleep_for(std::chrono::milliseconds(20));});
     }
-
     br1.wait_tasks();
     br2.wait_tasks();
 }
@@ -275,12 +265,10 @@ workspace是一个**托管器**/**任务分发器**，你可以将workbranch和s
 
 int main() {
     wsp::workspace spc;
-
     auto bid1 = spc.attach(new wsp::workbranch("BR1"));
     auto bid2 = spc.attach(new wsp::workbranch("BR2"));
     auto sid1 = spc.attach(new wsp::supervisor(2, 4));
     auto sid2 = spc.attach(new wsp::supervisor(2, 4));
-
     spc[sid1].supervise(spc[bid1]);  // start supervising
     spc[sid2].supervise(spc[bid2]);  // start supervising
 
@@ -289,7 +277,6 @@ int main() {
         each.submit([]{std::cout<<std::this_thread::get_id()<<" executed task"<<std::endl;});
         each.wait_tasks();
     });
-
     // Automatic assignment
     spc.submit([]{std::cout<<std::this_thread::get_id()<<" executed task"<<std::endl;});
     spc.submit([]{std::cout<<std::this_thread::get_id()<<" executed task"<<std::endl;});
@@ -373,18 +360,34 @@ threads: 12 tasks: 100000000 | time-cost: 5.17316 (s)
 **总结**：利用workspace进行任务分发，且**workbranch**线程数为1的情况下，整个任务同步框架是静态的，任务同步开销最小。当**workbranch**内的线程数越多，面对大量空任务时对任务队列的竞争越激烈，框架开销越大。
 
 
-## 如何编译
+## 如何使用
 
-```
-# 简单使用（代码与项目workspace同级）
+### 简单使用
+
+```shell
+# 项目代码与workspace同级
 g++ -I workspace/include xxx.cc && ./a.out
+```
 
-# 运行已有实例（以example为例）
-# 在`workspace/example`目录下: 
+### 运行已有实例（以example为例）
+
+```shell
+# 在"workspace/example"中
 cmake -B build 
 cd build
 make
+./e1
 ```
+
+### 安装到系统（支持win/Linux/mac）
+```shell
+# 在"workspace/"中
+cmake -B build 
+cd build
+make
+make install
+```
+
 
 ## 注意事项
 
