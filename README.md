@@ -362,14 +362,14 @@ threads: 12 tasks: 100000000 | time-cost: 5.17316 (s)
 
 ## 如何使用
 
-### 简单使用
+#### 简单使用
 
 ```shell
-# 项目代码与workspace同级
+# 项目代码与workspace同级（Linux）
 g++ -I workspace/include xxx.cc && ./a.out
 ```
 
-### 运行已有实例（以example为例）
+#### 运行已有实例（以example为例）
 
 ```shell
 # 在"workspace/example"中
@@ -379,7 +379,7 @@ make
 ./e1
 ```
 
-### 安装到系统（支持win/Linux/mac）
+#### 安装到系统（支持Win/Linux/Mac）
 ```shell
 # 在"workspace/"中
 cmake -B build 
@@ -391,11 +391,12 @@ make install
 
 ## 注意事项
 
-雷区：<br>
-1. 不要在任务中操纵组件，如`submit([&br]{br.wait_tasks();});`  <br>
-2. 不要在回调中操纵组件，如`set_tick_cb([&sp]{sp.suspend();});` <br>
-3. 不要让workbranch先于supervisor析构(空悬指针问题)。
-接口安全性：
+#### 雷区
+1. 不要在任务中操纵组件，如：`submit([&br]{br.wait_tasks();});`  <br>
+2. 不要在回调中操纵组件，如：`set_tick_cb([&sp]{sp.suspend();});` <br>
+3. 不要让workbranch先于supervisor析构（空悬指针问题）。
+
+#### 接口安全性
 
 |组件接口|是否线程安全|
 | :-- | :--: |
@@ -404,16 +405,15 @@ make install
 |supervisor|是|
 |futures|否|
 
-<br>
-时间单位：<br>
-workspace有关时间的接口单位都是 -> 毫秒|ms
+#### 时间单位
+workspace有关时间的接口单位都是 -> 毫秒（ms）
 
 ## 其它
-### 参考书目
+#### 参考书目
 《C++并发编程》
 
-### 旧版信息
+#### 旧版信息
 见 [https://github.com/firma2021/Hipe-Threadpool-Framework](https://github.com/firma2021/Hipe-Threadpool-Framework) 
 
-### 联系我
+#### 联系我
 邮箱: 1848395727@qq.com
