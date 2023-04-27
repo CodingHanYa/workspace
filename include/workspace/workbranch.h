@@ -14,7 +14,6 @@
 namespace wsp::details {
 
 class workbranch {
-
     using worker = autothread<detach>;
     using worker_map = std::map<worker::id, worker>;
 
@@ -32,6 +31,11 @@ class workbranch {
     std::condition_variable task_done_cv = {};
 
 public:
+    /**
+     * @brief construct function
+     * @param name workbranch's name (used in supervisor's log system)
+     * @param wks initial number of workers
+     */
     explicit workbranch(const char* name = "default", int wks = 1): name(name) {
         for (int i = 0; i < std::max(wks, 1); ++i) {
             add_worker(); // worker 
@@ -49,6 +53,7 @@ public:
 public:  
     /**
      * @brief add one worker
+     * @note O(logN)
      */
     void add_worker() {
         std::lock_guard<std::mutex> lock(lok);
@@ -58,6 +63,7 @@ public:
     
     /**
      * @brief delete one worker
+     * @note O(1)
      */
     void del_worker() {
         std::lock_guard<std::mutex> lock(lok);
@@ -127,9 +133,9 @@ public:
             try {
                 task();
             } catch (const std::exception& ex) {
-                std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught exception:\n  what(): "<<ex.what()<<std::endl;
+                std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught exception:\n  what(): "<<ex.what()<<'\n'<<std::flush;
             } catch (...) {
-                std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught unknown exception:\n  what(): "<<std::endl;
+                std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught unknown exception\n"<<std::flush;
             }
         });
     }
@@ -147,9 +153,9 @@ public:
             try {
                 task();
             } catch (const std::exception& ex) {
-                std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught exception:\n  what(): "<<ex.what()<<std::endl;
+                std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught exception:\n  what(): "<<ex.what()<<'\n'<<std::flush;
             } catch (...) {
-                std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught unknown exception:\n  what(): "<<std::endl;
+                std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught unknown exception\n"<<std::flush;
             }
         });
     }
@@ -163,11 +169,11 @@ public:
     auto submit(F&& task, Fs&&... tasks) -> typename std::enable_if<std::is_same<T, sequence>::value>::type {
         tq.push_back([=]{
             try {
-                execute(task, tasks...);
+                this->rexec(task, tasks...);
             } catch (const std::exception& ex) {
-                std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught exception:\n  what(): " << ex.what()<<std::endl;
+                std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught exception:\n  what(): "<<ex.what()<<'\n'<<std::flush;
             } catch (...) {
-                std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught unknown exception:\n  what(): "<<std::endl;
+                std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught unknown exception\n"<<std::flush;
             }
         });
     }
@@ -191,9 +197,9 @@ public:
                 try {
                     task_promise->set_exception(std::current_exception());
                 } catch (const std::exception& ex) {
-                    std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught exception:\n  what(): "<<ex.what()<<std::endl;
+                    std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught exception:\n  what(): "<<ex.what()<<'\n'<<std::flush;
                 } catch (...) {
-                    std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught unknown exception:\n  what(): "<<std::endl;
+                    std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught unknown exception\n"<<std::flush;
                 }
             }
         });
@@ -219,9 +225,9 @@ public:
                 try {
                     task_promise->set_exception(std::current_exception());
                 } catch (const std::exception& ex) {
-                    std::cerr<<"workspace: worker["<<std::this_thread::get_id()<<"] caught exception:\n  what(): "<<ex.what()<<std::endl;
+                    std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught exception:\n  what(): "<<ex.what()<<'\n'<<std::flush;
                 } catch (...) {
-                    std::cerr<<"workspace: worker["<<std::this_thread::get_id()<<"] caught unknown exception:\n  what(): "<<std::endl;
+                    std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught unknown exception\n"<<std::flush;
                 }
             }
         });
@@ -260,15 +266,15 @@ private:
 
     // recursive execute 
     template <typename F>
-    void execute(F&& func) {
+    void rexec(F&& func) {
         func();
     }
     
     // recursive execute 
     template <typename F, typename... Fs>
-    void execute(F&& func, Fs&&... funcs) {
+    void rexec(F&& func, Fs&&... funcs) {
         func();
-        execute(std::forward<Fs>(funcs)...);
+        rexec(std::forward<Fs>(funcs)...);
     }
 };
 
