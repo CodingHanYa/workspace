@@ -21,5 +21,5 @@ int main(int argn, char** argvs) {
         }
         spc.for_each([](wsp::workbranch& each){each.wait_tasks();});
     });
-    std::cout<<"threads: "<<thread_nums<<" tasks: "<<task_nums<<" | time-cost: "<<time_cost<<" (s)"<<std::endl;
+    std::cout<<"threads: "<<std::left<<std::setw(2)<<thread_nums<<" |  tasks: "<<task_nums<<"  |  time-cost: "<<time_cost<<" (s)"<<std::endl;
 }

@@ -41,8 +41,10 @@ int main() {
 
     space[sp1].suspend();  // stop
     std::cout<<"Paused superivsor"<<std::endl;
+
     std::this_thread::sleep_for(std::chrono::seconds(3)); // take a rest
     std::cout<<"tick times: "<<count/3<<std::endl;   
+
     space[sp1].disable_log(); 
     std::cout<<"Disabled log system"<<std::endl;
     space[sp1].proceed();  // go on

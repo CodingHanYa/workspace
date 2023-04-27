@@ -323,38 +323,38 @@ int main() {
 <**测试1**><br> 在测试1中我们调用了`submit<wsp::task::seq>`，每次打包10个空任务并提交到**workbranch**中执行。结果如下：（代码见`workspace/benchmark/bench1.cc`）
 
 ```
-threads: 1 tasks: 100000000 | time-cost: 2.68801 (s)
-threads: 2 tasks: 100000000 | time-cost: 3.53964 (s)
-threads: 3 tasks: 100000000 | time-cost: 3.99903 (s)
-threads: 4 tasks: 100000000 | time-cost: 5.26045 (s)
-threads: 5 tasks: 100000000 | time-cost: 6.65157 (s)
-threads: 6 tasks: 100000000 | time-cost: 8.40907 (s)
-threads: 7 tasks: 100000000 | time-cost: 10.5967 (s)
-threads: 8 tasks: 100000000 | time-cost: 13.2523 (s)
+threads: 1  |  tasks: 100000000  |  time-cost: 2.68801 (s)
+threads: 2  |  tasks: 100000000  |  time-cost: 3.53964 (s)
+threads: 3  |  tasks: 100000000  |  time-cost: 3.99903 (s)
+threads: 4  |  tasks: 100000000  |  time-cost: 5.26045 (s)
+threads: 5  |  tasks: 100000000  |  time-cost: 6.65157 (s)
+threads: 6  |  tasks: 100000000  |  time-cost: 8.40907 (s)
+threads: 7  |  tasks: 100000000  |  time-cost: 10.5967 (s)
+threads: 8  |  tasks: 100000000  |  time-cost: 13.2523 (s)
 ```
 
 <**测试2**><br> 在测试2中我们同样将10个任务打成一包，但是是将任务提交到**workspace**中，利用workspace进行任务分发，且在workspace托管的workbranch只拥有 **1条** 线程。结果如下：（代码见`workspace/benchmark/bench2.cc`）
 
 ```
-threads: 1 tasks: 100000000 | time-cost: 4.38221 (s)
-threads: 2 tasks: 100000000 | time-cost: 4.01103 (s)
-threads: 3 tasks: 100000000 | time-cost: 3.6797 (s)
-threads: 4 tasks: 100000000 | time-cost: 3.39314 (s)
-threads: 5 tasks: 100000000 | time-cost: 3.03324 (s)
-threads: 6 tasks: 100000000 | time-cost: 3.16079 (s)
-threads: 7 tasks: 100000000 | time-cost: 3.04612 (s)
-threads: 8 tasks: 100000000 | time-cost: 3.11893 (s)
+threads: 1  |  tasks: 100000000  |  time-cost: 4.38221 (s)
+threads: 2  |  tasks: 100000000  |  time-cost: 4.01103 (s)
+threads: 3  |  tasks: 100000000  |  time-cost: 3.6797 (s)
+threads: 4  |  tasks: 100000000  |  time-cost: 3.39314 (s)
+threads: 5  |  tasks: 100000000  |  time-cost: 3.03324 (s)
+threads: 6  |  tasks: 100000000  |  time-cost: 3.16079 (s)
+threads: 7  |  tasks: 100000000  |  time-cost: 3.04612 (s)
+threads: 8  |  tasks: 100000000  |  time-cost: 3.11893 (s)
 ```
 
 <**测试3**><br> 在测试3中我们同样将10个任务打成一包，并且将任务提交到**workspace**中，但是workspace管理的每个**workbranch**中都拥有 **2条** 线程。结果如下：（代码见`workspace/benchmark/bench3.cc`）
 
 ```
-threads: 2  tasks: 100000000 | time-cost: 4.53911 (s)
-threads: 4  tasks: 100000000 | time-cost: 7.0178 (s)
-threads: 6  tasks: 100000000 | time-cost: 6.00101 (s)
-threads: 8  tasks: 100000000 | time-cost: 5.97501 (s)
-threads: 10 tasks: 100000000 | time-cost: 5.63834 (s)
-threads: 12 tasks: 100000000 | time-cost: 5.17316 (s)
+threads: 2  |  tasks: 100000000  |  time-cost: 4.53911 (s)
+threads: 4  |  tasks: 100000000  |  time-cost: 7.0178 (s)
+threads: 6  |  tasks: 100000000  |  time-cost: 6.00101 (s)
+threads: 8  |  tasks: 100000000  |  time-cost: 5.97501 (s)
+threads: 10 |  tasks: 100000000  |  time-cost: 5.63834 (s)
+threads: 12 |  tasks: 100000000  |  time-cost: 5.17316 (s)
 ```
 
 **总结**：利用workspace进行任务分发，且**workbranch**线程数为1的情况下，整个任务同步框架是静态的，任务同步开销最小。当**workbranch**内的线程数越多，面对大量空任务时对任务队列的竞争越激烈，框架开销越大。
@@ -366,8 +366,9 @@ threads: 12 tasks: 100000000 | time-cost: 5.17316 (s)
 
 ```shell
 # 项目代码与workspace同级（Linux）
-g++ -I workspace/include xxx.cc && ./a.out
+g++ -I workspace/include xxx.cc -lpthread && ./a.out
 ```
+其它平台可能需要链接不同的线程库，且可执行文件后缀不同。
 
 #### 运行已有实例（以example为例）
 
@@ -392,8 +393,8 @@ make install
 ## 注意事项
 
 #### 雷区
-1. 不要在任务中操纵组件，如：`submit([&br]{br.wait_tasks();});`  <br>
-2. 不要在回调中操纵组件，如：`set_tick_cb([&sp]{sp.suspend();});` <br>
+1. 不要在任务中操纵组件，如：`submit([&br]{br.wait_tasks();});` （递归加锁问题） <br>
+2. 不要在回调中操纵组件，如：`set_tick_cb([&sp]{sp.suspend();});` （递归加锁问题） <br>
 3. 不要让workbranch先于supervisor析构（空悬指针问题）。
 
 #### 接口安全性
