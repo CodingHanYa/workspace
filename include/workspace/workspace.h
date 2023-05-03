@@ -9,16 +9,18 @@
 #include <workspace/workbranch.h>
 #include <workspace/supervisor.h>
 
-namespace wsp {
-
-namespace task {
+// task type
+namespace wsp::task {
     // Possess higher priority then "task::nor"
     using urg = details::urgent;
     // Possess lower  priority then "task::urg"
     using nor = details::normal;  
     // Can be executed by a thread at a time
-    using seq = details::sequence;  
-} // task type
+    using seq = details::sequence;
+}
+
+// public
+namespace wsp {
 
 // std::future collector
 template <typename RT>
@@ -27,6 +29,10 @@ using futures = details::futures<RT>;
 using workbranch = details::workbranch;              
 // workbranch supervisor
 using supervisor = details::supervisor;              
+
+}
+
+namespace wsp {
 
 // Component manager
 class workspace {
