@@ -117,38 +117,41 @@ private:
 
     void mission(workbranch* br) {
         while (!stop) {
-            // get info
-            auto tknums = br->num_tasks();
-            auto wknums = br->num_workers();
-            // adjust
-            if (tknums) {
-                sz_t nums = std::min(wmax-wknums, tknums-wknums);
-                for (sz_t i = 0; i < nums; ++i) { 
-                    br->add_worker(); // quick add
+            try {
+                // get info
+                auto tknums = br->num_tasks();
+                auto wknums = br->num_workers();
+                // adjust
+                if (tknums) {
+                    sz_t nums = std::min(wmax-wknums, tknums-wknums);
+                    for (sz_t i = 0; i < nums; ++i) { 
+                        br->add_worker(); // quick add
+                    }
+                } else if (wknums > wmin) {
+                    br->del_worker();     // slow dec
                 }
-            } else if (wknums > wmin) {
-                br->del_worker();     // slow dec
-            }
-            // log
-            std::unique_lock<std::mutex> lock(spv_lok);
-            if (tick_cb) {
-                tick_cb();
-            }
-            if (output) {
-                if (wknums == wmax) {
-                    (*output)<<"workspace: "<<br->get_name()<<" workers: "
-                    <<std::left<<std::setw(wide)<<wknums<<" [max] | blocking-task: "<<tknums<<"\n";
-                } else if (wknums <= wmin) {
-                    (*output)<<"workspace: "<<br->get_name()<<" workers: "
-                    <<std::left<<std::setw(wide)<<wknums<<" [min] | blocking-task: "<<tknums<<"\n";
-                } else {
-                    (*output)<<"workspace: "<<br->get_name()<<" workers: "
-                    <<std::left<<std::setw(wide)<<wknums<<" [mid] | blocking-task: "<<tknums<<"\n";
+                // log
+                std::unique_lock<std::mutex> lock(spv_lok);
+                if (tick_cb) 
+                    tick_cb();
+                if (output) {
+                    if (wknums == wmax) {
+                        (*output)<<"workspace: "<<br->get_name()<<" workers: "
+                        <<std::left<<std::setw(wide)<<wknums<<" [max] | blocking-task: "<<tknums<<"\n";
+                    } else if (wknums <= wmin) {
+                        (*output)<<"workspace: "<<br->get_name()<<" workers: "
+                        <<std::left<<std::setw(wide)<<wknums<<" [min] | blocking-task: "<<tknums<<"\n";
+                    } else {
+                        (*output)<<"workspace: "<<br->get_name()<<" workers: "
+                        <<std::left<<std::setw(wide)<<wknums<<" [mid] | blocking-task: "<<tknums<<"\n";
+                    }
                 }
-            }
-            // task a rest
-            if (!stop) {
-                thrd_cv.wait_for(lock, std::chrono::milliseconds(tout));
+                // task a rest
+                if (!stop) 
+                    thrd_cv.wait_for(lock, std::chrono::milliseconds(tout));
+            } catch (const std::exception& e) {
+                std::cerr<<"workspace: supervisor["<< std::this_thread::get_id()<<
+                "] caught exception:\n  what(): "<<e.what()<<'\n'<<std::flush;
             }
         }
     }
