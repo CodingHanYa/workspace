@@ -385,8 +385,7 @@ make
 # 在"workspace/"中
 cmake -B build 
 cd build
-make
-make install
+sudo make install
 ```
 
 
