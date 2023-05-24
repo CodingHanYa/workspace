@@ -9,6 +9,12 @@ int main() {
     auto b2 = space.attach(new wsp::workbranch("Girl", 2));
     auto sp = space.attach(new wsp::supervisor(2, 4, 1000));
 
+    if (b1 != b2) 
+        std::cout<<"b1["<<b1<<"] != b2["<<b2<<"]"<<std::endl;
+    if (b1 < b2) 
+        std::cout<<"b1["<<b1<<"] <  b2["<<b2<<"]"<<std::endl;
+
+
     space[sp].supervise(space[b1]);
     space[sp].supervise(space[b2]);
 

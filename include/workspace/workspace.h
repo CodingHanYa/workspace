@@ -41,13 +41,43 @@ public:
         workbranch* base = nullptr;
         friend class workspace;
     public:
-        bid(workbranch* b): base(b) {}
+        bid(workbranch* b)
+            : base(b) {}
+
+        bool operator == (const bid& other) {
+            return base == other.base;
+        }
+        bool operator != (const bid& other) {
+            return base != other.base;
+        }
+        bool operator < (const bid& other) {
+            return base < other.base;
+        }
+        friend std::ostream& operator <<(std::ostream& os, const bid& id) {
+            os << (uint64_t)(id.base);
+            return os;
+        }
     };
     class sid {
         supervisor* base = nullptr;
         friend class workspace;
     public:
-        sid(supervisor* b): base(b) {}
+        sid(supervisor* b)
+            : base(b) {}
+        
+        bool operator == (const sid& other) {
+            return base == other.base;
+        }
+        bool operator != (const sid& other) {
+            return base != other.base;
+        }
+        bool operator < (const sid& other) {
+            return base < other.base;
+        }
+        friend std::ostream& operator <<(std::ostream& os, const sid& id) {
+            os << (uint64_t)(id.base);
+            return os;
+        }
     };
 private:
     using branch_lst = std::list<std::unique_ptr<workbranch>>;
