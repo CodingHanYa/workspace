@@ -2,8 +2,7 @@
 #include <deque>
 #include <mutex>
 
-namespace wsp {
-namespace details {
+namespace wsp::details {
 
 /**
  * @brief A thread-safe task queue
@@ -51,5 +50,4 @@ public:
     }
 };
 
-} // details
-} // wsp
+} // wsp::details

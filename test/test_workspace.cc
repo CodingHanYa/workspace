@@ -5,8 +5,8 @@
 int main() {
     using namespace wsp;
     wsp::workspace space;
-    auto b1 = space.attach(new wsp::workbranch("Boy", 2));
-    auto b2 = space.attach(new wsp::workbranch("Girl", 2));
+    auto b1 = space.attach(new wsp::workbranch(2));
+    auto b2 = space.attach(new wsp::workbranch(2));
     auto sp = space.attach(new wsp::supervisor(2, 4, 1000));
 
     if (b1 != b2) 
@@ -27,8 +27,8 @@ int main() {
     
     // Detach one workbranch and there remain one.
     auto br = space.detach(b1); 
-    std::cout<<"workspace still maintain: ["<<space[b2].get_name()<<"]"<<std::endl;
-    std::cout<<"workspace no longer maintain: ["<<br->get_name()<<"]"<<std::endl;
+    std::cout<<"workspace still maintain: ["<<b2<<"]"<<std::endl;
+    std::cout<<"workspace no longer maintain: ["<<b1<<"]"<<std::endl;
 
     auto& ref = space.get_ref(b2);
     ref.submit<task::nor>([]{std::cout<<TID()<<" exec task C"<<std::endl;});

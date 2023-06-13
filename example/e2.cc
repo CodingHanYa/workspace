@@ -2,7 +2,7 @@
 
 int main() {
     // 1 threads
-    wsp::workbranch br("My Second BR");
+    wsp::workbranch br;
 
     // normal task 
     br.submit<wsp::task::nor>([]{ std::cout<<"task B done\n";});

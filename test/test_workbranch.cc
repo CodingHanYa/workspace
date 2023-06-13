@@ -2,8 +2,7 @@
 
 int main() {
 
-    wsp::workbranch br("MyBR", 2);
-    std::cout<<"name: "<<br.get_name()<<std::endl;
+    wsp::workbranch br(2);
 
     // add a worker
     br.add_worker();

@@ -28,7 +28,7 @@
 
 ### **workbranch**
 
-**workbranch**（工作分支）是动态线程池的抽象，内置了一条线程安全的**任务队列**用于同步任务。其管理的每一条异步工作线程被称为**worker**，负责从任务队列不断获取任务并执行。（以下示例位于`workspace/example/`）
+**workbranch**（工作分支）是动态线程池的抽象，内置了一条线程安全的**任务队列**用于同步任务。其管理的每一条异步工作线程被称为**worker**，负责从任务队列不断获取任务并执行。（以下示例按顺序置于`workspace/example/`）
 <br>
 
 让我们先简单地提交一点任务，当你的任务带有返回值时，workbranch会返回一个std::future，否则返回void。
@@ -38,7 +38,7 @@
 
 int main() {
     // 2 threads
-    wsp::workbranch br("My First BR", 2);
+    wsp::workbranch br(2);
     // return void
     br.submit([]{ std::cout<<"hello world"<<std::endl; });  
     // return std::future<int>
@@ -59,7 +59,7 @@ int main() {
 
 int main() {
     // 1 threads
-    wsp::workbranch br("My Second BR");
+    wsp::workbranch br;
     br.submit<wsp::task::nor>([]{ std::cout<<"task B done\n";}); // normal task 
     br.submit<wsp::task::urg>([]{ std::cout<<"task A done\n";}); // urgent task
     br.wait_tasks(); // wait for tasks done (timeout: no limit)
@@ -82,7 +82,7 @@ task B done
 #include <workspace/workspace.h>
 
 int main() {
-    wsp::workbranch br("My Third BR");
+    wsp::workbranch br;
     // sequence tasks
     br.submit<wsp::task::seq>([]{std::cout<<"task 1 done\n";},
                               []{std::cout<<"task 2 done\n";},
@@ -145,7 +145,7 @@ Caught error: YYYY
 
 ### **supervisor**
 
-supervisor是异步管理者线程的抽象，负责监控workbranch的负载情况并进行动态调整。它自带简单的日志系统，并允许你在每一次检查workbranch的时候插入一个小任务，比如：定制你的专属日志（如加入时间）、简单地统计任务负载等。
+supervisor是异步管理者线程的抽象，负责监控workbranch的负载情况并进行动态调整。它允许你在每一次调控workbranch之后执行一个小任务，你可以用来**写日志**或者做一些其它调控等。
 <br>
 
 每一个supervisor可以管理多个workbranch。此时workbranch之间共享supervisor的所有设定。
@@ -154,22 +154,23 @@ supervisor是异步管理者线程的抽象，负责监控workbranch的负载情
 #include <workspace/workspace.h>
 
 int main() {
-    wsp::workbranch br1("BR-1", 2);
-    wsp::workbranch br2("BR-2", 2);
+    wsp::workbranch br1(2);
+    wsp::workbranch br2(2);
 
     // 2 <= thread number <= 4 
     // time interval: 1000 ms 
     wsp::supervisor sp(2, 4, 1000);
 
-    sp.enable_log(std::cout);
-    sp.set_tick_cb([]{
-        static char buffer[40];
+    sp.set_tick_cb([&br1, &br2]{
         auto now = std::chrono::system_clock::now();
         std::time_t timestamp = std::chrono::system_clock::to_time_t(now);
         std::tm local_time = *std::localtime(&timestamp);
+        static char buffer[40];
         std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &local_time);
-        std::cout<<"["<<buffer<<"] ";
+        std::cout<<"["<<buffer<<"] "<<"br1: [workers] "<<br1.num_workers()<<" | [blocking-tasks] "<<br1.num_tasks()<<'\n';
+        std::cout<<"["<<buffer<<"] "<<"br2: [workers] "<<br2.num_workers()<<" | [blocking-tasks] "<<br2.num_tasks()<<'\n';
     });
+
     sp.supervise(br1);  // start supervising
     sp.supervise(br2);  // start supervising
 
@@ -177,76 +178,29 @@ int main() {
         br1.submit([]{std::this_thread::sleep_for(std::chrono::milliseconds(10));});
         br2.submit([]{std::this_thread::sleep_for(std::chrono::milliseconds(20));});
     }
+
     br1.wait_tasks();
     br2.wait_tasks();
 }
 ```
 
-在我的机器上，输出样式如下：
+在我的机器上，输出如下：
 
 ```
 jack@xxx:~/workspace/example/build$ ./e4
-[2023-04-24 16:37:15] workspace: BR-2 workers: 2 [min] | blocking-task: 0
-[2023-04-24 16:37:15] workspace: BR-1 workers: 2 [min] | blocking-task: 0
-[2023-04-24 16:37:16] workspace: BR-2 workers: 2 [min] | blocking-task: 900
-[2023-04-24 16:37:16] workspace: BR-1 workers: 2 [min] | blocking-task: 802
-[2023-04-24 16:37:17] workspace: BR-2 workers: 4 [max] | blocking-task: 700
-[2023-04-24 16:37:17] workspace: BR-1 workers: 4 [max] | blocking-task: 406
-[2023-04-24 16:37:18] workspace: BR-2 workers: 4 [max] | blocking-task: 500
-[2023-04-24 16:37:18] workspace: BR-1 workers: 4 [max] | blocking-task: 10
-[2023-04-24 16:37:19] workspace: BR-2 workers: 4 [max] | blocking-task: 302
-[2023-04-24 16:37:19] workspace: BR-1 workers: 4 [max] | blocking-task: 0
-[2023-04-24 16:37:20] workspace: BR-2 workers: 4 [max] | blocking-task: 104
-[2023-04-24 16:37:20] workspace: BR-1 workers: 3 [mid] | blocking-task: 0
+[2023-06-13 12:24:31] br1: [workers] 4 | [blocking-tasks] 606
+[2023-06-13 12:24:31] br2: [workers] 4 | [blocking-tasks] 800
+[2023-06-13 12:24:32] br1: [workers] 4 | [blocking-tasks] 213
+[2023-06-13 12:24:32] br2: [workers] 4 | [blocking-tasks] 600
+[2023-06-13 12:24:33] br1: [workers] 4 | [blocking-tasks] 0
+[2023-06-13 12:24:33] br2: [workers] 4 | [blocking-tasks] 404
+[2023-06-13 12:24:34] br1: [workers] 3 | [blocking-tasks] 0
+[2023-06-13 12:24:34] br2: [workers] 4 | [blocking-tasks] 204
+[2023-06-13 12:24:35] br1: [workers] 2 | [blocking-tasks] 0
+[2023-06-13 12:24:35] br2: [workers] 4 | [blocking-tasks] 4
+[2023-06-13 12:24:35] br1: [workers] 2 | [blocking-tasks] 0
+[2023-06-13 12:24:35] br2: [workers] 4 | [blocking-tasks] 0
 ```
-
-其中：
-
-- `workers`：代表线程数
-
-- `[min]|[mid]|[max]`： 代表了<最小|中等|最大>的线程数。
-
-- `blocking-task`：代表了当前任务队列中阻塞的任务数。
-
-从代码中可以看到，我们在每一次检查的间隔插入了一个日志任务，用于补充supervisor的日志信息 —— 将当前的系统时间安插到默认日志之前。
-<br>
-
-我们也可以让每一个supervisor单独管理一个workbranch，如下：
-
-```c++
-#include <workspace/workspace.h>
-#define TASKS 1000
-#define SLEEP_FOR(ms) std::this_thread::sleep_for(std::chrono::milliseconds(ms))
-
-int main() {
-    wsp::workbranch main_br("Main  ");
-    wsp::workbranch help_br("Helper");
-
-    wsp::supervisor main_br_sp(2, 4);  // interval 500(ms)
-    wsp::supervisor help_br_sp(0, 2);  // interval 500(ms)
-    main_br_sp.enable_log();  
-    help_br_sp.enable_log();
-
-    main_br_sp.supervise(main_br);
-    help_br_sp.supervise(help_br);
-
-    for (int i = 0; i < TASKS; ++i) {
-        if (main_br.num_tasks() > 200) {
-            if (help_br.num_tasks() > 200)
-                SLEEP_FOR(20);
-            else 
-                help_br.submit([]{SLEEP_FOR(10);});
-        } else {
-            main_br.submit([]{SLEEP_FOR(10);});
-        }
-    }
-    main_br.wait_tasks();
-    help_br.wait_tasks();
-}
-```
-
-在这个例子中我们申请了两个工作分支，并将其中一个作为**主要分支**，另一个作为**辅助分支**，接纳主要分支无法容纳的任务。值得注意的是：各个supervisor之间的输出**线程安全**的。
-
 ---
 
 ### **workspace**
@@ -258,25 +212,20 @@ workspace是一个**托管器**/**任务分发器**，你可以将workbranch和s
 - 避免空悬指针问题：当workbranch先于supervisor析构会造成**空悬指针**的问题，使用workspace可以避免这种情况
 - 更低的框架开销：workspace的任务分发机制能减少与工作线程的竞争，提高性能（见下Benchmark）。
 
-我们可以通过workspace自带的任务分发机制(调用`submit`)，或者调用`for_each`来进行任务分发。前者显然是更好的方式。
+我们可以通过workspace自带的任务分发机制来异步执行任务（调用`submit`）。
 
 ```C++
 #include <workspace/workspace.h>
 
 int main() {
     wsp::workspace spc;
-    auto bid1 = spc.attach(new wsp::workbranch("BR1"));
-    auto bid2 = spc.attach(new wsp::workbranch("BR2"));
+    auto bid1 = spc.attach(new wsp::workbranch);
+    auto bid2 = spc.attach(new wsp::workbranch);
     auto sid1 = spc.attach(new wsp::supervisor(2, 4));
     auto sid2 = spc.attach(new wsp::supervisor(2, 4));
     spc[sid1].supervise(spc[bid1]);  // start supervising
     spc[sid2].supervise(spc[bid2]);  // start supervising
 
-    // Manual assignment
-    spc.for_each([](wsp::workbranch& each){
-        each.submit([]{std::cout<<std::this_thread::get_id()<<" executed task"<<std::endl;});
-        each.wait_tasks();
-    });
     // Automatic assignment
     spc.submit([]{std::cout<<std::this_thread::get_id()<<" executed task"<<std::endl;});
     spc.submit([]{std::cout<<std::this_thread::get_id()<<" executed task"<<std::endl;});

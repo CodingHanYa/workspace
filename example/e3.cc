@@ -1,7 +1,7 @@
 #include <workspace/workspace.h>
 
 int main() {
-    wsp::workbranch br("My Third BR");
+    wsp::workbranch br;
 
     br.submit<wsp::task::seq>([]{std::cout<<"task 1 done\n";},
                               []{std::cout<<"task 2 done\n";},

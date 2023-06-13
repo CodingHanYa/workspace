@@ -11,28 +11,23 @@
 
 namespace wsp::details {
 
-// shared by all supervisors
-static std::mutex spv_lok;
-
 // workbranch supervisor
 class supervisor {
-    using worker = autothread<join>;
-    using callback_t = std::function<void()>;
+    using tick_callback_t = std::function<void()>;
 private:
     bool stop = false;
-    bool log = false;
 
-    int  wide = 1;
     sz_t wmin = 0;
     sz_t wmax = 0;
     unsigned tout = 0;
     const unsigned tval = 0;
 
-    callback_t tick_cb = {};
-    std::ostream* output = nullptr;
+    tick_callback_t tick_cb = {};
 
-    std::vector<worker> thrds;
+    autothread<join> worker;
+    std::vector<workbranch*> branchs;
     std::condition_variable thrd_cv;
+    std::mutex spv_lok;
 public:
     /**
      * @brief construct a supervisor
@@ -45,9 +40,10 @@ public:
         , wmax(max_wokrs)
         , tout(time_interval)
         , tval(time_interval) 
+        , tick_cb([]{})
+        , worker(std::thread(&supervisor::mission, this))
     {
         assert(min_wokrs >= 0 && max_wokrs > 0 && max_wokrs > min_wokrs);
-        while ((max_wokrs /= 10)) { wide++; }
     }
     supervisor(const supervisor&) = delete;
     supervisor(supervisor&&) = delete;
@@ -55,7 +51,7 @@ public:
         {
             std::lock_guard<std::mutex> lock(spv_lok);
             stop = true;
-            thrd_cv.notify_all();
+            thrd_cv.notify_one();
         }
     }
     
@@ -66,9 +62,9 @@ public:
      */
     void supervise(workbranch& wbr) {
         std::lock_guard<std::mutex> lock(spv_lok);
-        thrds.emplace_back(std::thread(&supervisor::mission, this, &wbr));
+        branchs.emplace_back(&wbr);
     }
-    
+
     /**
      * @brief suspend the supervisor
      * @param timeout the longest waiting time
@@ -77,81 +73,50 @@ public:
         std::lock_guard<std::mutex> lock(spv_lok);
         tout = timeout;
     }
-    
     // go on supervising
     void proceed() {
         {
             std::lock_guard<std::mutex> lock(spv_lok);
             tout = tval;
         }
-        thrd_cv.notify_all();
+        thrd_cv.notify_one();
     }
-    
-    /**
-     * @brief enable log system
-     * @param output output file or std::cout
-     */
-    void enable_log(std::ostream& output = std::cout) {
-        std::lock_guard<std::mutex> lock(spv_lok);
-        this->output = &output;
-    }
-
     /**
      * @brief Always execute callback before taking a rest
      * @param cb callback function
      */
-    void set_tick_cb(std::function<void()> cb) {
+    void set_tick_cb(tick_callback_t cb) {
         std::lock_guard<std::mutex> lock(spv_lok);
         tick_cb = cb;
     }
-    
-    /**
-     * @brief disable log system
-     * @note the output port will be wiped
-     */
-    void disable_log() {
-        std::lock_guard<std::mutex> lock(spv_lok);
-        this->output = nullptr;
-    }
 private:
 
-    void mission(workbranch* br) {
+    void mission() {
         while (!stop) {
             try {
-                // get info
-                auto tknums = br->num_tasks();
-                auto wknums = br->num_workers();
-                // adjust
-                if (tknums) {
-                    sz_t nums = std::min(wmax-wknums, tknums-wknums);
-                    for (sz_t i = 0; i < nums; ++i) { 
-                        br->add_worker(); // quick add
+                {
+                    std::unique_lock<std::mutex> lock(spv_lok);
+                    for (auto pbr: branchs) {
+                        // get info
+                        auto tknums = pbr->num_tasks();
+                        auto wknums = pbr->num_workers();
+                        // adjust
+                        if (tknums) { // block number of tasks
+                            sz_t nums = std::min(wmax-wknums, tknums-wknums);
+                            for (sz_t i = 0; i < nums; ++i) { 
+                                pbr->add_worker(); // quick add
+                            }
+                        } else if (wknums > wmin) {
+                            pbr->del_worker();     // slow dec
+                        }
                     }
-                } else if (wknums > wmin) {
-                    br->del_worker();     // slow dec
+                    if (!stop) thrd_cv.wait_for(lock, std::chrono::milliseconds(tout));
                 }
-                // log
-                std::unique_lock<std::mutex> lock(spv_lok);
-                if (tick_cb) 
-                    tick_cb();
-                if (output) {
-                    if (wknums == wmax) {
-                        (*output)<<"workspace: "<<br->get_name()<<" workers: "
-                        <<std::left<<std::setw(wide)<<wknums<<" [max] | blocking-task: "<<tknums<<"\n";
-                    } else if (wknums <= wmin) {
-                        (*output)<<"workspace: "<<br->get_name()<<" workers: "
-                        <<std::left<<std::setw(wide)<<wknums<<" [min] | blocking-task: "<<tknums<<"\n";
-                    } else {
-                        (*output)<<"workspace: "<<br->get_name()<<" workers: "
-                        <<std::left<<std::setw(wide)<<wknums<<" [mid] | blocking-task: "<<tknums<<"\n";
-                    }
-                }
-                // task a rest
-                if (!stop) 
-                    thrd_cv.wait_for(lock, std::chrono::milliseconds(tout));
+                tick_cb();  // execute tick callback
+
             } catch (const std::exception& e) {
-                std::cerr<<"workspace: supervisor["<< std::this_thread::get_id()<<
-                "] caught exception:\n  what(): "<<e.what()<<'\n'<<std::flush;
+                std::cerr<<"workspace: supervisor["<< std::this_thread::get_id()<<"] caught exception:\n  \
+                what(): "<<e.what()<<'\n'<<std::flush;
             }
         }
     }

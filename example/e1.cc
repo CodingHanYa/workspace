@@ -2,7 +2,7 @@
 
 int main() {
     // 2 threads
-    wsp::workbranch br("My First BR", 2);
+    wsp::workbranch br(2);
 
     // no return
     br.submit([]{ std::cout<<"hello world"<<std::endl; });  

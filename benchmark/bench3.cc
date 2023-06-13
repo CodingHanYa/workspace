@@ -12,7 +12,7 @@ int main(int argn, char** argvs) {
     } 
     wsp::workspace spc;
     for (int i = 0; i < thread_nums/2; ++i) {
-        spc.attach(new wsp::workbranch("xx", 2));
+        spc.attach(new wsp::workbranch(2));
     }
     auto time_cost = timewait([&]{
         auto task = []{/* empty task */};

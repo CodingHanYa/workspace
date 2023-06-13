@@ -10,7 +10,7 @@ int main(int argn, char** argvs) {
         fprintf(stderr, "Invalid parameter! usage: [threads + tasks]\n");
         return -1;
     }  
-    wsp::workbranch wb("bench", thread_nums);
+    wsp::workbranch wb(thread_nums);
     auto time_cost = timewait([&]{
         auto task = []{/* empty task */};
         for (int i = 0; i < task_nums/10; ++i) {

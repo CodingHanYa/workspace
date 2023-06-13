@@ -24,6 +24,3 @@ target_link_libraries(e5 PRIVATE Threads::Threads)
 
 add_executable(e6 e6.cc)
 target_link_libraries(e6 PRIVATE Threads::Threads)
-
-add_executable(e7 e7.cc)
-target_link_libraries(e7 PRIVATE Threads::Threads)

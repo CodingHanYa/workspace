@@ -21,7 +21,6 @@ class workbranch {
     sz_t task_done_workers = 0;
     bool is_waiting = false;
     bool destructing = false;
-    std::string name = {"default"};
 
     worker_map workers = {};
     taskqueue<std::function<void()>> tq = {};
@@ -33,10 +32,9 @@ class workbranch {
 public:
     /**
      * @brief construct function
-     * @param name workbranch's name (used in supervisor's log system)
      * @param wks initial number of workers
      */
-    explicit workbranch(const char* name = "default", int wks = 1): name(name) {
+    explicit workbranch(int wks = 1) {
         for (int i = 0; i < std::max(wks, 1); ++i) {
             add_worker(); // worker 
         }
@@ -68,7 +66,7 @@ public:
     void del_worker() {
         std::lock_guard<std::mutex> lock(lok);
         if (workers.empty()) {
-            throw std::runtime_error("workspace: Try to delete too many branchs");
+            throw std::runtime_error("workspace: No worker in workbranch to delete");
         } else {
             decline++;
         }
@@ -76,7 +74,7 @@ public:
    
     /**
      * @brief Wait for all tasks done.
-     * @brief This interface will pause all threads to relieve system's stress.
+     * @brief This interface will pause all threads(workers) in workbranch to relieve system's stress.
      * @param timeout timeout for waiting
      * @return return true if all tasks done 
      */
@@ -110,13 +108,6 @@ public:
      */
     sz_t num_tasks() {
         return tq.length();
-    }
-    /**
-     * @brief get workbranch's name
-     * @return name 
-     */
-    auto get_name() -> const std::string& {
-        return name;
     }
 
 public:
