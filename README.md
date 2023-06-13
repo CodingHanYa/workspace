@@ -341,8 +341,8 @@ sudo make install
 ## 注意事项
 
 #### 雷区
-1. 不要在任务中操纵组件，如：`submit([&br]{br.wait_tasks();});` （递归加锁问题） <br>
-2. 不要在回调中操纵组件，如：`set_tick_cb([&sp]{sp.suspend();});` （递归加锁问题） <br>
+1. 不要在任务中操纵组件，如：`submit([&br]{br.wait_tasks();});` 会阻塞线程 <br>
+2. 不要在回调中操纵组件，如：`set_tick_cb([&sp]{sp.suspend();});` <br>
 3. 不要让workbranch先于supervisor析构（空悬指针问题）。
 
 #### 接口安全性

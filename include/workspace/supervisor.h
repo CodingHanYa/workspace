@@ -86,11 +86,10 @@ public:
      * @param cb callback function
      */
     void set_tick_cb(tick_callback_t cb) {
-        std::lock_guard<std::mutex> lock(spv_lok);
         tick_cb = cb;
     }
 private:
-
+    // loop func
     void mission() {
         while (!stop) {
             try {
@@ -101,7 +100,7 @@ private:
                         auto tknums = pbr->num_tasks();
                         auto wknums = pbr->num_workers();
                         // adjust
-                        if (tknums) { // block number of tasks
+                        if (tknums) { 
                             sz_t nums = std::min(wmax-wknums, tknums-wknums);
                             for (sz_t i = 0; i < nums; ++i) { 
                                 pbr->add_worker(); // quick add
