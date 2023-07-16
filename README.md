@@ -24,6 +24,7 @@
 - 稳定的：利用`std::function`的小任务优化减少内存碎片、拥有良好的异步线程异常处理机制。
 - 兼容性：纯C++11实现，跨平台，且兼容C++11以上版本。
 
+
 ## 主要模块
 
 ### **workbranch**
@@ -310,6 +311,15 @@ threads: 12 |  tasks: 100000000  |  time-cost: 5.17316 (s)
 
 
 ## 如何使用
+
+#### 生成doxygen文档
+请提前安装doxygen
+``` shell
+# 与workspace同级目录中（Linux）
+doxygen ./doxygen.conf
+```
+生成的文档在`workspace/docs/`中，可以在浏览器中打开`workspace/docs/html/index.html`并查看接口。
+
 
 #### 简单使用
 

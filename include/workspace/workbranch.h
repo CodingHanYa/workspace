@@ -17,7 +17,7 @@ class workbranch {
     using worker = autothread<detach>;
     using worker_map = std::map<worker::id, worker>;
 
-    sz_t decline = 0;
+    sz_t decline = 0; 
     sz_t task_done_workers = 0;
     bool is_waiting = false;
     bool destructing = false;
@@ -74,17 +74,17 @@ public:
    
     /**
      * @brief Wait for all tasks done.
-     * @brief This interface will pause all threads(workers) in workbranch to relieve system's stress.
-     * @param timeout timeout for waiting
+     * @brief This interface will pause all threads(workers) in workbranch to relieve system's stress. 
+     * @param timeout timeout for waiting (ms)
      * @return return true if all tasks done 
      */
     bool wait_tasks(unsigned timeout = -1) {
         bool res;
         {
             std::unique_lock<std::mutex> locker(lok);
-            is_waiting = true;
+            is_waiting = true; // task_done_workers == 0
             res = task_done_cv.wait_for(locker, std::chrono::milliseconds(timeout), [this]{
-                return task_done_workers >= workers.size();  // use ">=" to avoid supervisor delete workers
+                return task_done_workers >= workers.size();  // use ">=" to avoid supervisor delete workers  
             }); 
             task_done_workers = 0;
             is_waiting = false;
@@ -117,7 +117,7 @@ public:
      * @return void
      */
     template <typename T = normal, typename F, 
-        typename R = details::result_of_t<F>, 
+        typename R = details::result_of_t<F>,  
         typename DR = typename std::enable_if<std::is_void<R>::value>::type>
     auto submit(F&& task) -> typename std::enable_if<std::is_same<T, normal>::value>::type {
         tq.push_back([task]{
@@ -128,7 +128,7 @@ public:
             } catch (...) {
                 std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught unknown exception\n"<<std::flush;
             }
-        });
+        }); // function
     }
 
     /**
@@ -154,6 +154,7 @@ public:
     /**
      * @brief async execute tasks 
      * @param task runnable object (sequence)
+     * @param tasks other parameters
      * @return void
      */
     template <typename T, typename F, typename... Fs>
@@ -172,7 +173,6 @@ public:
     /**
      * @brief async execute the task
      * @param task runnable object (normal)
-     * @param dummy dummy
      * @return std::future<R>
      */
     template <typename T = normal, typename F, 
@@ -200,7 +200,6 @@ public:
     /**
      * @brief async execute the task
      * @param task runnable object (urgent)
-     * @param dummy dummy
      * @return std::future<R>
      */
     template <typename T,  typename F,  
@@ -226,7 +225,7 @@ public:
     }
 
 private:
-    // loop
+    // thread's default loop
     void mission() {
         std::function<void()> task;
         while (true) {
@@ -234,8 +233,8 @@ private:
                 task(); 
             } else if (decline > 0) {
                 std::lock_guard<std::mutex> lock(lok);
-                if (decline > 0 && decline--) {
-                    workers.erase(std::this_thread::get_id());
+                if (decline > 0 && decline--) { // double check
+                    workers.erase(std::this_thread::get_id()); 
                     if (is_waiting)  
                         task_done_cv.notify_one();
                     if (destructing) 
@@ -247,9 +246,9 @@ private:
                     std::unique_lock<std::mutex> locker(lok);
                     task_done_workers++;
                     task_done_cv.notify_one();
-                    thread_cv.wait(locker);
+                    thread_cv.wait(locker);  
                 } else {
-                    std::this_thread::yield();
+                    std::this_thread::yield(); 
                 }
             }
         }
