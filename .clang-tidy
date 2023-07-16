@@ -1,0 +1,128 @@
+# .clang-tidy file format, see https://clang.llvm.org/extra/clang-tidy/
+# https://clang.llvm.org/extra/clang-tidy/checks/list.html
+
+#Configuration files:
+#  clang-tidy attempts to read configuration for each source file from a
+#  .clang-tidy file located in the closest parent directory of the source
+#  file. The .clang-tidy file is specified in YAML format. If any configuration
+#  options have a corresponding command-line option, command-line option takes
+#  precedence.
+#
+#  The following configuration options may be used in a .clang-tidy file:
+#
+#  CheckOptions                 - List of key-value pairs defining check-specific
+#                                 options. Example:
+#                                   CheckOptions:
+#                                     some-check.SomeOption: 'some value'
+#  Checks                       - Same as '--checks'. Additionally, the list of
+#                                 globs can be specified as a list instead of a
+#                                 string.
+#  ExtraArgs                    - Same as '--extra-args'.
+#  ExtraArgsBefore              - Same as '--extra-args-before'.
+#  FormatStyle                  - Same as '--format-style'.
+#  HeaderFileExtensions         - File extensions to consider to determine if a
+#                                 given diagnostic is located in a header file.
+#  HeaderFilterRegex            - Same as '--header-filter-regex'.
+#  ImplementationFileExtensions - File extensions to consider to determine if a
+#                                 given diagnostic is located in an
+#                                 implementation file.
+#  InheritParentConfig          - If this option is true in a config file, the
+#                                 configuration file in the parent directory
+#                                 (if any exists) will be taken and the current
+#                                 config file will be applied on top of the
+#                                 parent one.
+#  SystemHeaders                - Same as '--system-headers'.
+#  UseColor                     - Same as '--use-color'.
+#  User                         - Specifies the name or e-mail of the user
+#                                 running clang-tidy. This option is used, for
+#                                 example, to place the correct user name in
+#                                 TODO() comments in the relevant check.
+#  WarningsAsErrors             - Same as '--warnings-as-errors'.
+# -*disable all default checks
+
+
+
+Checks: '-*,
+
+bugprone-*,
+-bugprone-bool-pointer-implicit-conversion,
+-bugprone-easily-swappable-parameters,
+-bugprone-exception-escape, # This check may be expensive on large source files
+-bugprone-infinite-loop,
+-bugprone-signal-handler, # The check is disabled on C++17 and later
+-bugprone-signed-char-misuse,
+-bugprone-unhandled-exception-at-new,
+
+boost-use-to-string,
+
+cert-dcl21-cpp,
+cert-dcl58-cpp,
+cert-err34-c,
+cert-err52-cpp,
+cert-err58-cpp,
+cert-err60-cpp,
+cert-flp30-c,
+cert-msc50-cpp,
+cert-msc51-cpp,
+cert-str34-c,
+
+cppcoreguidelines-*,
+-cppcoreguidelines-pro-bounds-constant-array-index,
+-cppcoreguidelines-avoid-magic-numbers,
+-cppcoreguidelines-non-private-member-variables-in-classes,
+cppcoreguidelines-interfaces-global-init,
+cppcoreguidelines-narrowing-conversions,
+cppcoreguidelines-pro-type-member-init,
+cppcoreguidelines-pro-type-static-cast-downcast,
+cppcoreguidelines-slicing,
+
+google-default-arguments,
+google-explicit-constructor,
+google-runtime-operator,
+
+hicpp-exception-baseclass,
+hicpp-multiway-paths-covered,
+hicpp-signed-bitwise,
+
+misc-*,
+-misc-definitions-in-headers,
+-misc-non-private-member-variables-in-classes,
+-misc-unused-alias-decls,
+-misc-unused-parameters,
+-misc-unused-using-decls,
+
+modernize-*,
+-modernize-avoid-c-arrays,
+-modernize-use-default-member-init,
+-modernize-use-trailing-return-type,
+-modernize-use-using,
+
+mpi-*,
+
+openmp-use-default-none,
+
+performance-*,
+-performance-no-int-to-ptr,
+
+portability-*,
+-portability-restrict-system-includes,
+
+readability-*,
+-readability-braces-around-statements,
+-readability-container-data-pointer,
+-readability-else-after-return,
+-readability-function-cognitive-complexity,
+-readability-function-size,
+-readability-identifier-length,
+-readability-identifier-naming,
+-readability-implicit-bool-conversion,
+-readability-isolate-declaration,
+-readability-magic-numbers,
+-readability-named-parameter,
+-readability-qualified-auto,
+-readability-redundant-access-specifiers,
+-readability-redundant-member-init,
+-readability-redundant-preprocessor,
+-readability-simplify-boolean-expr,
+-readability-suspicious-call-argument,
+-readability-uppercase-literal-suffix'
