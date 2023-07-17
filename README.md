@@ -372,7 +372,7 @@ workspace有关时间的接口单位都是 -> 毫秒（ms）
 《C++并发编程》
 
 #### 旧版信息
-见 [https://github.com/firma2021/Hipe-Threadpool-Framework](https://github.com/firma2021/Hipe-Threadpool-Framework) 
+由于历史原因，Hipe源码已不复存在，诸位请向前看吧。
 
 #### 联系我
 邮箱: 1848395727@qq.com
