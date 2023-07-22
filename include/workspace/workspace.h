@@ -85,14 +85,14 @@ private:
     using pos_t = branch_lst::iterator;
 
     pos_t cur = {};
-    branch_lst branchs;
+    branch_lst branches;
     superv_map supervs;
 
 public:
     explicit workspace() = default;
     ~workspace() {
         supervs.clear();
-        branchs.clear();
+        branches.clear();
     }
     workspace(const workspace&) = delete;
     workspace(workspace&&) = delete;
@@ -105,8 +105,8 @@ public:
      */
     bid attach(workbranch* br) {
         assert(br != nullptr);
-        branchs.emplace_back(br);
-        cur = branchs.begin();   // reset cursor
+        branches.emplace_back(br);
+        cur = branches.begin();   // reset cursor
         return bid(br);
     }
     /**
@@ -128,11 +128,11 @@ public:
      * @note O(n)
      */
     auto detach(bid id) -> std::unique_ptr<workbranch> {
-        for (auto it = branchs.begin(); it != branchs.end(); it++) {
+        for (auto it = branches.begin(); it != branches.end(); it++) {
             if (it->get() == id.base) {
                 if (cur == it) forward(cur);
                 auto ptr = it->release();
-                branchs.erase(it);
+                branches.erase(it);
                 return std::unique_ptr<workbranch>(ptr);
             }
         }
@@ -160,7 +160,7 @@ public:
      * @param deal <void(workbranch&)> how to deal with the work branch
      */
     void for_each(std::function<void(workbranch&)> deal) {
-        for (auto& each: branchs) {
+        for (auto& each: branches) {
             deal(*(each.get()));
         }
     }
@@ -221,7 +221,7 @@ public:
         typename R = details::result_of_t<F>, 
         typename DR = typename std::enable_if<std::is_void<R>::value>::type>
     void submit(F&& task) {
-        assert(branchs.size() > 0);
+        assert(branches.size() > 0);
         auto this_br = cur->get();
         auto next_br = forward(cur)->get();
         if (next_br->num_tasks() < this_br->num_tasks()) {
@@ -241,7 +241,7 @@ public:
         typename R = details::result_of_t<F>, 
         typename DR = typename std::enable_if<!std::is_void<R>::value, R>::type>
     auto submit(F&& task) -> std::future<R>{
-        assert(branchs.size() > 0);
+        assert(branches.size() > 0);
         auto this_br = cur->get();
         auto next_br = forward(cur)->get();
         if (next_br->num_tasks() < this_br->num_tasks()) {
@@ -257,7 +257,7 @@ public:
      */
     template <typename T, typename F, typename... Fs>
     auto submit(F&& task, Fs&&... tasks) -> typename std::enable_if<std::is_same<T, task::seq>::value>::type {
-        assert(branchs.size() > 0);
+        assert(branches.size() > 0);
         auto this_br = cur->get();
         auto next_br = forward(cur)->get();
         if (next_br->num_tasks() < this_br->num_tasks()) {
@@ -269,8 +269,8 @@ public:
 
 private:
     const pos_t& forward(pos_t& this_pos) {
-        if (++this_pos == branchs.end()) {
-            this_pos = branchs.begin(); 
+        if (++this_pos == branches.end()) {
+            this_pos = branches.begin(); 
         } 
         return this_pos;
     } 

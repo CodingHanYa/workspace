@@ -25,7 +25,7 @@ private:
     tick_callback_t tick_cb = {};
 
     autothread<join> worker;
-    std::vector<workbranch*> branchs;
+    std::vector<workbranch*> branches;
     std::condition_variable thrd_cv;
     std::mutex spv_lok;
 public:
@@ -62,7 +62,7 @@ public:
      */
     void supervise(workbranch& wbr) {
         std::lock_guard<std::mutex> lock(spv_lok);
-        branchs.emplace_back(&wbr);
+        branches.emplace_back(&wbr);
     }
 
     /**
@@ -95,7 +95,7 @@ private:
             try {
                 {
                     std::unique_lock<std::mutex> lock(spv_lok);
-                    for (auto pbr: branchs) {
+                    for (auto pbr: branches) {
                         // get info
                         auto tknums = pbr->num_tasks();
                         auto wknums = pbr->num_workers();
