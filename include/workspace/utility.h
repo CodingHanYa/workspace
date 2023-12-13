@@ -5,7 +5,8 @@
 #include <cstdlib>
 #include <type_traits>
 
-namespace wsp::details {
+namespace wsp {
+namespace details {
 
 // size type
 using sz_t = size_t;
@@ -86,4 +87,5 @@ public:
     }
 };
 
-} // wsp::details
+} // details
+} // wsp

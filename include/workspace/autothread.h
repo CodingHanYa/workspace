@@ -1,7 +1,8 @@
 #pragma once
 #include <thread>
 
-namespace wsp::details {
+namespace wsp {
+namespace details {
 
 struct join {};   // just for type inference
 struct detach {}; // just for type inference
@@ -36,4 +37,5 @@ public:
     id get_id() { return thrd.get_id(); }
 };
 
-} // wsp::details
+} // details
+} // wsp

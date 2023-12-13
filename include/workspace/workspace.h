@@ -9,8 +9,12 @@
 #include <workspace/workbranch.h>
 #include <workspace/supervisor.h>
 
+
+// public
+namespace wsp {
+
 // task type
-namespace wsp::task {
+namespace task {
     // Possess higher priority then "task::nor"
     using urg = details::urgent;
     // Possess lower  priority then "task::urg"
@@ -19,8 +23,6 @@ namespace wsp::task {
     using seq = details::sequence;
 }
 
-// public
-namespace wsp {
 
 // std::future collector
 template <typename RT>

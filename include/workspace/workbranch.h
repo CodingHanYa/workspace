@@ -11,7 +11,9 @@
 #include <workspace/autothread.h>
 #include <workspace/utility.h>
 
-namespace wsp::details {
+namespace wsp {
+
+namespace details {
 
 class workbranch {
     using worker = autothread<detach>;
@@ -268,4 +270,5 @@ private:
     }
 };
 
-} // wsp::details
+} // details
+} // wsp

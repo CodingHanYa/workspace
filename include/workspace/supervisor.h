@@ -9,7 +9,8 @@
 #include <workspace/workbranch.h>
 #include <workspace/utility.h>
 
-namespace wsp::details {
+namespace wsp {
+namespace details {
 
 // workbranch supervisor
 class supervisor {
@@ -122,4 +123,5 @@ private:
 
 };
 
-} // wsp::details
+} // details
+} // wsp
