@@ -102,15 +102,17 @@ private:
                         auto wknums = pbr->num_workers();
                         // adjust
                         if (tknums) { 
+                            assert(wknums <= wmax); // Avoid wrong usage
                             sz_t nums = std::min(wmax-wknums, tknums-wknums);
                             for (sz_t i = 0; i < nums; ++i) { 
-                                pbr->add_worker(); // quick add
+                                pbr->add_worker();  // quick add
                             }
                         } else if (wknums > wmin) {
-                            pbr->del_worker();     // slow dec
+                            pbr->del_worker();      // slow dec
                         }
                     }
-                    if (!stop) thrd_cv.wait_for(lock, std::chrono::milliseconds(tout));
+                    if (!stop) 
+                        thrd_cv.wait_for(lock, std::chrono::milliseconds(tout));
                 }
                 tick_cb();  // execute tick callback
 

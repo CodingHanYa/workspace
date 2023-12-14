@@ -55,10 +55,10 @@ public:
         }
         return res;
     }
-    auto end() -> iterator& {
+    auto end() -> iterator {
         return futs.end();
     }
-    auto begin()->iterator& {
+    auto begin()->iterator {
         return futs.begin();
     }
     void add_back(std::future<T>&& fut) {
