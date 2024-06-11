@@ -35,7 +35,7 @@
 让我们先简单地提交一点任务，当你的任务带有返回值时，workbranch会返回一个std::future，否则返回void。
 
 ```c++
-#include <workspace/workspace.h>
+#include <workspace/workspace.hpp>
 
 int main() {
     // 2 threads
@@ -56,7 +56,7 @@ int main() {
 当你有一个任务并且你希望它能尽快被执行时，你可以指定该任务的类型为`urgent`，如下：
 
 ```C++
-#include <workspace/workspace.h>
+#include <workspace/workspace.hpp>
 
 int main() {
     // 1 threads
@@ -80,7 +80,7 @@ task B done
 假如你有几个轻量异步任务，执行他们只需要**非常短暂**的时间。同时，按照**顺序执行**它们对你来说没有影响，甚至正中你下怀。那么你可以把任务类型指定为`sequence`，以便提交一个**任务序列**。这个任务序列会被单个线程顺序执行：
 
 ```c++
-#include <workspace/workspace.h>
+#include <workspace/workspace.hpp>
 
 int main() {
     wsp::workbranch br;
@@ -98,7 +98,7 @@ int main() {
 
 当任务中抛出了一个异常，workbranch有两种处理方式：A-将其捕获并输出到终端 B-将其捕获并通过std::future传递到主线程。第二种需要你提交一个**带返回值**的任务。
 ```C++
-#include <workspace/workspace.h>
+#include <workspace/workspace.hpp>
 // self-defined
 class excep: public std::exception {
     const char* err;
@@ -152,7 +152,7 @@ supervisor是异步管理者线程的抽象，负责监控workbranch的负载情
 每一个supervisor可以管理多个workbranch。此时workbranch之间共享supervisor的所有设定。
 
 ```c++
-#include <workspace/workspace.h>
+#include <workspace/workspace.hpp>
 
 int main() {
     wsp::workbranch br1(2);
@@ -216,7 +216,7 @@ workspace是一个**托管器**/**任务分发器**，你可以将workbranch和s
 我们可以通过workspace自带的任务分发机制来异步执行任务（调用`submit`）。
 
 ```C++
-#include <workspace/workspace.h>
+#include <workspace/workspace.hpp>
 
 int main() {
     wsp::workspace spc;
@@ -243,7 +243,7 @@ int main() {
 ### futures 
 wsp::futures是一个std::future收集器(collector)，可以缓存同类型的std::future，并进行批量操作。一个简单的操作如下:
 ```C++
-#include <workspace/workspace.h>
+#include <workspace/workspace.hpp>
 
 int main() {
     wsp::futures<int> futures;
@@ -370,9 +370,6 @@ workspace有关时间的接口单位都是 -> 毫秒（ms）
 ## 其它
 #### 参考书目
 《C++并发编程》
-
-#### 旧版信息
-由于历史原因，Hipe源码已不复存在，诸位请向前看吧。
 
 #### 联系我
 邮箱: 1848395727@qq.com

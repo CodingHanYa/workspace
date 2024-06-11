@@ -6,8 +6,8 @@
 #include <vector>
 #include <list>
 
-#include <workspace/workbranch.h>
-#include <workspace/supervisor.h>
+#include <workspace/workbranch.hpp>
+#include <workspace/supervisor.hpp>
 
 
 // public

@@ -8,11 +8,11 @@ set(CMAKE_BUILD_TYPE Release)
 include_directories(../include)
 find_package(Threads REQUIRED)
 
-add_executable(bench1 bench1.cc)
-target_link_libraries(bench1 PRIVATE Threads::Threads)
+file(GLOB BENCH_SOURCES "bench*.cc")
 
-add_executable(bench2 bench2.cc)
-target_link_libraries(bench2 PRIVATE Threads::Threads)
-
-add_executable(bench3 bench3.cc)
-target_link_libraries(bench3 PRIVATE Threads::Threads)
+foreach(BENCH_SOURCE ${BENCH_SOURCES})
+	get_filename_component(BENCH_NAME ${BENCH_SOURCE} NAME_WE)
+	add_executable(${BENCH_NAME} ${BENCH_SOURCE})
+	target_link_libraries(${BENCH_NAME} PRIVATE Threads::Threads)
+	target_include_directories(${BENCH_NAME} PRIVATE ../include)
+endforeach()

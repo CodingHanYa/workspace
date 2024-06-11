@@ -1,4 +1,4 @@
-#include <workspace/workspace.h>
+#include <workspace/workspace.hpp>
 
 template <typename F>
 void repeat(F&& do_what, int times) {

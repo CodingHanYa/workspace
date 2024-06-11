@@ -1,4 +1,4 @@
-#include <workspace/workspace.h>
+#include "workspace/workspace.hpp"
 #include "timewait.h"
 
 int main(int argn, char** argvs) {
@@ -16,7 +16,6 @@ int main(int argn, char** argvs) {
         for (int i = 0; i < task_nums/10; ++i) {
             wb.submit<wsp::task::seq>(task, task, task, task, task, task, task, task, task, task);
         }
-        wb.wait_tasks();
     });
     std::cout<<"threads: "<<std::left<<std::setw(2)<<thread_nums<<" |  tasks: "<<task_nums<<"  |  time-cost: "<<time_cost<<" (s)"<<std::endl;
 }

@@ -1,4 +1,4 @@
-#include <workspace/workspace.h>
+#include <workspace/workspace.hpp>
 
 int main() {
     wsp::futures<int> futures;

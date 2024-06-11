@@ -2,6 +2,7 @@
 #include <future>
 #include <functional>
 #include <deque>
+#include <vector>
 #include <cstdlib>
 #include <type_traits>
 
@@ -12,6 +13,15 @@ namespace details {
 using sz_t = size_t;
 
 // type trait
+#if defined(_MSC_VER)
+#if _MSVC_LANG >= 201703L
+template <typename F, typename... Args>
+using result_of_t = std::invoke_result_t<F, Args...>; 
+#else
+template <typename F, typename... Args>
+using result_of_t = typename std::result_of<F(Args...)>::type; 
+#endif
+#else
 #if __cplusplus >= 201703L 
 template <typename F, typename... Args>
 using result_of_t = std::invoke_result_t<F, Args...>; 
@@ -19,6 +29,8 @@ using result_of_t = std::invoke_result_t<F, Args...>;
 template <typename F, typename... Args>
 using result_of_t = typename std::result_of<F(Args...)>::type; 
 #endif
+#endif
+
 
 // type trait
 struct normal   {};  // normal task (for type inference)
@@ -48,17 +60,17 @@ public:
      * @brief get set of result
      * @return std::vector<T>
      */
-    auto get() -> std::vector<T> {
+    std::vector<T> get() {
         std::vector<T> res;
         for (auto& each: futs) {
             res.emplace_back(each.get());
         }
         return res;
     }
-    auto end() -> iterator {
+    iterator end()  {
         return futs.end();
     }
-    auto begin()->iterator {
+    iterator begin() {
         return futs.begin();
     }
     void add_back(std::future<T>&& fut) {

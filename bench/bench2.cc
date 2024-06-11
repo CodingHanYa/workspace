@@ -1,4 +1,4 @@
-#include <workspace/workspace.h>
+#include <workspace/workspace.hpp>
 #include <chrono>
 #include <fstream>
 #include <nanobench.h>

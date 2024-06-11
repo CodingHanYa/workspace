@@ -7,9 +7,9 @@
 #include <iostream>
 #include <condition_variable>
 
-#include <workspace/taskqueue.h>
-#include <workspace/autothread.h>
-#include <workspace/utility.h>
+#include <workspace/taskqueue.hpp>
+#include <workspace/autothread.hpp>
+#include <workspace/utility.hpp>
 
 namespace wsp {
 

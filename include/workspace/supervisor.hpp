@@ -6,8 +6,8 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
-#include <workspace/workbranch.h>
-#include <workspace/utility.h>
+#include <workspace/workbranch.hpp>
+#include <workspace/utility.hpp>
 
 namespace wsp {
 namespace details {
