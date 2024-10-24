@@ -248,7 +248,7 @@ private:
                     std::unique_lock<std::mutex> locker(lok);
                     task_done_workers++;
                     task_done_cv.notify_one();
-                    thread_cv.wait(locker);  
+                    thread_cv.wait(locker, [this]{return !is_waiting; });  
                 } else {
                     std::this_thread::yield(); 
                 }
