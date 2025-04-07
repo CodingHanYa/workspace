@@ -13,11 +13,20 @@
 
 namespace wsp {
 
+enum class WaitStrategy {
+    LowLatencyMode,  // LowLatencyMode mode: original busy-waiting
+    BalancedMode,    // BalancedMode mode: adaptive waiting, sleep 1ms after exceeding max spin count
+    SleepMode        // SleepMode mode: sleeps 1ms per loop or uses condition variables to control the loop
+};
+
 namespace details {
 
 class workbranch {
     using worker = autothread<detach>;
     using worker_map = std::map<worker::id, worker>;
+
+    const int max_spin_count = 10000;
+    WaitStrategy wait_strategy = {};
 
     sz_t decline = 0; 
     sz_t task_done_workers = 0;
@@ -35,8 +44,10 @@ public:
     /**
      * @brief construct function
      * @param wks initial number of workers
+     * @param strategy wait strategy for workers (defaults to LowLatencyMode).
      */
-    explicit workbranch(int wks = 1) {
+    explicit workbranch(int wks = 1, WaitStrategy strategy = WaitStrategy::LowLatencyMode) {
+        wait_strategy = strategy;
         for (int i = 0; i < std::max(wks, 1); ++i) {
             add_worker(); // worker 
         }
@@ -230,6 +241,8 @@ private:
     // thread's default loop
     void mission() {
         std::function<void()> task;
+        int spin_count = 0;
+
         while (true) {
             if (decline <= 0 && tq.try_pop(task)) {
                 task(); 
@@ -250,7 +263,27 @@ private:
                     task_done_cv.notify_one();
                     thread_cv.wait(locker, [this]{return !is_waiting; });  
                 } else {
-                    std::this_thread::yield(); 
+  
+                    switch (wait_strategy) {
+                        case WaitStrategy::LowLatencyMode: {
+                            std::this_thread::yield();
+                            break;
+                        }
+                        case WaitStrategy::BalancedMode: {
+                            if (spin_count < max_spin_count) {
+                                ++spin_count;
+                                std::this_thread::yield(); 
+                            } else {
+                                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                                spin_count = tq.length() == 0 ? 0 : spin_count / 2;  
+                            }
+                            break;
+                        }
+                        case WaitStrategy::SleepMode: {
+                            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                            break;
+                        }
+                    }
                 }
             }
         }

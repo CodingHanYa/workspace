@@ -4,17 +4,30 @@
 
 ## 目录
 
-- [特点](#特点)
-- [模块简介](#主要模块)
-	- [workbranch](#workbranch)
-	- [supervisor](#supervisor)
-	- [workspace](#workspace)
-- [辅助模块](#辅助模块)
-    - [futures](#futures)   
-- [benchmark](#benchmark)
-- [如何使用](#如何使用)
-- [注意事项](#注意事项)
-- [其它](#其它)
+- [workspace](#workspace)
+  - [目录](#目录)
+  - [特点](#特点)
+  - [主要模块](#主要模块)
+    - [**workbranch**](#workbranch)
+    - [**supervisor**](#supervisor)
+    - [**workspace**](#workspace-1)
+  - [辅助模块](#辅助模块)
+    - [futures](#futures)
+  - [benchmark](#benchmark)
+    - [空跑测试](#空跑测试)
+    - [延迟测试](#延迟测试)
+  - [如何使用](#如何使用)
+      - [生成doxygen文档](#生成doxygen文档)
+      - [简单使用](#简单使用)
+      - [运行已有实例（以example为例）](#运行已有实例以example为例)
+      - [安装到系统（支持Win/Linux/Mac）](#安装到系统支持winlinuxmac)
+  - [注意事项](#注意事项)
+      - [雷区](#雷区)
+      - [接口安全性](#接口安全性)
+      - [时间单位](#时间单位)
+  - [其它](#其它)
+      - [参考书目](#参考书目)
+      - [联系我](#联系我)
 
 ## 特点
 
@@ -140,6 +153,28 @@ workspace: worker[140509071521536] caught exception:
 Caught error: std::bad_alloc
 Caught error: YYYY
 ```
+
+
+此外，workbranch在工作线程空闲时可以设置三种不同的**等待策略**：
+```
+enum class WaitStrategy {
+    LowLatencyMode,  // LowLatencyMode mode: original busy-waiting
+    BalancedMode,    // BalancedMode mode: adaptive waiting, sleep 1ms after exceeding max spin count
+    SleepMode        // SleepMode mode: sleeps 1ms per loop or uses condition variables to control the loop
+};
+```
+1. LowLatencyMode：
+    - 实现方式： 在任务队列为空时，工作线程调用 std::this_thread::yield() 主动让出 CPU 控制权，但立即重新检查任务队列（忙等待）。
+    - 响应延迟： 线程持续占用 CPU 资源，不断检查任务队列是否有新任务。一旦有新任务到达，线程能够迅速响应，导致平均延迟和最大延迟都较低。
+    - CPU 占用： 高，因为线程始终在循环中运行，未进行休眠。
+2. BalanceddMode：
+    - 实现方式： 线程在初始的 max_spin_count 次循环内，采用 std::this_thread::yield() 忙等待。如果超过 max_spin_count，线程会休眠 1 毫秒，然后重新开始检查任务队列。
+    - 响应延迟： 在负载较低时，线程能快速响应新任务。但在负载较高或任务提交频繁时，线程可能会进入休眠，导致响应延迟增加。
+    - CPU 占用： 较高，但比高性能模式低。 
+3. SleepMode：
+    - 实现方式： 线程在每次循环中都休眠固定的时间（代码中为 1 毫秒），然后检查任务队列。
+    - 响应延迟： 线程在任务队列为空时长时间休眠，即使有新任务到达，也要等待休眠结束后才会处理。这导致任务的响应延迟显著增加，平均延迟和最大延迟都很高。
+    - CPU 占用： 低，因为线程大部分时间都在休眠。
 
 
 ---
@@ -268,7 +303,7 @@ int main() {
 ### 空跑测试
 
 测试原理：通过快速提交大量的空任务以考察框架同步任务的开销。<br>
-测试环境：Ubuntu20.04 : 16核 : AMD Ryzen 7 5800H with Radeon Graphics 3.20 GHz
+测试环境：Ubuntu20.04 : 8核16线程 : AMD Ryzen 7 5800H with Radeon Graphics 3.20 GHz
 
 <**测试1**><br> 在测试1中我们调用了`submit<wsp::task::seq>`，每次打包10个空任务并提交到**workbranch**中执行。结果如下：（代码见`workspace/benchmark/bench1.cc`）
 
@@ -308,6 +343,25 @@ threads: 12 |  tasks: 100000000  |  time-cost: 5.17316 (s)
 ```
 
 **总结**：利用workspace进行任务分发，且**workbranch**线程数为1的情况下，整个任务同步框架是静态的，任务同步开销最小。当**workbranch**内的线程数越多，面对大量空任务时对任务队列的竞争越激烈，框架开销越大。（更加详尽的测试结果见`bench.md`，测试代码于`workspace/bench`）
+
+### 延迟测试
+测试原理：通过记录空任务的提交时间和执行时间来测试延迟。<br>
+测试环境：Windows11 : 8核16线程 : Intel Core i7-11800H @ 2.30 GHz
+<**测试4**><br> 在测试4中，我们每次提交一个任务到 **workbranch** 中执行。每个任务记录其提交时间，并在执行时计算延迟。测试的主要目的是评估不同线程调度策略（`WaitStrategy`）下的任务延迟性能。结果如下：（代码见 `workspace/benchmark/bench4.cc`）
+
+```
+Strategy: LowLatencyMode  | Threads: 8  | Tasks: 1000000  | Avg Latency:    12.65 us | Min Latency:    0 us | Max Latency:     2173 us
+Strategy: BalancedMode    | Threads: 8  | Tasks: 1000000  | Avg Latency:  4087.06 us | Min Latency:    0 us | Max Latency:    22699 us
+Strategy: SleepMode       | Threads: 8  | Tasks: 1000000  | Avg Latency: 15920.58 us | Min Latency:    1 us | Max Latency:    52847 us
+```
+
+总结：
+
+| 策略             | 等待方式                       | 延迟特性       | CPU 占用       | 适用场景                           |
+|------------------|--------------------------------|----------------|----------------|------------------------------------|
+| **LowLatencyMode** | 忙等待（`yield`）              | 最低延迟       | 高 CPU 占用    | 高实时性要求、任务频繁到达         |
+| **BalanceddMode**      | 混合等待（忙等待 + 短暂睡眠）   | 中等延迟       | 中等 CPU 占用  | 平衡延迟与资源消耗                 |
+| **SleepMode**        | 完全睡眠（固定 1ms 睡眠）       | 较高延迟       | 低 CPU 占用    | 后台任务、长时间运行的稳定任务     |
 
 
 ## 如何使用
