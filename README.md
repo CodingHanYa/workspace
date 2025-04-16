@@ -156,26 +156,37 @@ Caught error: YYYY
 
 
 此外，workbranch在工作线程空闲时可以设置三种不同的**等待策略**：
-```
-enum class WaitStrategy {
-    LowLatencyMode,  // LowLatencyMode mode: original busy-waiting
-    BalancedMode,    // BalancedMode mode: adaptive waiting, sleep 1ms after exceeding max spin count
-    SleepMode        // SleepMode mode: sleeps 1ms per loop or uses condition variables to control the loop
+```cpp
+enum class waitstrategy {
+    lowlatancy,  // Busy-wait with std::this_thread::yield(), minimal latency.
+    balance,     // Busy-wait initially, then sleep briefly after max_spin_count.
+    blocking     // Block thread using condition variables until a task is available or conditions are met.
 };
 ```
-1. LowLatencyMode：
-    - 实现方式： 在任务队列为空时，工作线程调用 std::this_thread::yield() 主动让出 CPU 控制权，但立即重新检查任务队列（忙等待）。
-    - 响应延迟： 线程持续占用 CPU 资源，不断检查任务队列是否有新任务。一旦有新任务到达，线程能够迅速响应，导致平均延迟和最大延迟都较低。
-    - CPU 占用： 高，因为线程始终在循环中运行，未进行休眠。
-2. BalanceddMode：
-    - 实现方式： 线程在初始的 max_spin_count 次循环内，采用 std::this_thread::yield() 忙等待。如果超过 max_spin_count，线程会休眠 1 毫秒，然后重新开始检查任务队列。
-    - 响应延迟： 在负载较低时，线程能快速响应新任务。但在负载较高或任务提交频繁时，线程可能会进入休眠，导致响应延迟增加。
-    - CPU 占用： 较高，但比高性能模式低。 
-3. SleepMode：
-    - 实现方式： 线程在每次循环中都休眠固定的时间（代码中为 1 毫秒），然后检查任务队列。
-    - 响应延迟： 线程在任务队列为空时长时间休眠，即使有新任务到达，也要等待休眠结束后才会处理。这导致任务的响应延迟显著增加，平均延迟和最大延迟都很高。
-    - CPU 占用： 低，因为线程大部分时间都在休眠。
-
+1. **LowLatency 模式**
+    - 实现方式：
+    在任务队列为空时，工作线程调用 `std::this_thread::yield()` 主动让出 CPU 控制权，但立即重新检查任务队列（忙等待）。
+    - 响应延迟：
+    线程持续占用 CPU 资源，不断检查任务队列是否有新任务。一旦有新任务到达，线程能够迅速响应，使得响应延迟较低。
+    - CPU 占用：
+    高，因为线程始终在循环中运行，未进行休眠。
+2. **Balance 模式**
+    - 实现方式：
+    线程在初始的 `max_spin_count` 次循环内，采用 `std::this_thread::yield()` 忙等待。如果超过 `max_spin_count`，线程首先会短暂休眠，然后重新开始检查任务队列。
+    - 响应延迟：
+    线程可能会进入休眠，导致响应延迟增加。
+    - CPU 占用：
+    中等，因为在初期使用忙等待消耗较多 CPU 资源，但之后通过休眠降低 CPU 占用。
+3. **Blocking 模式**
+    - 实现方式：
+    当任务队列为空时，线程不会主动检查任务队列，而是通过条件变量进入阻塞状态。线程会一直阻塞，直到满足以下任一条件：
+      1. 任务队列中有新任务到达（`num_tasks() > 0`）。
+      2. 系统处于等待状态（`is_waiting`）。
+      3. 系统正在销毁（`destructing`）。
+    - 响应延迟：
+    响应延迟较高，因为线程在阻塞状态下无法立即响应新任务。必须依赖外部通知（如 `notify_one()` 或 `notify_all()`）来唤醒线程。
+    - CPU 占用：
+    低，因为线程完全阻塞，不占用任何 CPU 资源，直到被唤醒。
 
 ---
 
@@ -345,23 +356,49 @@ threads: 12 |  tasks: 100000000  |  time-cost: 5.17316 (s)
 **总结**：利用workspace进行任务分发，且**workbranch**线程数为1的情况下，整个任务同步框架是静态的，任务同步开销最小。当**workbranch**内的线程数越多，面对大量空任务时对任务队列的竞争越激烈，框架开销越大。（更加详尽的测试结果见`bench.md`，测试代码于`workspace/bench`）
 
 ### 延迟测试
-测试原理：通过记录空任务的提交时间和执行时间来测试延迟。<br>
-测试环境：Windows11 : 8核16线程 : Intel Core i7-11800H @ 2.30 GHz
-<**测试4**><br> 在测试4中，我们每次提交一个任务到 **workbranch** 中执行。每个任务记录其提交时间，并在执行时计算延迟。测试的主要目的是评估不同线程调度策略（`WaitStrategy`）下的任务延迟性能。结果如下：（代码见 `workspace/benchmark/bench4.cc`）
+测试原理：通过记录在不同等待策略下空任务执行时间模拟测试延迟。<br>
+测试环境：Ubuntu24.04(WSL2) : 8核16线程 : AMD Ryzen 7 7840HS w/ Radeon 780M Graphics
+
+<**测试4**><br> 在测试4中我们同样将10个任务打成一包，并提交到**workspace**中，利用workspace进行任务分发，且在workspace托管的workbranch只拥有 **1条** 线程，我们对三种不同的等待策略（lowlatancy、balance 和 blocking）分别进行了测试，并记录了每种策略下的总耗时（time_cost）。结果如下：（代码见`workspace/benchmark/bench4.cc`）
 
 ```
-Strategy: LowLatencyMode  | Threads: 8  | Tasks: 1000000  | Avg Latency:    12.65 us | Min Latency:    0 us | Max Latency:     2173 us
-Strategy: BalancedMode    | Threads: 8  | Tasks: 1000000  | Avg Latency:  4087.06 us | Min Latency:    0 us | Max Latency:    22699 us
-Strategy: SleepMode       | Threads: 8  | Tasks: 1000000  | Avg Latency: 15920.58 us | Min Latency:    1 us | Max Latency:    52847 us
+Strategy: lowlatancy      | Threads: 2  | Tasks: 10000000 | Time-cost: 0.337076 (s)
+Strategy: balance         | Threads: 2  | Tasks: 10000000 | Time-cost: 0.33139 (s)
+Strategy: blocking        | Threads: 2  | Tasks: 10000000 | Time-cost: 0.457265 (s)
+---------------------------------------------------------------------------------------
+Strategy: lowlatancy      | Threads: 3  | Tasks: 10000000 | Time-cost: 0.328127 (s)
+Strategy: balance         | Threads: 3  | Tasks: 10000000 | Time-cost: 0.327678 (s)
+Strategy: blocking        | Threads: 3  | Tasks: 10000000 | Time-cost: 3.442142 (s)
+---------------------------------------------------------------------------------------
+Strategy: lowlatancy      | Threads: 4  | Tasks: 10000000 | Time-cost: 0.309493 (s)
+Strategy: balance         | Threads: 4  | Tasks: 10000000 | Time-cost: 0.302125 (s)
+Strategy: blocking        | Threads: 4  | Tasks: 10000000 | Time-cost: 6.375414 (s)
+---------------------------------------------------------------------------------------
+Strategy: lowlatancy      | Threads: 8  | Tasks: 10000000 | Time-cost: 0.289247 (s)
+Strategy: balance         | Threads: 8  | Tasks: 10000000 | Time-cost: 0.263492 (s)
+Strategy: blocking        | Threads: 8  | Tasks: 10000000 | Time-cost: 6.631623 (s)
+---------------------------------------------------------------------------------------
+Strategy: lowlatancy      | Threads: 16 | Tasks: 10000000 | Time-cost: 0.246766 (s)
+Strategy: balance         | Threads: 16 | Tasks: 10000000 | Time-cost: 0.238113 (s)
+Strategy: blocking        | Threads: 16 | Tasks: 10000000 | Time-cost: 6.722631 (s)
 ```
 
 总结：
+由于主线程一直在提交任务，`balance`策略睡眠时间较短，导致和`lowlatancy`策略的延迟大致相似。
 
-| 策略             | 等待方式                       | 延迟特性       | CPU 占用       | 适用场景                           |
-|------------------|--------------------------------|----------------|----------------|------------------------------------|
-| **LowLatencyMode** | 忙等待（`yield`）              | 最低延迟       | 高 CPU 占用    | 高实时性要求、任务频繁到达         |
-| **BalanceddMode**      | 混合等待（忙等待 + 短暂睡眠）   | 中等延迟       | 中等 CPU 占用  | 平衡延迟与资源消耗                 |
-| **SleepMode**        | 完全睡眠（固定 1ms 睡眠）       | 较高延迟       | 低 CPU 占用    | 后台任务、长时间运行的稳定任务     |
+而在 `blocking` 策略下，随着线程数的增加，以下因素导致了任务执行时间的增加：
+1. 条件变量的阻塞和唤醒开销。
+2. 任务队列的竞争和锁争用。
+3. 线程数超过 CPU 核心数导致的调度开销。
+4. 被动等待任务分发的效率低下。
+5. 线程上下文切换的频率增加。
+6. 条件变量广播导致的无效唤醒。
+
+| 策略             | 实现方式                                                                 | 响应延迟       | CPU 占用     |
+|------------------|--------------------------------------------------------------------------|----------------|--------------|
+| **LowLatency**   | 使用 `std::this_thread::yield()` 进行忙等待                              | 最低           | 高           |
+| **Balanced**     | 初始忙等待后进入短时间休眠                                               | 中等           | 中等         |
+| **Blocking (Passive)** | 使用条件变量阻塞线程，直到任务队列有新任务或其他条件满足 | 较高           | 低         |               |
 
 
 ## 如何使用

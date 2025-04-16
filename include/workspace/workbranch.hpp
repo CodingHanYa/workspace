@@ -13,10 +13,10 @@
 
 namespace wsp {
 
-enum class WaitStrategy {
-    LowLatencyMode,  // LowLatencyMode mode: original busy-waiting
-    BalancedMode,    // BalancedMode mode: adaptive waiting, sleep 1ms after exceeding max spin count
-    SleepMode        // SleepMode mode: sleeps 1ms per loop or uses condition variables to control the loop
+enum class waitstrategy {
+    lowlatancy,  // Busy-wait with std::this_thread::yield(), minimal latency.
+    balance,     // Busy-wait initially, then sleep briefly after max_spin_count.
+    blocking     // Block thread using condition variables until a task is available or conditions are met.
 };
 
 namespace details {
@@ -26,7 +26,7 @@ class workbranch {
     using worker_map = std::map<worker::id, worker>;
 
     const int max_spin_count = 10000;
-    WaitStrategy wait_strategy = {};
+    waitstrategy wait_strategy = {};
 
     sz_t decline = 0; 
     sz_t task_done_workers = 0;
@@ -39,14 +39,15 @@ class workbranch {
     std::mutex lok = {};
     std::condition_variable thread_cv = {};
     std::condition_variable task_done_cv = {};
+    std::condition_variable task_cv = {};
 
 public:
     /**
      * @brief construct function
      * @param wks initial number of workers
-     * @param strategy wait strategy for workers (defaults to LowLatencyMode).
+     * @param strategy wait_strategy for workers (defaults to lowlatancy).
      */
-    explicit workbranch(int wks = 1, WaitStrategy strategy = WaitStrategy::LowLatencyMode) {
+    explicit workbranch(int wks = 1, waitstrategy strategy = waitstrategy::lowlatancy) {
         wait_strategy = strategy;
         for (int i = 0; i < std::max(wks, 1); ++i) {
             add_worker(); // worker 
@@ -58,6 +59,8 @@ public:
         std::unique_lock<std::mutex> lock(lok);
         decline = workers.size();
         destructing = true;
+        if (wait_strategy == waitstrategy::blocking)
+            task_cv.notify_all();
         thread_cv.wait(lock, [this]{ return !decline; });
     } 
 
@@ -96,7 +99,9 @@ public:
         {
             std::unique_lock<std::mutex> locker(lok);
             is_waiting = true; // task_done_workers == 0
-            res = task_done_cv.wait_for(locker, std::chrono::milliseconds(timeout), [this]{
+            if (wait_strategy == waitstrategy::blocking)
+                task_cv.notify_all();
+            res = task_done_cv.wait_for(locker, std::chrono::milliseconds(timeout), [this] {
                 return task_done_workers >= workers.size();  // use ">=" to avoid supervisor delete workers  
             }); 
             task_done_workers = 0;
@@ -142,6 +147,8 @@ public:
                 std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught unknown exception\n"<<std::flush;
             }
         }); // function
+        if (wait_strategy == waitstrategy::blocking)
+            task_cv.notify_one();
     }
 
     /**
@@ -162,6 +169,8 @@ public:
                 std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught unknown exception\n"<<std::flush;
             }
         });
+        if (wait_strategy == waitstrategy::blocking)
+            task_cv.notify_one();
     }
 
     /**
@@ -181,6 +190,8 @@ public:
                 std::cerr<<"workspace: worker["<< std::this_thread::get_id()<<"] caught unknown exception\n"<<std::flush;
             }
         });
+        if (wait_strategy == waitstrategy::blocking)
+            task_cv.notify_one();    
     }
 
     /**
@@ -207,6 +218,8 @@ public:
                 }
             }
         });
+        if (wait_strategy == waitstrategy::blocking)
+            task_cv.notify_one();    
         return task_promise->get_future();
     }
     
@@ -234,6 +247,8 @@ public:
                 }
             }
         });
+        if (wait_strategy == waitstrategy::blocking)
+            task_cv.notify_one();
         return task_promise->get_future();
     }
 
@@ -246,6 +261,7 @@ private:
         while (true) {
             if (decline <= 0 && tq.try_pop(task)) {
                 task(); 
+                spin_count = 0;
             } else if (decline > 0) {
                 std::lock_guard<std::mutex> lock(lok);
                 if (decline > 0 && decline--) { // double check
@@ -263,24 +279,23 @@ private:
                     task_done_cv.notify_one();
                     thread_cv.wait(locker, [this]{return !is_waiting; });  
                 } else {
-  
                     switch (wait_strategy) {
-                        case WaitStrategy::LowLatencyMode: {
+                        case waitstrategy::lowlatancy: {
                             std::this_thread::yield();
                             break;
                         }
-                        case WaitStrategy::BalancedMode: {
+                        case waitstrategy::balance: {
                             if (spin_count < max_spin_count) {
                                 ++spin_count;
                                 std::this_thread::yield(); 
                             } else {
-                                std::this_thread::sleep_for(std::chrono::milliseconds(1));
-                                spin_count = tq.length() == 0 ? 0 : spin_count / 2;  
+                                std::this_thread::sleep_for(std::chrono::microseconds(500));
                             }
                             break;
                         }
-                        case WaitStrategy::SleepMode: {
-                            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                        case waitstrategy::blocking: {
+                            std::unique_lock<std::mutex> locker(lok);
+                            task_cv.wait(locker, [this] { return num_tasks() > 0 || is_waiting || destructing; });
                             break;
                         }
                     }
