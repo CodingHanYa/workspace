@@ -1,5 +1,6 @@
 #pragma once
 #include <chrono>
+#include <functional>
 
 /**
  * Time wait for the runnable object
@@ -24,4 +25,3 @@ static double timewait(F&& foo, Args&&... argv) {
     auto time_end = std::chrono::steady_clock::now();
     return std::chrono::duration<double>(time_end - time_start).count();
 }
-

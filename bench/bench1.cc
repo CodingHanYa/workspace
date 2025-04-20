@@ -1,15 +1,15 @@
-#include <workspace/workspace.hpp>
+#include <nanobench.h>
+
 #include <chrono>
 #include <fstream>
-#include <nanobench.h>
+#include <workspace/workspace.hpp>
 // https://nanobench.ankerl.com/reference.html
 
 void bench(ankerl::nanobench::Bench* bench, const char* name, size_t thread_nums, size_t task_nums) {
-
     wsp::workbranch wb(thread_nums);
 
     bench->run(name, [&]() {
-        auto task = [] { };
+        auto task = [] {};
         for (int i = 0; i < task_nums / 10; ++i) {
             wb.submit<wsp::task::seq>(task, task, task, task, task, task, task, task, task, task);
         }

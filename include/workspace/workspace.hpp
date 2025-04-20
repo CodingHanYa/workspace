@@ -1,38 +1,34 @@
 #pragma once
 #include <cassert>
-
+#include <list>
 #include <map>
 #include <memory>
 #include <vector>
-#include <list>
-
-#include <workspace/workbranch.hpp>
 #include <workspace/supervisor.hpp>
-
+#include <workspace/workbranch.hpp>
 
 // public
 namespace wsp {
 
 // task type
 namespace task {
-    // Possess higher priority then "task::nor"
-    using urg = details::urgent;
-    // Possess lower  priority then "task::urg"
-    using nor = details::normal;  
-    // Can be executed by a thread at a time
-    using seq = details::sequence;
-}
-
+// Possess higher priority then "task::nor"
+using urg = details::urgent;
+// Possess lower  priority then "task::urg"
+using nor = details::normal;
+// Can be executed by a thread at a time
+using seq = details::sequence;
+}  // namespace task
 
 // std::future collector
 template <typename RT>
-using futures = details::futures<RT>;                
+using futures = details::futures<RT>;
 // An async working node
-using workbranch = details::workbranch;              
+using workbranch = details::workbranch;
 // workbranch supervisor
-using supervisor = details::supervisor;              
+using supervisor = details::supervisor;
 
-}
+}  // namespace wsp
 
 namespace wsp {
 
@@ -42,20 +38,22 @@ public:
     class bid {
         workbranch* base = nullptr;
         friend class workspace;
+
     public:
         bid(workbranch* b)
-            : base(b) {}
+          : base(b) {
+        }
 
-        bool operator == (const bid& other) {
+        bool operator==(const bid& other) {
             return base == other.base;
         }
-        bool operator != (const bid& other) {
+        bool operator!=(const bid& other) {
             return base != other.base;
         }
-        bool operator < (const bid& other) {
+        bool operator<(const bid& other) {
             return base < other.base;
         }
-        friend std::ostream& operator <<(std::ostream& os, const bid& id) {
+        friend std::ostream& operator<<(std::ostream& os, const bid& id) {
             os << (uint64_t)(id.base);
             return os;
         }
@@ -63,24 +61,27 @@ public:
     class sid {
         supervisor* base = nullptr;
         friend class workspace;
+
     public:
         sid(supervisor* b)
-            : base(b) {}
-        
-        bool operator == (const sid& other) {
+          : base(b) {
+        }
+
+        bool operator==(const sid& other) {
             return base == other.base;
         }
-        bool operator != (const sid& other) {
+        bool operator!=(const sid& other) {
             return base != other.base;
         }
-        bool operator < (const sid& other) {
+        bool operator<(const sid& other) {
             return base < other.base;
         }
-        friend std::ostream& operator <<(std::ostream& os, const sid& id) {
+        friend std::ostream& operator<<(std::ostream& os, const sid& id) {
             os << (uint64_t)(id.base);
             return os;
         }
     };
+
 private:
     using branch_lst = std::list<std::unique_ptr<workbranch>>;
     using superv_map = std::map<const supervisor*, std::unique_ptr<supervisor>>;
@@ -108,7 +109,7 @@ public:
     bid attach(workbranch* br) {
         assert(br != nullptr);
         branches.emplace_back(br);
-        cur = branches.begin();   // reset cursor
+        cur = branches.begin();  // reset cursor
         return bid(br);
     }
     /**
@@ -126,7 +127,7 @@ public:
     /**
      * @brief detach workbranch by id
      * @param id branch's id
-     * @return std::unique_ptr<workbranch> 
+     * @return std::unique_ptr<workbranch>
      * @note O(n)
      */
     auto detach(bid id) -> std::unique_ptr<workbranch> {
@@ -143,10 +144,10 @@ public:
     /**
      * @brief detach supervisor by id
      * @param id supervisor's id
-     * @return std::unique_ptr<supervisor> 
+     * @return std::unique_ptr<supervisor>
      * @note O(logn)
      */
-    auto detach(sid id) -> std::unique_ptr<supervisor>{
+    auto detach(sid id) -> std::unique_ptr<supervisor> {
         auto it = supervs.find(id.base);
         if (it == supervs.end()) {
             return nullptr;
@@ -156,13 +157,13 @@ public:
             return std::unique_ptr<supervisor>(ptr);
         }
     }
-    
+
     /**
      * @brief travel all the workbranchs and deal each of them
      * @param deal <void(workbranch&)> how to deal with the work branch
      */
     void for_each(std::function<void(workbranch&)> deal) {
-        for (auto& each: branches) {
+        for (auto& each : branches) {
             deal(*(each.get()));
         }
     }
@@ -171,18 +172,18 @@ public:
      * @param deal <void(supervisor&)> how to deal with the supervisor
      */
     void for_each(std::function<void(supervisor&)> deal) {
-        for (auto& each: supervs) {
+        for (auto& each : supervs) {
             deal(*(each.second.get()));
         }
     }
- 
+
     /**
      * @brief get ref of workbranch by id
      * @param id workbranch's id
      * @return reference of the workbranch
      * @note O(1)
      */
-    auto operator [](bid id) -> workbranch& {
+    auto operator[](bid id) -> workbranch& {
         return (*id.base);
     }
     /**
@@ -191,7 +192,7 @@ public:
      * @return reference of the supervisor
      * @note O(1)
      */
-    auto operator [](sid id) -> supervisor& {
+    auto operator[](sid id) -> supervisor& {
         return (*id.base);
     }
 
@@ -213,15 +214,14 @@ public:
     auto get_ref(sid id) -> supervisor& {
         return *id.base;
     }
-    
+
     /**
      * @brief async execute a task
-     * @tparam T task type 
+     * @tparam T task type
      * @param task runnable object
      */
-    template <typename T = task::nor, typename F, 
-        typename R = details::result_of_t<F>, 
-        typename DR = typename std::enable_if<std::is_void<R>::value>::type>
+    template <typename T = task::nor, typename F, typename R = details::result_of_t<F>,
+              typename DR = typename std::enable_if<std::is_void<R>::value>::type>
     void submit(F&& task) {
         assert(branches.size() > 0);
         auto this_br = cur->get();
@@ -234,15 +234,14 @@ public:
     }
     /**
      * @brief async execute a task
-     * @tparam T task type 
+     * @tparam T task type
      * @tparam R task's return type
      * @param task runnable object
-     * @return std::future<R> 
+     * @return std::future<R>
      */
-    template <typename T = task::nor, typename F, 
-        typename R = details::result_of_t<F>, 
-        typename DR = typename std::enable_if<!std::is_void<R>::value, R>::type>
-    auto submit(F&& task) -> std::future<R>{
+    template <typename T = task::nor, typename F, typename R = details::result_of_t<F>,
+              typename DR = typename std::enable_if<!std::is_void<R>::value, R>::type>
+    auto submit(F&& task) -> std::future<R> {
         assert(branches.size() > 0);
         auto this_br = cur->get();
         auto next_br = forward(cur)->get();
@@ -253,7 +252,7 @@ public:
         }
     }
     /**
-     * @brief async execute tasks 
+     * @brief async execute tasks
      * @param task runnable object (sequnce)
      * @return void
      */
@@ -272,11 +271,10 @@ public:
 private:
     const pos_t& forward(pos_t& this_pos) {
         if (++this_pos == branches.end()) {
-            this_pos = branches.begin(); 
-        } 
+            this_pos = branches.begin();
+        }
         return this_pos;
-    } 
-
+    }
 };
 
-} // wsp
+}  // namespace wsp

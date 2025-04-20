@@ -15,11 +15,13 @@ template <typename T>
 class taskqueue {
     std::mutex tq_lok;
     std::deque<T> q;
+
 public:
     using size_type = typename std::deque<T>::size_type;
     taskqueue() = default;
     taskqueue(const taskqueue&) = delete;
     taskqueue(taskqueue&&) = default;
+
 public:
     void push_back(T& v) {
         std::lock_guard<std::mutex> lock(tq_lok);
@@ -52,5 +54,5 @@ public:
     }
 };
 
-} // details
-} // wsp
+}  // namespace details
+}  // namespace wsp

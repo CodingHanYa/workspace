@@ -21,3 +21,6 @@ target_link_libraries(test_exception PRIVATE Threads::Threads)
 
 add_executable(test_supervisor test_supervisor.cc)
 target_link_libraries(test_supervisor PRIVATE Threads::Threads)
+
+add_executable(test_function test_function.cc)
+target_link_libraries(test_function PRIVATE Threads::Threads)

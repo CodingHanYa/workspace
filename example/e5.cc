@@ -12,8 +12,8 @@ int main() {
     spc[sid2].supervise(spc[bid2]);  // start supervising
 
     // Automatic assignment
-    spc.submit([]{std::cout<<std::this_thread::get_id()<<" executed task"<<std::endl;});
-    spc.submit([]{std::cout<<std::this_thread::get_id()<<" executed task"<<std::endl;});
+    spc.submit([] { std::cout << std::this_thread::get_id() << " executed task" << std::endl; });
+    spc.submit([] { std::cout << std::this_thread::get_id() << " executed task" << std::endl; });
 
-    spc.for_each([](wsp::workbranch& each){each.wait_tasks(1000);}); // timeout: 1000ms
+    spc.for_each([](wsp::workbranch& each) { each.wait_tasks(1000); });  // timeout: 1000ms
 }
