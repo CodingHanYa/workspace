@@ -29,6 +29,7 @@ class workbranch {
 
     size_t decline = 0;
     size_t task_done_workers = 0;
+    size_t waiting_finished_worker = 0;
     bool is_waiting = false;
     bool destructing = false;
 
@@ -39,6 +40,7 @@ class workbranch {
     std::condition_variable thread_cv = {};
     std::condition_variable task_done_cv = {};
     std::condition_variable task_cv = {};
+    std::condition_variable waiting_finished = {};
 
 public:
     /**
@@ -106,6 +108,12 @@ public:
             is_waiting = false;
         }
         thread_cv.notify_all();  // recover
+
+        std::unique_lock<std::mutex> locker(lok);
+        waiting_finished.wait(locker, [this] {
+            return waiting_finished_worker >= workers.size();
+        });
+        waiting_finished_worker = 0;
         return res;
     }
 
@@ -282,6 +290,9 @@ private:
                     task_done_workers++;
                     task_done_cv.notify_one();
                     thread_cv.wait(locker, [this] { return !is_waiting; });
+                    waiting_finished_worker ++;
+                    if (waiting_finished_worker >= workers.size())
+                        waiting_finished.notify_one();
                 } else {
                     switch (wait_strategy) {
                         case waitstrategy::lowlatancy: {
