@@ -189,8 +189,8 @@ private:
 };
 
 
-using task_t = std::function<void()>;
-// using task_t = function_<void()>;
+// using task_t = std::function<void()>;
+using task_t = function_<void()>;
 
 /**
  * @brief std::future collector
