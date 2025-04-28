@@ -304,7 +304,8 @@ private:
                                 ++spin_count;
                                 std::this_thread::yield();
                             } else {
-                                std::this_thread::sleep_for(std::chrono::microseconds(500));
+                                // Just tell the system to suspend this thread in the shortest time
+                                std::this_thread::sleep_for(std::chrono::nanoseconds(1));
                             }
                             break;
                         }
